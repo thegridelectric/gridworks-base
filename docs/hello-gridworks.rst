@@ -4,7 +4,7 @@ Hello World
 
 
 .. note::
-    All GridWorks repos assume Python 3.10 or higher, docker, and the Algorand
+    All GridWorks repos assume Python 3.11 or higher, docker, and the Algorand
     `sandbox <https://github.com/algorand/sandbox>`_. Also, For these ```hello world``` examples,
     please clone `this repo <https://github.com/thegridelectric>`_  in order to spin up
     a local rabbit broker.

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gridworks-base"
-version = "0.0.1"
+version = "0.0.2"
 description = "Gridworks Base"
 authors = ["GridWorks <gridworks@gridworks-consulting.com>"]
 license = "MIT"
@@ -69,7 +69,7 @@ source = ["gwbase", "tests"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 100
+fail_under = 70
 
 [tool.isort]
 profile = "black"

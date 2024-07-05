@@ -10,6 +10,8 @@ repository = "https://github.com/thegridelectric/gridworks-base"
 documentation = "https://gridworks-base.readthedocs.io"
 packages = [
     { include = "gwbase", from = "src" },
+    { include = "gwbase_test", from = "src" },
+
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",

@@ -56,8 +56,15 @@ Tests for success:
 
 This, and most other GridWorks repositories, use poetry installed via pipx to handle package management. They are also kicked off via  [Cookiecutter](https://cookiecutter-hypermodern-python.readthedocs.io/en/2022.6.3.post1/quickstart.html), which also sets up a template for continuous integration in github actions, package publishing on pypi as well as documentation at pypi.  
 
-TODO: EXPLAIN MORE ABOUT CI, BLACK, NOX, DEPENDABOT. ALSO DESCRIBE CONDE GENERATION
+TODO: EXPLAIN MORE ABOUT CI, BLACK, NOX, DEPENDABOT. A MORE LINKS TO WHY THIS STUFF IS IMPORTANT IN A PRODUCTION SYSTEM. 
 
+
+## Hello Rabbit
+
+Quick start for seeing how the actor base can send a message on the rabbit broker. Run hello_rabbit.py (after starting up the dev rabbit broker, see [dev broker](dev-rabbit-broker) above) and look at the `src/gwbase/actor_base.py` code.
+
+TODO: explain more about what this code does. Links to the type registroy, code generation.
+TODO: create a second hello script with two actors sending heartbeats back and forth. 
 
 Distributed under the terms of the [MIT license][license],
 _Gridworks Base_ is free and open source software.

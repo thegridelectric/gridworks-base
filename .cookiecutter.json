@@ -1,0 +1,16 @@
+{
+  "_checkout": "2022.6.3",
+  "_output_dir": "/Users/jessica",
+  "_repo_dir": "/Users/jessica/.cookiecutters/cookiecutter-hypermodern-python",
+  "_template": "gh:cjolowicz/cookiecutter-hypermodern-python",
+  "author": "GridWorks",
+  "copyright_year": "2024",
+  "development_status": "Development Status :: 2 - Pre-Alpha",
+  "email": "gridworks@gridworks-consulting.com",
+  "friendly_name": "Gridworks Base",
+  "github_user": "thegridelectric",
+  "license": "MIT",
+  "package_name": "gwbase",
+  "project_name": "gridworks-base",
+  "version": "0.0.0"
+}

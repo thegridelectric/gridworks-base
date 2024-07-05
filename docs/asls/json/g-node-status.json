@@ -1,0 +1,37 @@
+{
+  "gtr_asl": "001",
+  "enum_name": "g.node.status",
+  "enum_version": "100",
+  "description": "Enum for managing GNode lifecycle",
+  "url": "https://gridworks.readthedocs.io/en/latest/g-node-status.html",
+  "ssot": "https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#gnodestatus",
+  "values": [
+    "Unknown",
+    "Pending",
+    "Active",
+    "PermanentlyDeactivated",
+    "Suspended"
+  ],
+  "value_to_symbol": {
+    "Unknown": "00000000",
+    "Pending": "153d3475",
+    "Active": "a2cfc2f7",
+    "PermanentlyDeactivated": "839b38db",
+    "Suspended": "f5831e1d"
+  },
+  "value_to_version": {
+    "Unknown": "100",
+    "Pending": "100",
+    "Active": "100",
+    "PermanentlyDeactivated": "100",
+    "Suspended": "100"
+  },
+  "value_descriptions": {
+    "Unknown": "Default value",
+    "Pending": "The GNode exists but cannot be used yet.",
+    "Active": "The GNode can be used.",
+    "PermanentlyDeactivated": "The GNode can no longer be used, now or in the future.",
+    "Suspended": "The GNode cannot be used, but may become active in the future."
+  },
+  "default_value": "Unknown"
+}

@@ -1,0 +1,54 @@
+{
+  "gtr_asl": "001",
+  "type_name": "super.starter",
+  "version": "000",
+  "owner": "gridworks@gridworks-consulting.com",
+  "description": "Used by world to seed a docker container with data needed to spawn and superviser GNodeInstances",
+  "properties": {
+    "SupervisorContainer": {
+      "type": "supervisor.container.gt.000",
+      "required": true
+    },
+    "GniList": {
+      "type": "array",
+      "items": {
+        "type": "g.node.instance.gt.000"
+      },
+      "required": true
+    },
+    "AliasWithKeyList": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "format": "LeftRightDot",
+      "title": "Aliases of Gnis that own Algorand secret keys",
+      "required": true
+    },
+    "KeyList": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "required": true
+    },
+    "TypeName": {
+      "type": "string",
+      "value": "super.starter",
+      "title": "The type name"
+    },
+    "Version": {
+      "type": "string",
+      "title": "The type version",
+      "default": "000",
+      "required": true
+    }
+  },
+  "formats": {
+    "LeftRightDot": {
+      "type": "string",
+      "description": "Lowercase alphanumeric words separated by periods, with the most significant word (on the left) starting with an alphabet character.",
+      "example": "dw1.isone.me.freedom.apple"
+    }
+  }
+}

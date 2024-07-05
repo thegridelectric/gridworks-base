@@ -1,0 +1,48 @@
+{
+  "gtr_asl": "001",
+  "enum_name": "message.category",
+  "enum_version": "000",
+  "description": "Categorizes how GridWorks messages are sent and decoded/encoded",
+  "ssot": "https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#messagecategory",
+  "values": [
+    "Unknown",
+    "RabbitJsonDirect",
+    "RabbitJsonBroadcast",
+    "RabbitGwSerial",
+    "MqttJsonBroadcast",
+    "RestApiPost",
+    "RestApiPostResponse",
+    "RestApiGet"
+  ],
+  "value_to_symbol": {
+    "Unknown": "00000000",
+    "RabbitJsonDirect": "9057ab24",
+    "RabbitJsonBroadcast": "7813eb50",
+    "RabbitGwSerial": "9d70744e",
+    "MqttJsonBroadcast": "16594e91",
+    "RestApiPost": "5b2c69cb",
+    "RestApiPostResponse": "7cbba191",
+    "RestApiGet": "167236a6"
+  },
+  "value_to_version": {
+    "Unknown": "000",
+    "RabbitJsonDirect": "000",
+    "RabbitJsonBroadcast": "000",
+    "RabbitGwSerial": "000",
+    "MqttJsonBroadcast": "000",
+    "RestApiPost": "000",
+    "RestApiPostResponse": "000",
+    "RestApiGet": "000"
+  },
+  "value_descriptions": {
+    "Unknown": "Default value",
+    "RabbitJsonDirect": "Serialized Json message sent on the world rabbit broker from one GNode actor to another",
+    "RabbitJsonBroadcast": "Serailized Json message broadcast on the world rabbit broker by a GNode actor",
+    "RabbitGwSerial": "GwSerial protocol message sent on the world rabbit broker",
+    "MqttJsonBroadcast": "Serialized Json message following MQTT topic format, sent on the world rabbit broker",
+    "RestApiPost": "REST API post",
+    "RestApiPostResponse": "REST API post response",
+    "RestApiGet": "REST API GET"
+  },
+  "default_value": "Unknown"
+}

@@ -1,0 +1,164 @@
+name: Tests
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  tests:
+    name: ${{ matrix.session }} ${{ matrix.python }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # - { python: "3.12", os: "ubuntu-latest", session: "pre-commit" }
+          # - { python: "3.12", os: "ubuntu-latest", session: "safety" }
+          # - { python: "3.12", os: "ubuntu-latest", session: "mypy" }
+          - { python: "3.11", os: "ubuntu-latest", session: "tests" }
+          - { python: "3.12", os: "ubuntu-latest", session: "tests" }
+
+    env:
+      NOXSESSION: ${{ matrix.session }}
+      FORCE_COLOR: "1"
+      PRE_COMMIT_COLOR: "always"
+
+    steps:
+      ###############################
+      # Work around pipx issue #1331 with absolute path to constraint.txt
+      # https://github.com/pypa/pipx/issues/1331#issuecomment-2043163012
+      - name: Set PIP_ARGS on Windows
+        run: echo "PIP_ARGS=--constraint=$env:GITHUB_WORKSPACE/.github/workflows/constraints.txt" | Out-File -FilePath $env:GITHUB_ENV -Append
+        if: runner.os == 'Windows'
+
+      - name: Set PIP_ARGS on not-Windows
+        run: echo "PIP_ARGS=--constraint=$GITHUB_WORKSPACE/.github/workflows/constraints.txt" >> "$GITHUB_ENV"
+        if: runner.os != 'Windows'
+      ###############################
+
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Start World Broker
+        uses: namoshek/rabbitmq-github-action@v1
+        with:
+          version: "3.9.13"
+          ports: "1885:1885 4369:4369 5672:5672 15672:15672 15674:15674 25672:25672"
+          config: ${{ github.workspace }}/.ci/rabbitmq.conf
+          container-name: "rabbit"
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Upgrade pip
+        run: |
+          pip install ${{ env.PIP_ARGS }} pip
+          pip --version
+
+      - name: Upgrade pip in virtual environments
+        shell: python
+        run: |
+          import os
+          import pip
+
+          with open(os.environ["GITHUB_ENV"], mode="a") as io:
+              print(f"VIRTUALENV_PIP={pip.__version__}", file=io)
+
+      - name: Install Poetry
+        run: |
+          pipx install --pip-args=${{ env.PIP_ARGS }} poetry
+          poetry --version
+
+      - name: Install Nox
+        run: |
+          pipx install --pip-args=${{ env.PIP_ARGS }} nox
+          pipx inject --pip-args=${{ env.PIP_ARGS }} nox nox-poetry
+          nox --version
+
+      - name: Compute pre-commit cache key
+        if: matrix.session == 'pre-commit'
+        id: pre-commit-cache
+        shell: python
+        run: |
+          import hashlib
+          import sys
+
+          python = "py{}.{}".format(*sys.version_info[:2])
+          payload = sys.version.encode() + sys.executable.encode()
+          digest = hashlib.sha256(payload).hexdigest()
+          result = "${{ runner.os }}-{}-{}-pre-commit".format(python, digest[:8])
+
+          print("::set-output name=result::{}".format(result))
+
+      - name: Restore pre-commit cache
+        uses: actions/cache@v4
+        if: matrix.session == 'pre-commit'
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ steps.pre-commit-cache.outputs.result }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ steps.pre-commit-cache.outputs.result }}-
+
+      - name: Run Nox
+        run: |
+          nox --python=${{ matrix.python }}
+
+      - name: Upload coverage data
+        if: matrix.session == 'tests' && matrix.python == '3.12' && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-data
+          path: ".coverage.*"
+
+      - name: Upload documentation
+        if: matrix.session == 'docs-build'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: docs/_build
+
+  coverage:
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Upgrade pip
+        run: |
+          pip install ${{ env.PIP_ARGS }} pip
+          pip --version
+
+      - name: Install Poetry
+        run: |
+          pipx install --pip-args=${{ env.PIP_ARGS }} poetry
+          poetry --version
+
+      - name: Install Nox
+        run: |
+          pipx install --pip-args=${{ env.PIP_ARGS }} nox
+          pipx inject --pip-args=${{ env.PIP_ARGS }} nox nox-poetry
+          nox --version
+
+      - name: Download coverage data
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-data
+
+      - name: Combine coverage data and display human readable report
+        run: |
+          nox --session=coverage
+
+      - name: Create coverage report
+        run: |
+          nox --session=coverage -- xml
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4.1.0

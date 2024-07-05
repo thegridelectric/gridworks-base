@@ -1,0 +1,49 @@
+{
+  "gtr_asl": "001",
+  "enum_name": "core.g.node.role",
+  "enum_version": "001",
+  "description": "CoreGNodeRole assigned by GNodeFactory",
+  "url": "https://gridworks.readthedocs.io/en/latest/core-g-node-role.html",
+  "ssot": "https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#coregnoderole",
+  "values": [
+    "Other",
+    "TerminalAsset",
+    "AtomicTNode",
+    "MarketMaker",
+    "AtomicMeteringNode",
+    "ConductorTopologyNode",
+    "InterconnectionComponent",
+    "Scada"
+  ],
+  "value_to_symbol": {
+    "Other": "00000000",
+    "TerminalAsset": "0f8872f7",
+    "AtomicTNode": "d9823442",
+    "MarketMaker": "86f21dd2",
+    "AtomicMeteringNode": "9521af06",
+    "ConductorTopologyNode": "4502e355",
+    "InterconnectionComponent": "d67e564e",
+    "Scada": "7a8e4046"
+  },
+  "value_to_version": {
+    "Other": "000",
+    "TerminalAsset": "000",
+    "AtomicTNode": "000",
+    "MarketMaker": "000",
+    "AtomicMeteringNode": "000",
+    "ConductorTopologyNode": "001",
+    "InterconnectionComponent": "001",
+    "Scada": "001"
+  },
+  "value_descriptions": {
+    "Other": "",
+    "TerminalAsset": "",
+    "AtomicTNode": "",
+    "MarketMaker": "",
+    "AtomicMeteringNode": "",
+    "ConductorTopologyNode": "",
+    "InterconnectionComponent": "",
+    "Scada": ""
+  },
+  "default_value": "Other"
+}

@@ -1,0 +1,25 @@
+{
+  "gtr_asl": "001",
+  "enum_name": "universe.type",
+  "enum_version": "000",
+  "description": "Allows for multiple GridWorks, in particular for development and shared simulations",
+  "url": "https://gridworks.readthedocs.io/en/latest/universe.html",
+  "ssot": "https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#universetype",
+  "values": ["Dev", "Hybrid", "Production"],
+  "value_to_symbol": {
+    "Dev": "00000000",
+    "Hybrid": "8281a0fa",
+    "Production": "b0168bda"
+  },
+  "value_to_version": {
+    "Dev": "000",
+    "Hybrid": "000",
+    "Production": "000"
+  },
+  "value_descriptions": {
+    "Dev": "Simulation running on a single computer.",
+    "Hybrid": "Anything goes.",
+    "Production": "Money at stake."
+  },
+  "default_value": "Dev"
+}

@@ -1,0 +1,39 @@
+{
+  "gtr_asl": "001",
+  "enum_name": "message.category.symbol",
+  "enum_version": "000",
+  "description": "Shorthand symbols for MessageCategory000 Enum, used in meta-data like routing keys",
+  "ssot": "https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#messagecategorysymbol",
+  "values": ["unknown", "rj", "rjb", "s", "gw", "post", "postack", "get"],
+  "value_to_symbol": {
+    "unknown": "00000000",
+    "rj": "7e4957a3",
+    "rjb": "68bb105c",
+    "s": "eb802736",
+    "gw": "f36a8e69",
+    "post": "94329f30",
+    "postack": "9fc1b9d4",
+    "get": "8c36344a"
+  },
+  "value_to_version": {
+    "unknown": "000",
+    "rj": "000",
+    "rjb": "000",
+    "s": "000",
+    "gw": "000",
+    "post": "000",
+    "postack": "000",
+    "get": "000"
+  },
+  "value_descriptions": {
+    "unknown": "Default value",
+    "rj": "Serialized Json message sent on the world rabbit broker from one GNode actor to another",
+    "rjb": "Serailized Json message broadcast on the world rabbit broker by a GNode actor",
+    "s": "GwSerial protocol message sent on the world rabbit broker",
+    "gw": "Serialized Json message following MQTT topic format, sent on the world rabbit broker",
+    "post": "REST API post",
+    "postack": "REST API post response",
+    "get": "REST API GET"
+  },
+  "default_value": "unknown"
+}

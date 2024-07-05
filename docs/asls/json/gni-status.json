@@ -1,0 +1,28 @@
+{
+  "gtr_asl": "001",
+  "enum_name": "gni.status",
+  "enum_version": "000",
+  "description": "Enum for managing GNodeInstance lifecycle",
+  "url": "https://gridworks.readthedocs.io/en/latest/g-node-instance.html",
+  "ssot": "https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#gnistatus",
+  "values": ["Unknown", "Pending", "Active", "Done"],
+  "value_to_symbol": {
+    "Unknown": "00000000",
+    "Pending": "7890ab0a",
+    "Active": "69241259",
+    "Done": "8222421f"
+  },
+  "value_to_version": {
+    "Unknown": "000",
+    "Pending": "000",
+    "Active": "000",
+    "Done": "000"
+  },
+  "value_descriptions": {
+    "Unknown": "Default Value",
+    "Pending": "Has been created by the World, but has not yet finished provisioning",
+    "Active": "Active in its GridWorks world. If the GNodeInstance has an actor, that actor is communicating",
+    "Done": "No longer represents the GNode."
+  },
+  "default_value": "Unknown"
+}

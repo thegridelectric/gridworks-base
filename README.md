@@ -24,7 +24,7 @@
 This repository serves two purposes:
   1. it provides the base class for the default GridWorks actor using pika, the main python package for interacting with RabbitMQ
         - install the `gwbase` package via 
-   ```console
+    ```
     $ pip install gridworks-base
     ```
   2. It provides scripts for runnig a local dev rabbit broker, which is the recommended way to develop.

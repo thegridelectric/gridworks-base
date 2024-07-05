@@ -21,40 +21,47 @@
 [pre-commit]: https://github.com/pre-commit/pre-commit
 [black]: https://github.com/psf/black
 
-## Features
+This repository serves two purposes:
+  1. it provides the base class for the default GridWorks actor using pika, the main python package for interacting with RabbitMQ
+        - install the `gwbase` package via 
+    ```
+    $ pip install gridworks-base
+    ```
+  2. It provides scripts for runnig a local dev rabbit broker, which is the recommended way to develop.
+   
+## Dev Rabbit Broker
 
-- TODO
 
-## Requirements
+All GridWorks repos require a running rabbitMQ dev broker running to pass tests or run dev simulations.  Instructions for setting it up:
 
-- TODO
+  - Make sure you have [docker](https://www.docker.com/products/docker-desktop/) installed
+  - Know whether your computer architecture is x86 or arm
+  - Start the dev broker in a docker container:
+    - **x86 architecture**: `./x86.sh`
+    - **arm architecture**: `./arm.sh`
 
-## Installation
+Tests for success:
+  1) go to http://0.0.0.0:15672/ - it should look like this:
 
-You can install _Gridworks Base_ via [pip] from [PyPI]:
+![alt_text](docs/images/dev-broker-login.png)
+    - Username/password for the dev rabbit broker: `smqPublic/smqPublic`
+    - [More info]](https://gridworks.readthedocs.io/en/latest/gridworks-broker.html) on the GridWorks use of rabbit brokers
 
-```console
-$ pip install gridworks-base
-```
+  2) tests pass
+  ```
+  poetry install
+  poetry shell
+  pytest -v
+  ```
 
-## Usage
+This, and most other GridWorks repositories, use poetry installed via pipx to handle package management. They are also kicked off via  [Cookiecutter](https://cookiecutter-hypermodern-python.readthedocs.io/en/2022.6.3.post1/quickstart.html), which also sets up a template for continuous integration in github actions, package publishing on pypi as well as documentation at pypi.  
 
-Please see the [Command-line Reference] for details.
+TODO: EXPLAIN MORE ABOUT CI, BLACK, NOX, DEPENDABOT. ALSO DESCRIBE CONDE GENERATION
 
-## Contributing
-
-Contributions are very welcome.
-To learn more, see the [Contributor Guide].
-
-## License
 
 Distributed under the terms of the [MIT license][license],
 _Gridworks Base_ is free and open source software.
 
-## Issues
-
-If you encounter any problems,
-please [file an issue] along with a detailed description.
 
 ## Credits
 

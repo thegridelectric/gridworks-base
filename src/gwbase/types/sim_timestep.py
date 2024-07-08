@@ -7,10 +7,12 @@ from typing import Dict
 from typing import Literal
 
 from gw.errors import GwTypeError
-from gw.utils import snake_to_camel
+from gw.utils import is_pascal_case
 from pydantic import BaseModel
 from pydantic import Field
-from pydantic import validator
+from pydantic import field_validator
+from pydantic.alias_generators import to_pascal
+from pydantic.alias_generators import to_snake
 
 
 LOG_FORMAT = (
@@ -47,10 +49,10 @@ class SimTimestep(BaseModel):
     version: Literal["000"] = "000"
 
     class Config:
-        allow_population_by_field_name = True
-        alias_generator = snake_to_camel
+        populate_by_name = True
+        alias_generator = to_pascal
 
-    @validator("from_g_node_alias")
+    @field_validator("from_g_node_alias")
     def _check_from_g_node_alias(cls, v: str) -> str:
         try:
             check_is_left_right_dot(v)
@@ -60,7 +62,7 @@ class SimTimestep(BaseModel):
             )
         return v
 
-    @validator("from_g_node_instance_id")
+    @field_validator("from_g_node_instance_id")
     def _check_from_g_node_instance_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
@@ -70,7 +72,7 @@ class SimTimestep(BaseModel):
             )
         return v
 
-    @validator("time_unix_s")
+    @field_validator("time_unix_s")
     def _check_time_unix_s(cls, v: int) -> int:
         try:
             check_is_reasonable_unix_time_s(v)
@@ -80,7 +82,7 @@ class SimTimestep(BaseModel):
             )
         return v
 
-    @validator("timestep_created_ms")
+    @field_validator("timestep_created_ms")
     def _check_timestep_created_ms(cls, v: int) -> int:
         try:
             check_is_reasonable_unix_time_ms(v)
@@ -90,7 +92,7 @@ class SimTimestep(BaseModel):
             )
         return v
 
-    @validator("message_id")
+    @field_validator("message_id")
     def _check_message_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
@@ -117,10 +119,8 @@ class SimTimestep(BaseModel):
         It also applies these changes recursively to sub-types.
         """
         d = {
-            key: value
-            for key, value in self.dict(
-                by_alias=True, include=self.__fields_set__ | {"type_name", "version"}
-            ).items()
+            to_pascal(key): value
+            for key, value in self.model_dump().items()
             if value is not None
         }
         return d
@@ -201,6 +201,9 @@ class SimTimestep_Maker:
         Returns:
             SimTimestep
         """
+        for key in d.keys():
+            if not is_pascal_case(key):
+                raise GwTypeError(f"Key '{key}' is not PascalCase")
         d2 = dict(d)
         if "FromGNodeAlias" not in d2.keys():
             raise GwTypeError(f"dict missing FromGNodeAlias: <{d2}>")
@@ -221,7 +224,8 @@ class SimTimestep_Maker:
                 f"Attempting to interpret sim.timestep version {d2['Version']} as version 000"
             )
             d2["Version"] = "000"
-        return SimTimestep(**d2)
+        d3 = {to_snake(key): value for key, value in d2.items()}
+        return SimTimestep(**d3)
 
 
 def check_is_left_right_dot(v: str) -> None:

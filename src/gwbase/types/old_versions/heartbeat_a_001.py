@@ -1,4 +1,4 @@
-"""Type heartbeat.a, version 001"""
+"""Type heartbeat.a, version 001 - sample of type evolution with versions."""
 
 import json
 from typing import Any
@@ -7,18 +7,35 @@ from typing import Literal
 
 from gw.errors import GwTypeError
 from pydantic import BaseModel
-from pydantic import validator
+from pydantic import field_validator
 
+from pydantic.alias_generators import to_pascal
+from pydantic.alias_generators import to_snake
+
+from gwbase.types import HeartbeatA
 
 class HeartbeatA001(BaseModel):
-    MyHex: str  #
-    YourLastHex: str  #
-    TypeName: Literal["heartbeat.a"] = "heartbeat.a"
-    Version: str = "001"
+    """
+    This earlier version of type heartbeat.a does not enforce that MyHex and
+    YourLastHex are single character hexes - just that they are strings
+    """
+    my_hex: str  #
+    your_last_hex: str  #
+    type_name: Literal["heartbeat.a"] = "heartbeat.a"
+    version: str = "001"
+
+    class Config:
+        populate_by_name = True
+        alias_generator = to_pascal
 
     def as_dict(self) -> Dict[str, Any]:
-        d = self.dict()
+        d = {
+            to_pascal(key): value
+            for key, value in self.model_dump().items()
+            if value is not None
+        }
         return d
+
 
     def as_type(self) -> str:
         return json.dumps(self.as_dict())
@@ -28,12 +45,6 @@ class HeartbeatA001_Maker:
     type_name = "heartbeat.a"
     version = "001"
 
-    def __init__(self, my_hex: str, your_last_hex: str):
-        self.tuple = HeartbeatA001(
-            MyHex=my_hex,
-            YourLastHex=your_last_hex,
-            #
-        )
 
     @classmethod
     def tuple_to_type(cls, tuple: HeartbeatA001) -> str:
@@ -58,10 +69,6 @@ class HeartbeatA001_Maker:
             raise GwTypeError(f"dict {d2} missing YourLastHex")
         if "TypeName" not in d2.keys():
             raise GwTypeError(f"dict {d2} missing TypeName")
+        d3 = {to_snake(key): value for key, value in d2.items()}
+        return HeartbeatA001(**d3)
 
-        return HeartbeatA001(
-            MyHex=d2["MyHex"],
-            YourLastHex=d2["YourLastHex"],
-            TypeName=d2["TypeName"],
-            Version="001",
-        )

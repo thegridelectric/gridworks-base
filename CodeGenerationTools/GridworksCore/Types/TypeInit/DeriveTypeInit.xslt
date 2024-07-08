@@ -24,8 +24,7 @@
 
                 <OverwriteMode>Always</OverwriteMode>
                 <xsl:element name="FileContents">
-<xsl:text>
-""" List of all the types """
+<xsl:text>""" List of all the types """
 </xsl:text>
 <xsl:for-each select="$airtable//VersionedTypes/VersionedType[
   count(Protocols[text()='gwbase']) > 0 and

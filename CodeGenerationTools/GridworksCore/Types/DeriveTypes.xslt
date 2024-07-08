@@ -55,6 +55,7 @@
 
 <xsl:text>"""Type </xsl:text><xsl:value-of select="$type-name"/><xsl:text>, version </xsl:text>
 <xsl:value-of select="Version"/><xsl:text>"""
+
 import json
 import logging
 from typing import Any
@@ -72,19 +73,18 @@ from typing import Optional</xsl:text>
 </xsl:if>
 <xsl:text>
 
+from gw.errors import GwTypeError
+from gw.utils import is_pascal_case
 from pydantic import BaseModel</xsl:text>
-<xsl:if test="ExtraAllowed='true'">
 <xsl:text>
-from pydantic import Extra</xsl:text>
-</xsl:if><xsl:text>
 from pydantic import Field</xsl:text>
 <xsl:if test="count($airtable//TypeAxioms/TypeAxiom[MultiPropertyAxiom=$versioned-type-id]) > 0">
 <xsl:text>
-from pydantic import root_validator</xsl:text>
+from pydantic import model_validator</xsl:text>
 </xsl:if>
 <xsl:if test="count($airtable//TypeAttributes/TypeAttribute[(VersionedType = $versioned-type-id) and (IsRequired='false') or (IsEnum='true' or (IsList='true' and (IsType = 'true' or (IsPrimitive='true'  and normalize-space(PrimitiveFormat) != '') )))]) > 0">
 <xsl:text>
-from pydantic import validator</xsl:text>
+from pydantic import field_validator</xsl:text>
 </xsl:if>
 
 <xsl:if test="count(PropertyFormatsUsed)>0">
@@ -172,8 +172,8 @@ from gwbase.enums import </xsl:text>
 
 </xsl:for-each>
 <xsl:text>
-from gw.errors import GwTypeError
-from gw.utils import snake_to_camel</xsl:text>
+from pydantic.alias_generators import to_pascal
+from pydantic.alias_generators import to_snake</xsl:text>
 
 <xsl:text>
 
@@ -400,15 +400,15 @@ class </xsl:text>
 <xsl:if test="ExtraAllowed='true'"><xsl:text>
 
     class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
-        alias_generator = snake_to_camel</xsl:text>
+        extra = 'allow'
+        populate_by_name = True
+        alias_generator = to_pascal</xsl:text>
 </xsl:if>
 <xsl:if test="not(ExtraAllowed='true')"><xsl:text>
 
     class Config:
-        allow_population_by_field_name = True
-        alias_generator = snake_to_camel</xsl:text>
+        populate_by_name = True
+        alias_generator = to_pascal</xsl:text>
 </xsl:if>
 
 <!-- CONSTRUCTING VALIDATORS CONSTRUCTING VALIDATORS  CONSTRUCTING VALIDATORS  CONSTRUCTING VALIDATORS  CONSTRUCTING VALIDATORS -->
@@ -491,10 +491,10 @@ class </xsl:text>
 
     <xsl:text>
 
-    @validator("</xsl:text><xsl:value-of select="$attribute-name"/><xsl:text>"</xsl:text>
+    @field_validator("</xsl:text><xsl:value-of select="$attribute-name"/><xsl:text>"</xsl:text>
 
     <xsl:if test="PreValidateFormat='true'">
-    <xsl:text>, pre=True</xsl:text>
+    <xsl:text>, mode='before'</xsl:text>
     </xsl:if>
     <xsl:text>)
     def </xsl:text>
@@ -674,9 +674,9 @@ class </xsl:text>
     <xsl:sort select="AxiomNumber" data-type="number"/>
     <xsl:text>
 
-    @root_validator</xsl:text>
+    @model_validator</xsl:text>
     <xsl:if test="CheckFirst='true'">
-     <xsl:text>(pre=True)</xsl:text>
+     <xsl:text>(mode='before')</xsl:text>
     </xsl:if>
     <xsl:text>
     def check_axiom_</xsl:text><xsl:value-of select="AxiomNumber"/><xsl:text>(cls, v: dict) -> dict:
@@ -730,11 +730,8 @@ class </xsl:text>
         It also applies these changes recursively to sub-types.
         """
         d = {
-            key: value
-            for key, value in self.dict(
-                by_alias=True,
-                include=self.__fields_set__ | {"type_name", "version"}
-            ).items()
+            to_pascal(key): value
+            for key, value in self.model_dump().items()
             if value is not None
         }</xsl:text>
 
@@ -1019,6 +1016,9 @@ class </xsl:text>
         Returns:
             </xsl:text><xsl:value-of select="$python-class-name"/><xsl:text>
         """
+        for key in d.keys():
+            if not is_pascal_case(key):
+                raise GwTypeError(f"Key '{key}' is not PascalCase")
         d2 = dict(d)</xsl:text>
 
 <xsl:for-each select="$airtable//TypeAttributes/TypeAttribute[(VersionedType = $versioned-type-id)]">
@@ -1296,7 +1296,8 @@ class </xsl:text>
             <xsl:value-of select="Version"/> <xsl:text>"
             )
             d2["Version"] = "</xsl:text><xsl:value-of select="Version"/><xsl:text>"
-        return </xsl:text><xsl:value-of select="$python-class-name"/><xsl:text>(**d2)</xsl:text>
+        d3 = {to_snake(key): value for key, value in d2.items()}
+        return </xsl:text><xsl:value-of select="$python-class-name"/><xsl:text>(**d3)</xsl:text>
     <xsl:if test="(MakeDataClass='true')">
     <xsl:text>
 

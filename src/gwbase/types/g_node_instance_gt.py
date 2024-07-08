@@ -9,11 +9,12 @@ from typing import Optional
 
 from gw.errors import DcError
 from gw.errors import GwTypeError
-from gw.utils import snake_to_camel
+from gw.utils import is_pascal_case
 from pydantic import BaseModel
-from pydantic import Extra
 from pydantic import Field
-from pydantic import validator
+from pydantic import field_validator
+from pydantic.alias_generators import to_pascal
+from pydantic.alias_generators import to_snake
 
 from gwbase.data_classes.g_node import GNode
 from gwbase.data_classes.g_node_instance import GNodeInstance
@@ -71,11 +72,11 @@ class GNodeInstanceGt(BaseModel):
     version: Literal["000"] = "000"
 
     class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
-        alias_generator = snake_to_camel
+        extra = "allow"
+        populate_by_name = True
+        alias_generator = to_pascal
 
-    @validator("g_node_instance_id")
+    @field_validator("g_node_instance_id")
     def _check_g_node_instance_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
@@ -85,7 +86,7 @@ class GNodeInstanceGt(BaseModel):
             )
         return v
 
-    @validator("g_node_id")
+    @field_validator("g_node_id")
     def _check_g_node_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
@@ -95,7 +96,7 @@ class GNodeInstanceGt(BaseModel):
             )
         return v
 
-    @validator("supervisor_container_id")
+    @field_validator("supervisor_container_id")
     def _check_supervisor_container_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
@@ -105,7 +106,7 @@ class GNodeInstanceGt(BaseModel):
             )
         return v
 
-    @validator("start_time_unix_s")
+    @field_validator("start_time_unix_s")
     def _check_start_time_unix_s(cls, v: int) -> int:
         try:
             check_is_reasonable_unix_time_s(v)
@@ -115,7 +116,7 @@ class GNodeInstanceGt(BaseModel):
             )
         return v
 
-    @validator("algo_address")
+    @field_validator("algo_address")
     def _check_algo_address(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -144,10 +145,8 @@ class GNodeInstanceGt(BaseModel):
         It also applies these changes recursively to sub-types.
         """
         d = {
-            key: value
-            for key, value in self.dict(
-                by_alias=True, include=self.__fields_set__ | {"type_name", "version"}
-            ).items()
+            to_pascal(key): value
+            for key, value in self.model_dump().items()
             if value is not None
         }
         del d["Strategy"]
@@ -232,6 +231,9 @@ class GNodeInstanceGt_Maker:
         Returns:
             GNodeInstanceGt
         """
+        for key in d.keys():
+            if not is_pascal_case(key):
+                raise GwTypeError(f"Key '{key}' is not PascalCase")
         d2 = dict(d)
         if "GNodeInstanceId" not in d2.keys():
             raise GwTypeError(f"dict missing GNodeInstanceId: <{d2}>")
@@ -262,7 +264,8 @@ class GNodeInstanceGt_Maker:
                 f"Attempting to interpret g.node.instance.gt version {d2['Version']} as version 000"
             )
             d2["Version"] = "000"
-        return GNodeInstanceGt(**d2)
+        d3 = {to_snake(key): value for key, value in d2.items()}
+        return GNodeInstanceGt(**d3)
 
     @classmethod
     def tuple_to_dc(cls, t: GNodeInstanceGt) -> GNodeInstance:

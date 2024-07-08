@@ -24,8 +24,8 @@
 
                 <OverwriteMode>Always</OverwriteMode>
                 <xsl:element name="FileContents">
-<xsl:text>
-""" List of all the types used by the actor."""
+<xsl:text>""" List of all the types used by the actor."""
+
 from typing import Dict
 from typing import List
 from typing import no_type_check
@@ -52,21 +52,31 @@ TypeMakerByName: Dict[str, HeartbeatA_Maker] = {}
 @no_type_check
 def type_makers() -> List[HeartbeatA_Maker]:
     return [
-    </xsl:text>
-<xsl:for-each select="$airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase')]">
+        </xsl:text>
+<xsl:for-each select="$airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase') and (normalize-space(VersionedTypeName)!='')]">
 <xsl:sort select="VersionedTypeName" data-type="text"/>
 <xsl:variable name="versioned-type-id" select="VersionedType"/>
-<xsl:for-each select="$airtable//VersionedTypes/VersionedType[(VersionedTypeId = $versioned-type-id)  and (Status = 'Active' or Status = 'Pending') and (ProtocolCategory = 'Json' or ProtocolCategory = 'GwAlgoSerial')]">
+<xsl:for-each select="$airtable//VersionedTypes/VersionedType[(VersionedTypeId = $versioned-type-id)  and (Status = 'Active' or Status = 'Pending')  and (ProtocolCategory = 'Json' or ProtocolCategory = 'GwAlgoSerial')]">
 <xsl:call-template name="nt-case">
     <xsl:with-param name="type-name-text" select="TypeName" />
 </xsl:call-template>
-<xsl:text>_Maker,
-    </xsl:text>
+<xsl:text>_Maker</xsl:text>
+</xsl:for-each>
 
+
+<xsl:choose>
+ <xsl:when test="position() != count($airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase')])">
+<xsl:text>,
+        </xsl:text>
+</xsl:when>
+<xsl:otherwise>
+<xsl:text>,
+    </xsl:text>
+</xsl:otherwise>
+</xsl:choose>
 </xsl:for-each>
-</xsl:for-each>
-    <xsl:text>
-]
+    <xsl:text>]
+
 
 for maker in type_makers():
     TypeMakerByName[maker.type_name] = maker
@@ -89,17 +99,25 @@ def version_by_type_name() -> Dict[str, str]:
     <xsl:value-of select="TypeName"/>
     <xsl:text>": "</xsl:text>
     <xsl:value-of select="Version"/>
-    <xsl:text>",
+    <xsl:text>"</xsl:text>
+    </xsl:for-each>
+    <xsl:choose>
+ <xsl:when test="position() != count($airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase')])">
+    <xsl:text>,
         </xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+    <xsl:text>,
+    </xsl:text>
+    </xsl:otherwise>
+    </xsl:choose>
     </xsl:for-each>
-    </xsl:for-each>
-    <xsl:text>
-    }
+    <xsl:text>}
 
     return v
 
 
-def status_by_versioned_type_name() ->Dict[str, str]:
+def status_by_versioned_type_name() -> Dict[str, str]:
     """
     Returns:
         Dict[str, str]: Keys are versioned TypeNames, values are type status
@@ -115,15 +133,22 @@ def status_by_versioned_type_name() ->Dict[str, str]:
     <xsl:value-of select="VersionedTypeName"/>
     <xsl:text>": "</xsl:text>
     <xsl:value-of select="Status"/>
-    <xsl:text>",
+    <xsl:text>"</xsl:text>
+    </xsl:for-each>
+        <xsl:choose>
+ <xsl:when test="position() != count($airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase')])">
+    <xsl:text>,
         </xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+    <xsl:text>,
+    </xsl:text>
+    </xsl:otherwise>
+    </xsl:choose>
     </xsl:for-each>
-    </xsl:for-each>
-    <xsl:text>
-    }
+    <xsl:text>}
 
     return v
-
 </xsl:text>
 
 

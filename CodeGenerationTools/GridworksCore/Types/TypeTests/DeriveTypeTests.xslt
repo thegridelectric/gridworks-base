@@ -55,12 +55,20 @@
 <xsl:text>"""Tests </xsl:text><xsl:value-of select="$type-name"/><xsl:text> type, version </xsl:text>
 <xsl:value-of select="Version"/>
 <xsl:text>"""
+
 import json
 
 import pytest
+from gw.errors import GwTypeError
 from pydantic import ValidationError
-
-from gw.errors import GwTypeError</xsl:text>
+</xsl:text>
+<xsl:for-each select="$airtable//GtEnums/GtEnum[(normalize-space(Name) !='')  and (count(TypesThatUse[text()=$versioned-type-id])>0)]">
+<xsl:text>
+from gwbase.enums import </xsl:text>
+<xsl:call-template name="nt-case">
+    <xsl:with-param name="type-name-text" select="LocalName" />
+</xsl:call-template>
+</xsl:for-each>
 <xsl:choose>
 <xsl:when test="(NotInInit='true')">
 <xsl:text>
@@ -79,13 +87,7 @@ from gwbase.types import </xsl:text>
 </xsl:otherwise>
 
 </xsl:choose>
-<xsl:for-each select="$airtable//GtEnums/GtEnum[(normalize-space(Name) !='')  and (count(TypesThatUse[text()=$versioned-type-id])>0)]">
-<xsl:text>
-from gwbase.enums import </xsl:text>
-<xsl:call-template name="nt-case">
-    <xsl:with-param name="type-name-text" select="LocalName" />
-</xsl:call-template>
-</xsl:for-each>
+
 <xsl:text>
 
 

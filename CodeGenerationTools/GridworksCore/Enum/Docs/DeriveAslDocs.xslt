@@ -66,7 +66,8 @@
     <xsl:sort select="Idx" data-type="number"/>
     <xsl:text>"</xsl:text>
     <xsl:value-of select="LocalValue"/>
-    <xsl:text>"</xsl:text>
+
+     <xsl:text>"</xsl:text>
         <xsl:if test="position() != count($airtable//EnumSymbols/EnumSymbol[(Enum = $enum-id) and (Version &lt;= $version)])">
         <xsl:text>, </xsl:text>
     </xsl:if>

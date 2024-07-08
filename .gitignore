@@ -26,7 +26,8 @@ cook*
 CodeGenerationTools/GridworksCore/SSoT/Airtable.xml
 CodeGenerationTools/GridworksCore/SassyMQ/
 CodeGenerationTools/GridworksCore/SMQL
-.ssotme
+.ssotme/*
+*.zfs
 
 
 # environment file

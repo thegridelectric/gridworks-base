@@ -1,4 +1,6 @@
-"""Type heartbeat.a, version 100"""
+"""Type heartbeat.a, version 100.
+Change since 001: enforces that MyHex and YourLastHex are hex characters
+"""
 
 import json
 import logging

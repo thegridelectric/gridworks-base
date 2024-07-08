@@ -3,10 +3,10 @@ import datetime
 import pytest
 from pydantic import SecretStr
 
-from gwbase.config import AlgoApiSecrets
 from gwbase.config import GNodeSettings
-from gwbase.config import Public
-from gwbase.config import RabbitBrokerClient
+from gwbase.config.algo_settings import AlgoApiSecrets
+from gwbase.config.algo_settings import Public
+from gwbase.config.rabbit_settings import RabbitBrokerClient
 
 
 # TODO: implement paths and clean_g_node_env like for scada
@@ -15,9 +15,9 @@ from gwbase.config import RabbitBrokerClient
 def test_g_node_settings_defaults():
     settings = GNodeSettings()
     expected = dict(
-        public=Public().dict(),
-        algo_api_secrets=AlgoApiSecrets().dict(),
-        rabbit=RabbitBrokerClient().dict(),
+        public=Public().model_dump(),
+        algo_api_secrets=AlgoApiSecrets().model_dump(),
+        rabbit=RabbitBrokerClient().model_dump(),
         redis_endpoint="localhost",
         g_node_alias="d1.isone.unknown.gnode",
         g_node_id="e23eb2ec-4064-4921-89d4-b006edc81216",

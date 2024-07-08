@@ -8,11 +8,12 @@ from typing import Literal
 from typing import Optional
 
 from gw.errors import GwTypeError
-from gw.utils import snake_to_camel
+from gw.utils import is_pascal_case
 from pydantic import BaseModel
-from pydantic import Extra
 from pydantic import Field
-from pydantic import validator
+from pydantic import field_validator
+from pydantic.alias_generators import to_pascal
+from pydantic.alias_generators import to_snake
 
 from gwbase.data_classes.g_node import GNode
 from gwbase.enums import GNodeRole
@@ -139,11 +140,11 @@ class GNodeGt(BaseModel):
     version: Literal["002"] = "002"
 
     class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
-        alias_generator = snake_to_camel
+        extra = "allow"
+        populate_by_name = True
+        alias_generator = to_pascal
 
-    @validator("g_node_id")
+    @field_validator("g_node_id")
     def _check_g_node_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
@@ -153,7 +154,7 @@ class GNodeGt(BaseModel):
             )
         return v
 
-    @validator("alias")
+    @field_validator("alias")
     def _check_alias(cls, v: str) -> str:
         try:
             check_is_left_right_dot(v)
@@ -161,7 +162,7 @@ class GNodeGt(BaseModel):
             raise ValueError(f"Alias failed LeftRightDot format validation: {e}")
         return v
 
-    @validator("g_node_registry_addr")
+    @field_validator("g_node_registry_addr")
     def _check_g_node_registry_addr(cls, v: str) -> str:
         try:
             check_is_algo_address_string_format(v)
@@ -171,7 +172,7 @@ class GNodeGt(BaseModel):
             )
         return v
 
-    @validator("prev_alias")
+    @field_validator("prev_alias")
     def _check_prev_alias(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -181,7 +182,7 @@ class GNodeGt(BaseModel):
             raise ValueError(f"PrevAlias failed LeftRightDot format validation: {e}")
         return v
 
-    @validator("gps_point_id")
+    @field_validator("gps_point_id")
     def _check_gps_point_id(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -193,7 +194,7 @@ class GNodeGt(BaseModel):
             )
         return v
 
-    @validator("ownership_deed_id")
+    @field_validator("ownership_deed_id")
     def _check_ownership_deed_id(cls, v: Optional[int]) -> Optional[int]:
         if v is None:
             return v
@@ -205,7 +206,7 @@ class GNodeGt(BaseModel):
             )
         return v
 
-    @validator("ownership_deed_validator_addr")
+    @field_validator("ownership_deed_validator_addr")
     def _check_ownership_deed_validator_addr(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -217,7 +218,7 @@ class GNodeGt(BaseModel):
             )
         return v
 
-    @validator("owner_addr")
+    @field_validator("owner_addr")
     def _check_owner_addr(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -229,7 +230,7 @@ class GNodeGt(BaseModel):
             )
         return v
 
-    @validator("daemon_addr")
+    @field_validator("daemon_addr")
     def _check_daemon_addr(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -241,7 +242,7 @@ class GNodeGt(BaseModel):
             )
         return v
 
-    @validator("trading_rights_id")
+    @field_validator("trading_rights_id")
     def _check_trading_rights_id(cls, v: Optional[int]) -> Optional[int]:
         if v is None:
             return v
@@ -253,7 +254,7 @@ class GNodeGt(BaseModel):
             )
         return v
 
-    @validator("scada_algo_addr")
+    @field_validator("scada_algo_addr")
     def _check_scada_algo_addr(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -265,7 +266,7 @@ class GNodeGt(BaseModel):
             )
         return v
 
-    @validator("scada_cert_id")
+    @field_validator("scada_cert_id")
     def _check_scada_cert_id(cls, v: Optional[int]) -> Optional[int]:
         if v is None:
             return v
@@ -277,7 +278,7 @@ class GNodeGt(BaseModel):
             )
         return v
 
-    @validator("component_id")
+    @field_validator("component_id")
     def _check_component_id(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -306,10 +307,8 @@ class GNodeGt(BaseModel):
         It also applies these changes recursively to sub-types.
         """
         d = {
-            key: value
-            for key, value in self.dict(
-                by_alias=True, include=self.__fields_set__ | {"type_name", "version"}
-            ).items()
+            to_pascal(key): value
+            for key, value in self.model_dump().items()
             if value is not None
         }
         del d["Status"]
@@ -394,6 +393,9 @@ class GNodeGt_Maker:
         Returns:
             GNodeGt
         """
+        for key in d.keys():
+            if not is_pascal_case(key):
+                raise GwTypeError(f"Key '{key}' is not PascalCase")
         d2 = dict(d)
         if "GNodeId" not in d2.keys():
             raise GwTypeError(f"dict missing GNodeId: <{d2}>")
@@ -420,7 +422,8 @@ class GNodeGt_Maker:
                 f"Attempting to interpret g.node.gt version {d2['Version']} as version 002"
             )
             d2["Version"] = "002"
-        return GNodeGt(**d2)
+        d3 = {to_snake(key): value for key, value in d2.items()}
+        return GNodeGt(**d3)
 
     @classmethod
     def tuple_to_dc(cls, t: GNodeGt) -> GNode:

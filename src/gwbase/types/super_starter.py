@@ -8,11 +8,12 @@ from typing import List
 from typing import Literal
 
 from gw.errors import GwTypeError
-from gw.utils import snake_to_camel
+from gw.utils import is_pascal_case
 from pydantic import BaseModel
-from pydantic import Extra
 from pydantic import Field
-from pydantic import validator
+from pydantic import field_validator
+from pydantic.alias_generators import to_pascal
+from pydantic.alias_generators import to_snake
 
 from gwbase.types.g_node_instance_gt import GNodeInstanceGt
 from gwbase.types.g_node_instance_gt import GNodeInstanceGt_Maker
@@ -48,11 +49,11 @@ class SuperStarter(BaseModel):
     version: Literal["000"] = "000"
 
     class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
-        alias_generator = snake_to_camel
+        extra = "allow"
+        populate_by_name = True
+        alias_generator = to_pascal
 
-    @validator("alias_with_key_list")
+    @field_validator("alias_with_key_list")
     def _check_alias_with_key_list(cls, v: List[str]) -> List[str]:
         for elt in v:
             try:
@@ -80,10 +81,8 @@ class SuperStarter(BaseModel):
         It also applies these changes recursively to sub-types.
         """
         d = {
-            key: value
-            for key, value in self.dict(
-                by_alias=True, include=self.__fields_set__ | {"type_name", "version"}
-            ).items()
+            to_pascal(key): value
+            for key, value in self.model_dump().items()
             if value is not None
         }
         d["SupervisorContainer"] = self.supervisor_container.as_dict()
@@ -170,6 +169,9 @@ class SuperStarter_Maker:
         Returns:
             SuperStarter
         """
+        for key in d.keys():
+            if not is_pascal_case(key):
+                raise GwTypeError(f"Key '{key}' is not PascalCase")
         d2 = dict(d)
         if "SupervisorContainer" not in d2.keys():
             raise GwTypeError(f"dict missing SupervisorContainer: <{d2}>")
@@ -207,7 +209,8 @@ class SuperStarter_Maker:
                 f"Attempting to interpret super.starter version {d2['Version']} as version 000"
             )
             d2["Version"] = "000"
-        return SuperStarter(**d2)
+        d3 = {to_snake(key): value for key, value in d2.items()}
+        return SuperStarter(**d3)
 
 
 def check_is_left_right_dot(v: str) -> None:

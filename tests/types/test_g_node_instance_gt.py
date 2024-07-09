@@ -74,6 +74,8 @@ def test_g_node_instance_gt_generated() -> None:
     )
 
     dc = Maker.tuple_to_dc(gtuple)
+    assert dc.g_node == gn
+    
     assert gtuple == Maker.dc_to_tuple(dc)
     assert Maker.type_to_dc(Maker.dc_to_type(dc)) == dc
 

@@ -1,0 +1,46 @@
+{
+    "vhosts": [
+        {
+        "name": "hw1_analytics"
+        }
+    ],
+    "permissions": [
+        {
+        "user": "smqPublic",
+        "vhost": "hw1_analytics",
+        "configure": ".*",
+        "write": ".*",
+        "read": ".*"
+        }
+    ],
+    "exchanges": [
+        {
+        "name": "earmic_tx",
+        "vhost": "hw1_analytics",
+        "type": "topic",
+        "durable": true,
+        "auto_delete": false,
+        "internal": false,
+        "arguments": {}
+        },
+        {
+        "name": "journalkeeper_tx",
+        "vhost": "hw1_analytics",
+        "type": "topic",
+        "durable": true,
+        "auto_delete": false,
+        "internal": true,
+        "arguments": {}
+        }
+    ],
+    "bindings": [
+        {
+          "source": "earmic_tx",
+          "vhost": "hw1_analytics",
+          "destination": "journalkeeper_tx",
+          "destination_type": "exchange",
+          "routing_key": "*.*.ear.*.journalkeeper.*",
+          "arguments": {}
+        }
+    ]
+}

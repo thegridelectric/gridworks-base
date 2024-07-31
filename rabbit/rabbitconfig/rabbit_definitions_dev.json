@@ -5,12 +5,22 @@
     },
     {
       "name": "dev_registry"
+    },
+    {
+      "name": "d1_analytics"
     }
   ],
   "permissions": [
     {
       "user": "smqPublic",
       "vhost": "d1__1",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "smqPublic",
+      "vhost": "d1_analytics",
       "configure": ".*",
       "write": ".*",
       "read": ".*"
@@ -24,6 +34,24 @@
     }
   ],
   "exchanges": [
+    {
+      "name": "earmic_tx",
+      "vhost": "d1_analytics",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "journalkeeper_tx",
+      "vhost": "d1_analytics",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": true,
+      "arguments": {}
+    },
     {
       "name": "atomictnodemic_tx",
       "vhost": "d1__1",
@@ -222,6 +250,14 @@
     }
   ],
   "bindings": [
+    {
+      "source": "earmic_tx",
+      "vhost": "d1_analytics",
+      "destination": "journalkeeper_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.ear.*.journalkeeper.*",
+      "arguments": {}
+    },
     {
       "source": "amq.topic",
       "vhost": "d1__1",

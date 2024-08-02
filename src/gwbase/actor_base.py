@@ -136,7 +136,7 @@ class ActorBase(ABC):
         self._consume_connection: Optional[
             pika.adapters.select_connection.SelectConnection
         ] = None
-        self._consume_channel: Optional[pika.channel.Channel] = None
+        self._single_channel: Optional[pika.channel.Channel] = None
         self._closing_consumer: bool = False
         self._consumer_tag: Optional[str] = None
         self.should_reconnect_consumer: bool = False
@@ -219,7 +219,7 @@ class ActorBase(ABC):
         self.should_reconnect_consumer = False
         self.was_consuming = False
         self._consume_connection = None
-        self._consume_channel = None
+        self._single_channel = None
         self._closing_consumer = False
         self._consumer_tag = None
         self._consuming = False
@@ -280,7 +280,7 @@ class ActorBase(ABC):
         :param pika.SelectConnection _unused_connection: The connection
         """
         LOGGER.info("Connection opened")
-        self.open_consume_channel()
+        self.open_single_channel()
 
     def on_consumer_connection_open_error(
         self, _unused_connection: pika.SelectConnection, err: Exception
@@ -303,7 +303,7 @@ class ActorBase(ABC):
         :param Exception reason: exception representing reason for loss of
         connection.
         """
-        self._consume_channel = None
+        self._single_channel = None
         if self._closing_consumer:
             self._consume_connection.ioloop.stop()  # type: ignore[union-attr]
         else:
@@ -318,7 +318,7 @@ class ActorBase(ABC):
         self.should_reconnect_consumer = True
         self.stop_consumer()
 
-    def open_consume_channel(self) -> None:
+    def open_single_channel(self) -> None:
         """Open a new channel with RabbitMQ by issuing the Channel.Open RPC
         command. When RabbitMQ responds that the channel is open, the
         on_channel_open callback will be invoked by pika.
@@ -338,17 +338,17 @@ class ActorBase(ABC):
         :type channel: PikaChannel
         """
         LOGGER.info("Channel opened")
-        self._consume_channel = channel
-        self.add_on_consume_channel_close_callback()
+        self._single_channel = channel
+        self.add_on_single_channel_close_callback()
         self.setup_exchange()
 
     @no_type_check
-    def add_on_consume_channel_close_callback(self) -> None:
+    def add_on_single_channel_close_callback(self) -> None:
         """This method tells pika to call the on_consumer_channel_closed method if
         RabbitMQ unexpectedly closes the channel.
         """
         LOGGER.info("Adding consumer channel close callback")
-        self._consume_channel.add_on_close_callback(self.on_consumer_channel_closed)
+        self._single_channel.add_on_close_callback(self.on_consumer_channel_closed)
 
     @no_type_check
     def on_consumer_channel_closed(
@@ -382,7 +382,7 @@ class ActorBase(ABC):
         cb = functools.partial(
             self.on_exchange_declareok, userdata=self._consume_exchange
         )
-        self._consume_channel.exchange_declare(
+        self._single_channel.exchange_declare(
             exchange=self._consume_exchange,
             exchange_type="topic",
             durable=True,
@@ -409,7 +409,7 @@ class ActorBase(ABC):
         """
         LOGGER.info(f"Declaring queue {self.queue_name}")
         cb = functools.partial(self.on_queue_declareok)
-        self._consume_channel.queue_declare(
+        self._single_channel.queue_declare(
             queue=self.queue_name, auto_delete=True, callback=cb
         )
 
@@ -436,7 +436,7 @@ class ActorBase(ABC):
         cb = functools.partial(
             self.on_direct_message_bindok, binding=direct_message_to_me_binding
         )
-        self._consume_channel.queue_bind(
+        self._single_channel.queue_bind(
             self.queue_name,
             self._consume_exchange,
             routing_key=direct_message_to_me_binding,
@@ -460,7 +460,7 @@ class ActorBase(ABC):
         before RabbitMQ will deliver another one. You should experiment
         with different prefetch values to achieve desired performance.
         """
-        self._consume_channel.basic_qos(
+        self._single_channel.basic_qos(
             prefetch_count=self._prefetch_count, callback=self.on_basic_qos_ok
         )
 
@@ -486,7 +486,7 @@ class ActorBase(ABC):
         """
         LOGGER.info("Start consuming")
         self.add_on_cancel_consumer_callback()
-        self._consumer_tag = self._consume_channel.basic_consume(
+        self._consumer_tag = self._single_channel.basic_consume(
             self.queue_name, self.on_message
         )
         self.was_consuming = True
@@ -499,7 +499,7 @@ class ActorBase(ABC):
         on_consumer_cancelled will be invoked by pika.
         """
         LOGGER.info("Adding consumer cancellation callback")
-        self._consume_channel.add_on_cancel_callback(self.on_consumer_cancelled)  # type: ignore
+        self._single_channel.add_on_cancel_callback(self.on_consumer_cancelled)  # type: ignore
 
     @no_type_check
     def on_consumer_cancelled(self, method_frame) -> None:
@@ -508,8 +508,8 @@ class ActorBase(ABC):
         :param pika.frame.Method method_frame: The Basic.Cancel frame
         """
         LOGGER.info("Consumer was cancelled remotely, shutting down: %r", method_frame)
-        if self._consume_channel:
-            self._consume_channel.close()
+        if self._single_channel:
+            self._single_channel.close()
 
     @no_type_check
     def acknowledge_message(self, delivery_tag) -> None:
@@ -520,18 +520,18 @@ class ActorBase(ABC):
         LOGGER.debug(
             f"Acknowledging message {delivery_tag}",
         )
-        self._consume_channel.basic_ack(delivery_tag)
+        self._single_channel.basic_ack(delivery_tag)
 
     def stop_consuming(self) -> None:
         """Tell RabbitMQ that you would like to stop consuming by sending the
         Basic.Cancel RPC command.
         """
-        if self._consume_channel:
+        if self._single_channel:
             LOGGER.info("Sending a Basic.Cancel RPC command to RabbitMQ")
             cb = functools.partial(
                 self.on_cancelconsumer_ok, userdata=self._consumer_tag
             )
-            self._consume_channel.basic_cancel(self._consumer_tag, cb)  # type: ignore[arg-type]
+            self._single_channel.basic_cancel(self._consumer_tag, cb)  # type: ignore[arg-type]
 
     @no_type_check
     def on_cancelconsumer_ok(self, _unused_frame, userdata) -> None:
@@ -553,12 +553,12 @@ class ActorBase(ABC):
         """Call to close the channel with RabbitMQ cleanly by issuing the
         Channel.Close RPC command.
         """
-        if self._consume_channel:
+        if self._single_channel:
             if (
-                not self._consume_channel.is_closing
-                and not self._consume_channel.is_closed
+                not self._single_channel.is_closing
+                and not self._single_channel.is_closed
             ):
-                self._consume_channel.close()
+                self._single_channel.close()
 
     def run_consumer(self) -> None:
         """Run the example consumer by connecting to RabbitMQ and then
@@ -972,7 +972,7 @@ class ActorBase(ABC):
             return OnSendMessageDiagnostic.STOPPED_SO_NOT_SENDING
 
         if "MessageId" in payload.as_dict():
-            correlation
+            correlation_id = payload["MessageId"]
         else:
             correlation_id = str(uuid.uuid4())
 
@@ -982,6 +982,7 @@ class ActorBase(ABC):
             type=message_category,
             correlation_id=correlation_id,
         )
+        print(f"type is {message_category}")
         publish_exchange = self._publish_exchange
         if message_category == MessageCategory.RabbitJsonDirect:
             if not isinstance(to_role, GNodeRole):
@@ -1016,15 +1017,15 @@ class ActorBase(ABC):
         #     LOGGER.error(f"Publish channel not open so not sending {routing_key}")
         #     return OnSendMessageDiagnostic.CHANNEL_NOT_OPEN
 
-        if self._consume_channel is None:
+        if self._single_channel is None:
             LOGGER.error(f"No channel so not sending {routing_key}")
             return OnSendMessageDiagnostic.CHANNEL_NOT_OPEN
-        if not self._consume_channel.is_open:
+        if not self._single_channel.is_open:
             LOGGER.error(f"Channel not open so not sending {routing_key}")
             return OnSendMessageDiagnostic.CHANNEL_NOT_OPEN
 
         try:
-            self._consume_channel.basic_publish(
+            self._single_channel.basic_publish(
                 exchange=publish_exchange,
                 routing_key=routing_key,
                 body=payload.as_type(),

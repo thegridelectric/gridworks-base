@@ -3,8 +3,8 @@ import datetime
 import pytest
 from pydantic import SecretStr
 
-from gwbase.config import GNodeSettings
 from gwbase.config.algo_settings import AlgoApiSecrets
+from gwbase.config import GNodeSettings
 from gwbase.config.algo_settings import Public
 from gwbase.config.rabbit_settings import RabbitBrokerClient
 
@@ -44,7 +44,7 @@ def test_g_node_settings_defaults():
         hour_cron_file="cron_last_hour.txt",
         day_cron_file="cron_last_day.txt",
     )
-    assert settings.dict() == expected
+    assert settings.model_dump() == expected
     assert (
         settings.rabbit.url.get_secret_value()
         == "amqp://smqPublic:smqPublic@localhost:5672/d1__1"

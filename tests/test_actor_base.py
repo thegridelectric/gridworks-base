@@ -29,7 +29,7 @@ def test_actor_base():
 
     # This is required for tests to pass in CI, as we haven't figured
     # out how to pre-load the bindings and exchanges in github actions
-    load_rabbit_exchange_bindings(gn._consume_channel)
+    load_rabbit_exchange_bindings(gn._single_channel)
 
     payload = HeartbeatA(my_hex="0", your_last_hex="0")
     gn.send_message(
@@ -78,22 +78,22 @@ def test_actor_base():
 #     ####################################
 #     # Testing actor_base.on_message
 #     ###################################
-#     gnf._consume_channel.queue_bind(
+#     gnf._single_channel.queue_bind(
 #         gnf.queue_name,
 #         "gnrmic_tx",
 #         routing_key="garbage.#",
 #     )
-#     gnf._consume_channel.queue_bind(
+#     gnf._single_channel.queue_bind(
 #         gnf.queue_name,
 #         "gnrmic_tx",
 #         routing_key="pubsub.#",
 #     )
-#     gnf._consume_channel.queue_bind(
+#     gnf._single_channel.queue_bind(
 #         gnf.queue_name,
 #         "gnrmic_tx",
 #         routing_key="json",
 #     )
-#     gnf._consume_channel.queue_bind(
+#     gnf._single_channel.queue_bind(
 #         gnf.queue_name,
 #         "gnrmic_tx",
 #         routing_key="json.*.crap.*.*",
@@ -230,22 +230,22 @@ def test_actor_base():
 #         gnf._latest_on_message_diagnostic == OnReceiveMessageDiagnostic.FROM_GNODE_DECODING_PROBLEM
 #     )
 
-#     gnf._consume_channel.queue_unbind(
+#     gnf._single_channel.queue_unbind(
 #         gnf.queue_name,
 #         "gnrmic_tx",
 #         routing_key="garbage.#",
 #     )
-#     gnf._consume_channel.queue_unbind(
+#     gnf._single_channel.queue_unbind(
 #         gnf.queue_name,
 #         "gnrmic_tx",
 #         routing_key="pubsub.#",
 #     )
-#     gnf._consume_channel.queue_unbind(
+#     gnf._single_channel.queue_unbind(
 #         gnf.queue_name,
 #         "gnrmic_tx",
 #         routing_key="json",
 #     )
-#     gnf._consume_channel.queue_unbind(
+#     gnf._single_channel.queue_unbind(
 #         gnf.queue_name,
 #         "gnrmic_tx",
 #         routing_key="json.*.crap.*.*",

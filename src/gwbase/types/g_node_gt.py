@@ -16,13 +16,13 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_validator
 
-from gwbase.config import GNodeSettings
+from gwbase.config import EnumSettings
 from gwbase.data_classes.g_node import GNode
 from gwbase.enums import GNodeRole
 from gwbase.enums import GNodeStatus
 
 
-ENCODE_ENUMS = GNodeSettings(_env_file=dotenv.find_dotenv()).encode_enums
+ENCODE_ENUMS = EnumSettings(_env_file=dotenv.find_dotenv()).encode
 
 LOG_FORMAT = (
     "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "

@@ -18,6 +18,7 @@ def test_g_node_settings_defaults():
         public=Public().model_dump(),
         algo_api_secrets=AlgoApiSecrets().model_dump(),
         rabbit=RabbitBrokerClient().model_dump(),
+        encode_enums=1,
         redis_endpoint="localhost",
         g_node_alias="d1.isone.unknown.gnode",
         g_node_id="e23eb2ec-4064-4921-89d4-b006edc81216",

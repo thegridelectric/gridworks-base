@@ -27,6 +27,7 @@ class GNodeSettings(BaseSettings):
     """
 
     rabbit: RabbitBrokerClient = RabbitBrokerClient()
+    encode_enums: int = 1 # use  8-digit hex encoded enum symbol if 1; send enum value if 0
     g_node_alias: str = "d1.isone.unknown.gnode"
     g_node_id: str = "e23eb2ec-4064-4921-89d4-b006edc81216"
     g_node_instance_id: str = "00000000-0000-0000-0000-000000000000"

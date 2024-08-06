@@ -89,6 +89,10 @@ from pydantic import model_validator</xsl:text>
 <xsl:text>
 from pydantic import field_validator</xsl:text>
 </xsl:if>
+<xsl:if test="count($airtable//TypeAxioms/TypeAxiom[MultiPropertyAxiom=$versioned-type-id]) > 0">
+<xsl:text>
+from typing_extensions import Self</xsl:text>
+</xsl:if>
 
 <xsl:if test="count(PropertyFormatsUsed)>0">
 <xsl:for-each select="$airtable//PropertyFormats/PropertyFormat[(normalize-space(Name) ='MarketSlotNameLrdFormat')  and (count(TypesThatUse[text()=$versioned-type-id])>0)]">
@@ -99,7 +103,7 @@ from gw import check_is_market_slot_name_lrd_format</xsl:text>
 
 <xsl:text>
 
-from gwbase.config import GNodeSettings</xsl:text>
+from gwbase.config import EnumSettings</xsl:text>
 <xsl:if test="MakeDataClass='true'">
 <xsl:if test="not(IsComponent = 'true') and not(IsCac = 'true')">
 <xsl:text>
@@ -684,8 +688,11 @@ class </xsl:text>
     <xsl:if test="CheckFirst='true'">
      <xsl:text>(mode='before')</xsl:text>
     </xsl:if>
+    <xsl:if test="not(CheckFirst='true')">
+     <xsl:text>(mode='after')</xsl:text>
+    </xsl:if>
     <xsl:text>
-    def check_axiom_</xsl:text><xsl:value-of select="AxiomNumber"/><xsl:text>(cls, v: dict) -> dict:
+    def check_axiom_</xsl:text><xsl:value-of select="AxiomNumber"/><xsl:text>(self) -> Self:
         """
         Axiom </xsl:text><xsl:value-of select="AxiomNumber"/><xsl:text>: </xsl:text>
         <xsl:value-of select="Title"/>
@@ -701,7 +708,7 @@ class </xsl:text>
         <xsl:text>
         """
         # TODO: Implement check for axiom </xsl:text><xsl:value-of select="AxiomNumber"/><xsl:text>"
-        return v</xsl:text>
+        return self</xsl:text>
 
     </xsl:for-each>
     </xsl:if>

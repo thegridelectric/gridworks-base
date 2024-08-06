@@ -4,7 +4,7 @@ import pytest
 from pydantic import SecretStr
 
 from gwbase.config.algo_settings import AlgoApiSecrets
-from gwbase.config import GNodeSettings
+from gwbase.config import GNodeSettings, EnumSettings
 from gwbase.config.algo_settings import Public
 from gwbase.config.rabbit_settings import RabbitBrokerClient
 
@@ -20,7 +20,7 @@ def test_g_node_settings_defaults():
         rabbit=RabbitBrokerClient().model_dump(),
         redis_endpoint="localhost",
         g_node_alias="d1.isone.unknown.gnode",
-        g_node_id="e23eb2ec-4064-4921-89d4-b006edc81216",
+        g_node_id="00000000-0000-0000-0000-000000000000",
         g_node_instance_id="00000000-0000-0000-0000-000000000000",
         g_node_role_value="GNode",
         sk=SecretStr(
@@ -50,6 +50,10 @@ def test_g_node_settings_defaults():
         == "amqp://smqPublic:smqPublic@localhost:5672/d1__1"
     )
 
+def test_enum_default_settings():
+    settings = EnumSettings()
+    expected = {"encode": 1}
+    assert settings.model_dump() == expected
 
 def test_g_node_settings_validations(monkeypatch):
     """

@@ -1,5 +1,3 @@
-"""Settings for the GNodeFactory, readable from environment and/or from env files."""
-
 import datetime
 
 from pydantic import SecretStr
@@ -20,15 +18,21 @@ from gwbase.enums import UniverseType
 
 DEFAULT_ENV_FILE = ".env"
 
+class EnumSettings(BaseSettings):
+    encode: int = 1 # use 8-digit hex encoded enum symbol if 1
+    
+    class Config:
+        env_prefix = "ENUM_"
+        env_nested_delimiter = "__"
+        extra = "ignore"  # Ignore extra fields in the environment
 
 class GNodeSettings(BaseSettings):
     """
     Template settings for a GNode.
     """
-
     rabbit: RabbitBrokerClient = RabbitBrokerClient()
     g_node_alias: str = "d1.isone.unknown.gnode"
-    g_node_id: str = "e23eb2ec-4064-4921-89d4-b006edc81216"
+    g_node_id: str = "00000000-0000-0000-0000-000000000000"
     g_node_instance_id: str = "00000000-0000-0000-0000-000000000000"
     my_super_alias: str = "d1.super1"
     g_node_role_value: str = "GNode"
@@ -82,6 +86,7 @@ class GNodeSettings(BaseSettings):
     class Config:
         env_prefix = "GNODE_"
         env_nested_delimiter = "__"
+        extra = "ignore"  # Ignore extra fields in the environment
 
 
 class SupervisorSettings(BaseSettings):

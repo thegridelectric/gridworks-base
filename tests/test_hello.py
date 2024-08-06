@@ -13,7 +13,7 @@ class HelloGNode(ActorBase):
         self.settings: GNodeSettings = settings
 
     def prepare_for_death(self) -> None:
-        self.actor_main_stopped = True
+        self._main_loop_running = False
 
 
 def test_hello():

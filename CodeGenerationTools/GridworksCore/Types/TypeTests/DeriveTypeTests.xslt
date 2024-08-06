@@ -151,7 +151,30 @@ def test_</xsl:text><xsl:value-of select="translate($type-name,'.','_')"/>
     }
 
     assert t.as_dict() == d
-
+    </xsl:text>
+    <xsl:if test="count($airtable//TypeAttributes/TypeAttribute[(VersionedType = $versioned-type-id) and (IsEnum='true')]) > 0">
+    <xsl:text>
+    d2 = d.copy()
+    </xsl:text>
+    <xsl:for-each select="$airtable//TypeAttributes/TypeAttribute[(VersionedType = $versioned-type-id) and (IsEnum='true')]">
+    <xsl:text>
+    del d2["</xsl:text><xsl:value-of select="Value"/>
+    <xsl:text>GtEnumSymbol"]
+    d2["</xsl:text><xsl:value-of select="Value"/><xsl:text>"] = </xsl:text>
+    <xsl:call-template name="nt-case">
+                        <xsl:with-param name="type-name-text" select="EnumLocalName" />
+    </xsl:call-template>
+    <xsl:text>.symbol_to_value(</xsl:text>
+    <xsl:value-of select="normalize-space(TestValue)"/>
+    <xsl:text>)
+    </xsl:text>
+    </xsl:for-each>
+    <xsl:text>
+    assert t == Maker.dict_to_tuple(d2)
+    </xsl:text>
+    </xsl:if>
+    <xsl:text>
+    
     with pytest.raises(GwTypeError):
         Maker.type_to_tuple(d)
 
@@ -182,7 +205,7 @@ def test_</xsl:text><xsl:value-of select="translate($type-name,'.','_')"/>
     # GwTypeError raised if missing a required attribute
     ######################################
 
-    d2 = dict(d)
+    d2 = d.copy()
     del d2["TypeName"]
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)
@@ -195,7 +218,7 @@ def test_</xsl:text><xsl:value-of select="translate($type-name,'.','_')"/>
 
 
 
-    <xsl:text>d2 = dict(d)
+    <xsl:text>d2 = d.copy()
     del d2["</xsl:text>
     <xsl:value-of  select="Value"/>
         <xsl:if test="not(normalize-space(SubTypeDataClass) = '') and not(IsList='true')">

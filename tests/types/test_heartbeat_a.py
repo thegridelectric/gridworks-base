@@ -24,7 +24,8 @@ def test_heartbeat_a_generated() -> None:
     }
 
     assert t.as_dict() == d
-
+    
+    
     with pytest.raises(GwTypeError):
         Maker.type_to_tuple(d)
 
@@ -43,17 +44,17 @@ def test_heartbeat_a_generated() -> None:
     # GwTypeError raised if missing a required attribute
     ######################################
 
-    d2 = dict(d)
+    d2 = d.copy()
     del d2["TypeName"]
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)
 
-    d2 = dict(d)
+    d2 = d.copy()
     del d2["MyHex"]
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)
 
-    d2 = dict(d)
+    d2 = d.copy()
     del d2["YourLastHex"]
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)

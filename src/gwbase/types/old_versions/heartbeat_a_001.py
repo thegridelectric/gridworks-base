@@ -8,17 +8,18 @@ from typing import Literal
 from gw.errors import GwTypeError
 from pydantic import BaseModel
 from pydantic import field_validator
-
 from pydantic.alias_generators import to_pascal
 from pydantic.alias_generators import to_snake
 
 from gwbase.types import HeartbeatA
+
 
 class HeartbeatA001(BaseModel):
     """
     This earlier version of type heartbeat.a does not enforce that MyHex and
     YourLastHex are single character hexes - just that they are strings
     """
+
     my_hex: str  #
     your_last_hex: str  #
     type_name: Literal["heartbeat.a"] = "heartbeat.a"
@@ -36,7 +37,6 @@ class HeartbeatA001(BaseModel):
         }
         return d
 
-
     def as_type(self) -> str:
         return json.dumps(self.as_dict())
 
@@ -44,7 +44,6 @@ class HeartbeatA001(BaseModel):
 class HeartbeatA001_Maker:
     type_name = "heartbeat.a"
     version = "001"
-
 
     @classmethod
     def tuple_to_type(cls, tuple: HeartbeatA001) -> str:
@@ -71,4 +70,3 @@ class HeartbeatA001_Maker:
             raise GwTypeError(f"dict {d2} missing TypeName")
         d3 = {to_snake(key): value for key, value in d2.items()}
         return HeartbeatA001(**d3)
-

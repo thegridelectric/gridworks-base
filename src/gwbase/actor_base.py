@@ -22,7 +22,8 @@ from pika.channel import Channel as PikaChannel
 from pika.spec import Basic
 from pika.spec import BasicProperties
 
-import gwbase.types.base_asl_types as base_asl_types
+import gwbase.codec as codec
+import gwbase.types.asl_types as asl_types
 from gwbase.config import GNodeSettings
 from gwbase.enums import GNodeRole
 from gwbase.enums import MessageCategory
@@ -109,12 +110,8 @@ class ActorBase(ABC):
     def __init__(
         self,
         settings: GNodeSettings,
-        api_type_maker_by_name: Dict[
-            str, HeartbeatA_Maker
-        ] = base_asl_types.TypeMakerByName,
     ):
         self.settings: GNodeSettings = settings
-        self.api_type_maker_by_name = api_type_maker_by_name
         self.latest_routing_key: Optional[str] = None
         self.shutting_down: bool = False
         self.alias: str = settings.g_node_alias
@@ -126,7 +123,7 @@ class ActorBase(ABC):
         self._time: float = time.time()
         if self.universe_type == UniverseType.Dev:
             self._time = settings.initial_time_unix_s
-        self.actor_main_stopped: bool = True
+        self._main_loop_running: bool = False
 
         adder = "-F" + str(uuid.uuid4()).split("-")[0][0:3]
         self.queue_name: str = self.alias + adder
@@ -172,7 +169,7 @@ class ActorBase(ABC):
     def stop(self) -> None:
         self.shutting_down = True
         self.prepare_for_death()
-        while self.actor_main_stopped is False:
+        while self._main_loop_running:
             time.sleep(self.SHUTDOWN_INTERVAL)
         # self.stop_publisher()
         self.stop_consumer()
@@ -186,7 +183,7 @@ class ActorBase(ABC):
         """This should be overwritten in derived class for additional threads.
         It cannot assume the rabbit channels are established and that
         messages can be received or sent."""
-        self.actor_main_stopped = False
+        self._main_loop_running = True
 
     def local_rabbit_startup(self) -> None:
         """This should be overwritten in derived class for any additional rabbit
@@ -196,17 +193,17 @@ class ActorBase(ABC):
 
     @abstractmethod
     def prepare_for_death(self) -> None:
-        """Use actor_main_stopped to exit out of any threads in the derived class. Then
+        """Use _main_loop_running to exit out of any threads in the derived class. Then
         use local_stop to join those threads.
 
         If there are no threads in the derived class, copy this method into the derived
         class, get rid of the abstractmethod decorator, and delete the exception"""
-        self.actor_main_stopped = True
+        self._main_loop_running = False
         raise NotImplementedError
 
     def local_stop(self) -> None:
         """Join any threads in the derived class."""
-        pass
+        self._main_loop_running = False
 
     def __repr__(self) -> str:
         return f"{self.alias}"
@@ -225,7 +222,7 @@ class ActorBase(ABC):
         self._consuming = False
 
     def run_reconnecting_consumer(self) -> None:
-        while not self.actor_main_stopped:
+        while self._main_loop_running:
             self.run_consumer()
             self._maybe_reconnect_consumer()
 
@@ -233,7 +230,7 @@ class ActorBase(ABC):
         if self.should_reconnect_consumer:
             self.stop_consumer()
             reconnect_delay = self._get_reconnect_delay()
-            if not self.actor_main_stopped:
+            if self._main_loop_running:
                 LOGGER.info("Reconnecting after %d seconds", reconnect_delay)
             time.sleep(reconnect_delay)
             self.flush_consumer()
@@ -1089,7 +1086,7 @@ class ActorBase(ABC):
         except GwTypeError:
             return
 
-        if type_name not in self.api_type_maker_by_name.keys():
+        if type_name not in codec.type_list:
             self._latest_on_message_diagnostic = (
                 OnReceiveMessageDiagnostic.UNKNOWN_TYPE_NAME
             )
@@ -1099,10 +1096,10 @@ class ActorBase(ABC):
             return
 
         try:
-            payload = self.api_type_maker_by_name[type_name].type_to_tuple(body)
+            payload = codec.deserializer(body)
         except Exception as e:
             LOGGER.warning(
-                f"TypeName for incoming message claimed to be {type_name}, but was not true! Failed to make a {self.api_type_maker_by_name[type_name].tuple}"
+                f"TypeName for incoming message claimed to be {type_name}, but was not true!"
             )
             return
 

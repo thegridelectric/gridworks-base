@@ -19,7 +19,7 @@ from gwbase.enums import UniverseType
 DEFAULT_ENV_FILE = ".env"
 
 class EnumSettings(BaseSettings):
-    encode: int = 1 # use  8-digit hex encoded enum symbol if 1; send enum value if 0
+    encode: int = 0 # use  8-digit hex encoded enum symbol if 1
     
     class Config:
         env_prefix = "ENUM_"

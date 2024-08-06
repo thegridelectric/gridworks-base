@@ -238,8 +238,8 @@ class BaseGNode:
         parent = cls.parent_from_alias(alias)
         if parent is None:
             raise DcError(f"Create Axiom 5: non-root {alias} must have Active parent!")
-        if parent.status is GNodeStatus.PermanentlyDeactivated and not (
-            status is GNodeStatus.PermanentlyDeactivated
+        if parent.status is GNodeStatus.PermanentlyDeactivated and (
+            status is not GNodeStatus.PermanentlyDeactivated
         ):
             raise DcError(
                 "Creation Axiom 5`: the parent of an PermanentlyDeactivated GNode must be PermanentlyDeactivated."
@@ -336,7 +336,7 @@ class BaseGNode:
                 except GwTypeError as e:
                     raise DcError(
                         f"Schema Axiom 2: {addr} must have format AlgoAddressStringFormat"
-                    )
+                    ) from e
 
     @classmethod
     def _schema_axiom_3(cls, attributes):
@@ -407,7 +407,7 @@ class BaseGNode:
         """Update Axiom 2: g_node_id is Immutable"""
         if self.g_node_id:
             if new_attributes["g_node_id"] != self.g_node_id:
-                raise DcError(f"Update Axiom 1: g_node_id is Immutable.")
+                raise DcError("Update Axiom 1: g_node_id is Immutable.")
 
     def _update_axiom_3(self, new_attributes):
         """Update Axiom 3:  Status update rules:
@@ -443,7 +443,7 @@ class BaseGNode:
                     f"Update Axiom 2: Suspended can only change to Active or PermanentlyDeactivated, not {new_status}"
                 )
         elif self.status is GNodeStatus.PermanentlyDeactivated:
-            if not (new_status is GNodeStatus.PermanentlyDeactivated):
+            if new_status is not GNodeStatus.PermanentlyDeactivated:
                 raise DcError(
                     f"Update Axiom 3: Permanently Deactivated status cannot change. Got {new_status}"
                 )
@@ -539,13 +539,13 @@ class BaseGNode:
         if new_alias != self.alias:
             if prev_alias != self.alias:
                 raise DcError(
-                    f"Update Axiom 6: If alias has changed, then new prev_alias "
+                    "Update Axiom 6: If alias has changed, then new prev_alias "
                     "must equal original alias prior to the change."
                 )
         else:
             if prev_alias != self.prev_alias:
                 raise DcError(
-                    f"Update Axiom 6: If alias has NOT changed then new "
+                    "Update Axiom 6: If alias has NOT changed then new "
                     "prev_alias must equal original prev_alias."
                 )
 
@@ -581,7 +581,7 @@ def check_is_uuid_canonical_textual(v: str) -> None:
         raise ValueError(f"{v} word lengths not 8-4-4-4-12")
 
 
-def check_is_algo_address_string_format(v: str) -> None:
+def check_is_algo_address_string_format(_: str) -> None:
     """
     Checks if a given string is in the correct format for an Algorand address.
 

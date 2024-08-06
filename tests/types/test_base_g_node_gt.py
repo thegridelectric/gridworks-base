@@ -50,18 +50,17 @@ def test_base_g_node_gt_generated() -> None:
     }
 
     assert t.as_dict() == d
-    
+
     d2 = d.copy()
-    
+
     del d2["StatusGtEnumSymbol"]
     d2["Status"] = GNodeStatus.symbol_to_value("153d3475")
-    
+
     del d2["RoleGtEnumSymbol"]
     d2["Role"] = CoreGNodeRole.symbol_to_value("0f8872f7")
-    
+
     assert t == Maker.dict_to_tuple(d2)
-    
-    
+
     with pytest.raises(GwTypeError):
         Maker.type_to_tuple(d)
 

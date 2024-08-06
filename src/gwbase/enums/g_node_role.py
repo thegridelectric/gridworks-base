@@ -131,7 +131,7 @@ class GNodeRole(GwStrEnum):
         Provides the encoding symbol for a GNodeRole enum to send in seriliazed messages.
 
         Args:
-            symbol (str): The candidate value.
+            value (str): The candidate value.
 
         Returns:
             str: The symbol encoding that value. If the value is not recognized -

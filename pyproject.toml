@@ -23,20 +23,19 @@ Changelog = "https://github.com/thegridelectric/gridworks-base/releases"
 [tool.poetry.dependencies]
 python = ">=3.11, <4.0"
 python-dotenv = ">=1.0.0"
-#pydantic = ">=2.8.2"
-
 pika = "^1.3.2"
 py-algorand-sdk = ">=2.6.1"
 pydantic = "^2.8.2"
 pydantic-settings = "^2.3.4"
-gridworks = "^1.1.6"
+gridworks = "^1.1.7"
 #gridworks = {path="../gridworks", develop=true}
+#gridworks = {git = "https://github.com/thegridelectric/gridworks.git", branch="SOME_DEV_BRANCH"}
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
 black = ">=21.10b0"
 coverage = {extras = ["toml"], version = ">=6.2"}
-darglint = ">=1.8.1"
+# darglint = ">=1.8.1"
 flake8 = ">=4.0.1"
 flake8-bandit = ">=2.1.2"
 flake8-bugbear = ">=21.9.2"
@@ -50,16 +49,11 @@ pre-commit = ">=2.16.0"
 pre-commit-hooks = ">=4.1.0"
 pytest = ">=6.2.5"
 pyupgrade = ">=2.29.1"
-safety = ">=1.10.3"
 sphinx = ">=4.3.2"
 sphinx-autobuild = ">=2021.3.14"
 sphinx-click = ">=3.0.2"
-typeguard = ">=2.13.3"
 xdoctest = {extras = ["colors"], version = ">=0.15.10"}
 myst-parser = {version = ">=0.16.1"}
-
-[tool.poetry.scripts]
-gridworks-base = "gwbase.__main__:main"
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
@@ -70,7 +64,7 @@ branch = true
 source = ["gwbase", "tests"]
 
 [tool.coverage.report]
-show_missing = true
+show_missing = false
 fail_under = 70
 
 [tool.isort]

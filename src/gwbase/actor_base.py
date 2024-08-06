@@ -23,7 +23,6 @@ from pika.spec import Basic
 from pika.spec import BasicProperties
 
 import gwbase.codec as codec
-import gwbase.types.asl_types as asl_types
 from gwbase.config import GNodeSettings
 from gwbase.enums import GNodeRole
 from gwbase.enums import MessageCategory

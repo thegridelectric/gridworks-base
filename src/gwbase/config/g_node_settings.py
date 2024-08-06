@@ -18,18 +18,21 @@ from gwbase.enums import UniverseType
 
 DEFAULT_ENV_FILE = ".env"
 
+
 class EnumSettings(BaseSettings):
-    encode: int = 1 # use 8-digit hex encoded enum symbol if 1
-    
+    encode: int = 1  # use 8-digit hex encoded enum symbol if 1
+
     class Config:
         env_prefix = "ENUM_"
         env_nested_delimiter = "__"
         extra = "ignore"  # Ignore extra fields in the environment
 
+
 class GNodeSettings(BaseSettings):
     """
     Template settings for a GNode.
     """
+
     rabbit: RabbitBrokerClient = RabbitBrokerClient()
     g_node_alias: str = "d1.isone.unknown.gnode"
     g_node_id: str = "00000000-0000-0000-0000-000000000000"
@@ -55,6 +58,7 @@ class GNodeSettings(BaseSettings):
     day_cron_file: str = "cron_last_day.txt"
 
     @field_validator("initial_time_unix_s", mode="before")
+    @classmethod
     def convert_initial_time_unix_s(cls, value):
         return int(value)
 

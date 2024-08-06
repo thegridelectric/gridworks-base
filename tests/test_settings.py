@@ -3,8 +3,9 @@ import datetime
 import pytest
 from pydantic import SecretStr
 
+from gwbase.config import EnumSettings
+from gwbase.config import GNodeSettings
 from gwbase.config.algo_settings import AlgoApiSecrets
-from gwbase.config import GNodeSettings, EnumSettings
 from gwbase.config.algo_settings import Public
 from gwbase.config.rabbit_settings import RabbitBrokerClient
 

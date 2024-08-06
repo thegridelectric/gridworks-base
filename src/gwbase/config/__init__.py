@@ -1,7 +1,7 @@
 """ Base GNodeSettings """
 
-from gwbase.config.g_node_settings import GNodeSettings
 from gwbase.config.g_node_settings import EnumSettings
+from gwbase.config.g_node_settings import GNodeSettings
 from gwbase.config.g_node_settings import SupervisorSettings
 
 

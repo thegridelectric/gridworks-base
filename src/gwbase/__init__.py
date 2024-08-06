@@ -7,6 +7,7 @@ from gwbase.actor_base import OnReceiveMessageDiagnostic
 from gwbase.actor_base import OnSendMessageDiagnostic
 from gwbase.config import GNodeSettings
 
+
 __all__ = [
     "errors",
     "ActorBase",

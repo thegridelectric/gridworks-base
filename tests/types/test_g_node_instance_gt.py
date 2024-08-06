@@ -44,13 +44,13 @@ def test_g_node_instance_gt_generated() -> None:
     assert t.as_dict() == d
 
     d2 = d.copy()
-    
+
     del d2["StrategyGtEnumSymbol"]
     d2["Strategy"] = StrategyName.symbol_to_value("642c83d3")
-    
+
     del d2["StatusGtEnumSymbol"]
     d2["Status"] = GniStatus.symbol_to_value("69241259")
-    
+
     assert t == Maker.dict_to_tuple(d2)
 
     with pytest.raises(GwTypeError):
@@ -85,7 +85,7 @@ def test_g_node_instance_gt_generated() -> None:
 
     dc = Maker.tuple_to_dc(gtuple)
     assert dc.g_node == gn
-    
+
     assert gtuple == Maker.dc_to_tuple(dc)
     assert Maker.type_to_dc(Maker.dc_to_type(dc)) == dc
 

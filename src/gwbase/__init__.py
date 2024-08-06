@@ -8,9 +8,9 @@ from gwbase.actor_base import OnSendMessageDiagnostic
 from gwbase.config import GNodeSettings
 
 __all__ = [
-    "errors", 
+    "errors",
     "ActorBase",
     "GNodeSettings",
     "OnReceiveMessageDiagnostic",
     "OnSendMessageDiagnostic",
-    ]
+]

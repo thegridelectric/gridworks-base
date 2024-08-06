@@ -50,10 +50,12 @@ def test_g_node_settings_defaults():
         == "amqp://smqPublic:smqPublic@localhost:5672/d1__1"
     )
 
+
 def test_enum_default_settings():
     settings = EnumSettings()
     expected = {"encode": 1}
     assert settings.model_dump() == expected
+
 
 def test_g_node_settings_validations(monkeypatch):
     """

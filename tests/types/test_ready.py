@@ -26,8 +26,7 @@ def test_ready_generated() -> None:
     }
 
     assert t.as_dict() == d
-    
-    
+
     with pytest.raises(GwTypeError):
         Maker.type_to_tuple(d)
 

@@ -58,6 +58,7 @@ class GNodeSettings(BaseSettings):
     day_cron_file: str = "cron_last_day.txt"
 
     @field_validator("initial_time_unix_s", mode="before")
+    @classmethod
     def convert_initial_time_unix_s(cls, value):
         return int(value)
 

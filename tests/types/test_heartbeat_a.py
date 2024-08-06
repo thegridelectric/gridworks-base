@@ -24,8 +24,7 @@ def test_heartbeat_a_generated() -> None:
     }
 
     assert t.as_dict() == d
-    
-    
+
     with pytest.raises(GwTypeError):
         Maker.type_to_tuple(d)
 

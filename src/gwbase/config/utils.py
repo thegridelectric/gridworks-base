@@ -5,14 +5,14 @@ from gwbase.enums import UniverseType
 
 def check_is_algo_secret_key_format(v: str) -> None:
     try:
-        b = algosdk.account.address_from_private_key(v)
+        algosdk.account.address_from_private_key(v)
     except Exception as e:
         raise ValueError(
             f"Not Algorand Secret Key format! Generate one by: \n"
             f"import algosdk\n"
             "private_key, address = algosdk.account.generate_account()\n"
             f"incorrect sk: {v}"
-        )
+        ) from e
 
 
 def check_is_left_right_dot(v: str) -> None:
@@ -27,8 +27,8 @@ def check_is_left_right_dot(v: str) -> None:
 
     try:
         x: List[str] = v.split(".")
-    except:
-        raise ValueError(f"Failed to seperate {v} into words with split'.'")
+    except Exception as e:
+        raise ValueError(f"Failed to seperate {v} into words with split'.'") from e
     first_word = x[0]
     first_char = first_word[0]
     if not first_char.isalpha():

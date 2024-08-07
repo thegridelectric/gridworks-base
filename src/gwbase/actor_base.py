@@ -793,7 +793,7 @@ class ActorBase(ABC):
 
     def scada_routing_key(self, payload: HeartbeatA, to_g_node_alias: str) -> str:
         if self.g_node_role != GNodeRole.AtomicTNode:
-            raise Exception(f"Only send messages to SCADA if role is AtomicTNode!")
+            raise Exception("Only send messages to SCADA if role is AtomicTNode!")
         msg_type = MessageCategorySymbol.gw.value
         from_alias_lrh = self.alias.replace(".", "-")
         type_name_lrh = payload.type_name.replace(".", "-")
@@ -1097,7 +1097,7 @@ class ActorBase(ABC):
 
         try:
             payload = codec.deserializer(body)
-        except Exception as e:
+        except Exception:
             LOGGER.warning(
                 f"TypeName for incoming message claimed to be {type_name}, but was not true!"
             )

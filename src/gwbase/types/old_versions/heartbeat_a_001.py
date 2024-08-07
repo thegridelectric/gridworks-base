@@ -7,11 +7,8 @@ from typing import Literal
 
 from gw.errors import GwTypeError
 from pydantic import BaseModel
-from pydantic import field_validator
 from pydantic.alias_generators import to_pascal
 from pydantic.alias_generators import to_snake
-
-from gwbase.types import HeartbeatA
 
 
 class HeartbeatA001(BaseModel):

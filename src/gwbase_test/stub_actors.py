@@ -29,10 +29,10 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
     :param PikaChannel ch: any open channel to the rabbit broker
     """
     if ch is None:
-        raise Exception(f"Channel is None! Make sure you have started the actor")
+        raise Exception("Channel is None! Make sure you have started the actor")
     if not ch.is_open:
         raise Exception(
-            f"Channel is not open yet! Make sure the channel is open before calling"
+            "Channel is not open yet! Make sure the channel is open before calling"
         )
 
     ch.exchange_declare(

@@ -1,15 +1,10 @@
 import logging
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Dict, List, Optional
 
-from gw.errors import DcError
-from gw.errors import GwTypeError
+from gw.errors import DcError, GwTypeError
 
 from gwbase.data_classes.gps_point import GpsPoint
-from gwbase.enums import CoreGNodeRole
-from gwbase.enums import GNodeStatus
-
+from gwbase.enums import CoreGNodeRole, GNodeStatus
 
 LOG_FORMAT = (
     "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "
@@ -194,7 +189,7 @@ class BaseGNode:
             check_is_uuid_canonical_textual(g_node_id)
         except GwTypeError:
             raise DcError(
-                f"g_node_id must have format UuidCanonicalTextutal. Got {g_node_id}."
+                f"g_node_id must have format UuidCanonicalTextutal. Got {g_node_id}.",
             )
 
     @classmethod
@@ -203,7 +198,7 @@ class BaseGNode:
         status = attributes["status"]
         if status != GNodeStatus.Pending:
             raise DcError(
-                f"Creation Axiom 3: Initial Status must be Pending. Got {status}"
+                f"Creation Axiom 3: Initial Status must be Pending. Got {status}",
             )
 
     @classmethod
@@ -212,7 +207,7 @@ class BaseGNode:
         prev_alias = attributes["prev_alias"]
         if prev_alias is not None:
             raise DcError(
-                f"Creation Axiom 4: On creation, PrevAlias is None. Got {prev_alias}"
+                f"Creation Axiom 4: On creation, PrevAlias is None. Got {prev_alias}",
             )
 
     @classmethod
@@ -242,7 +237,7 @@ class BaseGNode:
             status is not GNodeStatus.PermanentlyDeactivated
         ):
             raise DcError(
-                "Creation Axiom 5`: the parent of an PermanentlyDeactivated GNode must be PermanentlyDeactivated."
+                "Creation Axiom 5`: the parent of an PermanentlyDeactivated GNode must be PermanentlyDeactivated.",
             )
 
         if (role is CoreGNodeRole.ConductorTopologyNode) or (
@@ -255,7 +250,7 @@ class BaseGNode:
             ):
                 raise DcError(
                     f"Creation Axiom 5`: the parent of a {role} must be ConductorTopologyNode"
-                    f" or MarketMaker, not {parent.role}"
+                    f" or MarketMaker, not {parent.role}",
                 )
         if (role is CoreGNodeRole.AtomicMeteringNode) or (
             role is CoreGNodeRole.AtomicTNode
@@ -266,7 +261,7 @@ class BaseGNode:
             ):
                 raise DcError(
                     f"Creation Axiom 5 `: the parent of a {role} must be ConductorTopologyNode"
-                    f" or MarketMaker, not {parent.role}"
+                    f" or MarketMaker, not {parent.role}",
                 )
         if role is CoreGNodeRole.TerminalAsset:
             if not (
@@ -275,7 +270,7 @@ class BaseGNode:
             ):
                 raise DcError(
                     f"Joint Axiom `: the parent of a {role} must be AtomicMete PringNode"
-                    f" or AtomicTNode, not {parent.role}"
+                    f" or AtomicTNode, not {parent.role}",
                 )
 
     #########################################################
@@ -335,7 +330,7 @@ class BaseGNode:
                     check_is_algo_address_string_format(addr)
                 except GwTypeError as e:
                     raise DcError(
-                        f"Schema Axiom 2: {addr} must have format AlgoAddressStringFormat"
+                        f"Schema Axiom 2: {addr} must have format AlgoAddressStringFormat",
                     ) from e
 
     @classmethod
@@ -363,7 +358,7 @@ class BaseGNode:
         roots = list(filter(lambda x: len(x.split(".")) == 1, aliases))
         if len(roots) > 1:
             raise DcError(
-                f"Joint Axiom 1: There is at most one root GNode. Already have {set(roots) -  {attributes['alias']} }"
+                f"Joint Axiom 1: There is at most one root GNode. Already have {set(roots) - {attributes['alias']}}",
             )
 
     @classmethod
@@ -376,7 +371,7 @@ class BaseGNode:
             if gps_point_id not in GpsPoint.by_id.keys():
                 raise DcError(
                     "Joint Axoim 2: If GpsPointId is not None, then it exists in the GpsPoints"
-                    f"Got {gps_point_id} for {attributes['g_node_id']}"
+                    f"Got {gps_point_id} for {attributes['g_node_id']}",
                 )
 
     ##########################
@@ -422,7 +417,7 @@ class BaseGNode:
                 or (new_status is GNodeStatus.Active)
             ):
                 raise DcError(
-                    f"Update Axiom 2: Pending can only change to Active, not {new_status}"
+                    f"Update Axiom 2: Pending can only change to Active, not {new_status}",
                 )
         elif self.status is GNodeStatus.Active:
             if not (
@@ -431,7 +426,7 @@ class BaseGNode:
                 or (new_status is GNodeStatus.Suspended)
             ):
                 raise DcError(
-                    f"Update Axiom 2: Active can only change to Suspended or PermanentlyDeactivated, not {new_status}"
+                    f"Update Axiom 2: Active can only change to Suspended or PermanentlyDeactivated, not {new_status}",
                 )
         elif self.status is GNodeStatus.Suspended:
             if not (
@@ -440,12 +435,12 @@ class BaseGNode:
                 or (new_status is GNodeStatus.Suspended)
             ):
                 raise DcError(
-                    f"Update Axiom 2: Suspended can only change to Active or PermanentlyDeactivated, not {new_status}"
+                    f"Update Axiom 2: Suspended can only change to Active or PermanentlyDeactivated, not {new_status}",
                 )
         elif self.status is GNodeStatus.PermanentlyDeactivated:
             if new_status is not GNodeStatus.PermanentlyDeactivated:
                 raise DcError(
-                    f"Update Axiom 3: Permanently Deactivated status cannot change. Got {new_status}"
+                    f"Update Axiom 3: Permanently Deactivated status cannot change. Got {new_status}",
                 )
 
     def _update_axiom_4(self, attributes):
@@ -472,7 +467,7 @@ class BaseGNode:
             parent = self.parent()
             if parent is None and self.status != GNodeStatus.PermanentlyDeactivated:
                 raise DcError(
-                    f"Update Axiom 4: non-root {alias} with status {self.status} must have Active parent!"
+                    f"Update Axiom 4: non-root {alias} with status {self.status} must have Active parent!",
                 )
 
         # LOOKING DOWN AT DESCENDANTS
@@ -484,7 +479,7 @@ class BaseGNode:
             ):
                 raise DcError(
                     f"Cannot change role to {role} unless there are no children or "
-                    f"children are all PermanentlyDeactivated. Children: {self.children()}"
+                    f"children are all PermanentlyDeactivated. Children: {self.children()}",
                 )
 
         if not is_root:
@@ -498,7 +493,7 @@ class BaseGNode:
                 ):
                     raise DcError(
                         f"Update Axiom 4`: the parent of a {role} must be ConductorTopologyNode"
-                        f" or MarketMaker, not {parent.role}"
+                        f" or MarketMaker, not {parent.role}",
                     )
             if (role is CoreGNodeRole.AtomicMeteringNode) or (
                 role is CoreGNodeRole.AtomicTNode
@@ -509,7 +504,7 @@ class BaseGNode:
                 ):
                     raise DcError(
                         f"Update Axiom 4`: the parent of a {role} must be ConductorTopologyNode"
-                        f" or MarketMaker, not {parent.role}"
+                        f" or MarketMaker, not {parent.role}",
                     )
             if role is CoreGNodeRole.TerminalAsset:
                 if not (
@@ -518,7 +513,7 @@ class BaseGNode:
                 ):
                     raise DcError(
                         f"Update Axiom 4`: the parent of a {role} must be AtomicMete PringNode"
-                        f" or AtomicTNode, not {parent.role}"
+                        f" or AtomicTNode, not {parent.role}",
                     )
         # LOOKING DOWN AT DESCENDANTS
         # Question: add the above again, or rely on role update axioms??
@@ -540,13 +535,13 @@ class BaseGNode:
             if prev_alias != self.alias:
                 raise DcError(
                     "Update Axiom 6: If alias has changed, then new prev_alias "
-                    "must equal original alias prior to the change."
+                    "must equal original alias prior to the change.",
                 )
         else:
             if prev_alias != self.prev_alias:
                 raise DcError(
                     "Update Axiom 6: If alias has NOT changed then new "
-                    "prev_alias must equal original prev_alias."
+                    "prev_alias must equal original prev_alias.",
                 )
 
 

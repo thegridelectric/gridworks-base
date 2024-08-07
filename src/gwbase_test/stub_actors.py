@@ -1,18 +1,16 @@
 import copy
 import datetime
-from typing import List
-from typing import Optional
+from typing import List, Optional
 
-from pika.channel import Channel as PikaChannel
-from pydantic import BaseModel
-
-from gwbase.actor_base import ActorBase  # TODO: from gwatn import ActorBase
-from gwbase.actor_base import RabbitRole
+from gwbase.actor_base import (
+    ActorBase,  # TODO: from gwatn import ActorBase
+    RabbitRole,
+)
 from gwbase.config import GNodeSettings
 from gwbase.enums import GNodeRole
-from gwbase.types import HeartbeatA
-from gwbase.types import Ready
-from gwbase.types import Ready_Maker
+from gwbase.types import HeartbeatA, Ready, Ready_Maker
+from pika.channel import Channel as PikaChannel
+from pydantic import BaseModel
 
 
 class ExchangeBinding(BaseModel):
@@ -29,10 +27,10 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
     :param PikaChannel ch: any open channel to the rabbit broker
     """
     if ch is None:
-        raise Exception(f"Channel is None! Make sure you have started the actor")
+        raise Exception("Channel is None! Make sure you have started the actor")
     if not ch.is_open:
         raise Exception(
-            f"Channel is not open yet! Make sure the channel is open before calling"
+            "Channel is not open yet! Make sure the channel is open before calling",
         )
 
     ch.exchange_declare(
@@ -71,7 +69,9 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
         ExchangeBinding(From="gnode", To="ear", Key="#"),
         ExchangeBinding(From="gnode", To="supervisor", Key="*.*.gnode.*.supervisor.*"),
         ExchangeBinding(
-            From="gnode", To="timecoordinator", Key="*.*.gnode.*.timecoordinator.*"
+            From="gnode",
+            To="timecoordinator",
+            Key="*.*.gnode.*.timecoordinator.*",
         ),
         ExchangeBinding(From="marketmaker", To="ear", Key="#"),
         ExchangeBinding(
@@ -96,7 +96,9 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
             Key="*.*.supervisor.*.marketmaker.*",
         ),
         ExchangeBinding(
-            From="supervisor", To="supervisor", Key="*.*.supervisor*.supervisor.*"
+            From="supervisor",
+            To="supervisor",
+            Key="*.*.supervisor*.supervisor.*",
         ),
         ExchangeBinding(
             From="supervisor",
@@ -105,7 +107,9 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
         ),
         ExchangeBinding(From="world", To="ear", Key="#"),
         ExchangeBinding(
-            From="world", To="timecoordinator", Key="*.*.world.*.timecoordinator.*"
+            From="world",
+            To="timecoordinator",
+            Key="*.*.world.*.timecoordinator.*",
         ),
     ]
 
@@ -140,7 +144,10 @@ class GNodeStubRecorder(ActorBase):
             self.heartbeat_a_received(from_alias, from_role, payload)
 
     def heartbeat_a_received(
-        self, from_alias: str, from_role: GNodeRole, payload: HeartbeatA
+        self,
+        from_alias: str,
+        from_role: GNodeRole,
+        payload: HeartbeatA,
     ):
         if (
             from_alias == self.settings.my_super_alias
@@ -170,7 +177,10 @@ class SupervisorStubRecorder(GNodeStubRecorder):
         self.my_single_sub = subordinate_alias
 
     def heartbeat_a_received(
-        self, from_alias: str, from_role: GNodeRole, payload: HeartbeatA
+        self,
+        from_alias: str,
+        from_role: GNodeRole,
+        payload: HeartbeatA,
     ):
         """Used to test that a Supervisor gets a message from GNode"""
         if from_alias == self.my_single_sub:
@@ -183,8 +193,12 @@ class TimeCoordinatorStubRecorder(GNodeStubRecorder):
     def __init__(self, settings: GNodeSettings):
         self._time: int = int(
             datetime.datetime(
-                year=2020, month=1, day=1, hour=5, tzinfo=datetime.timezone.utc
-            ).timestamp()
+                year=2020,
+                month=1,
+                day=1,
+                hour=5,
+                tzinfo=datetime.timezone.utc,
+            ).timestamp(),
         )
         my_settings = copy.deepcopy(settings)
         my_settings.g_node_alias = "d1.time"

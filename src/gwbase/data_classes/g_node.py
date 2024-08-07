@@ -1,14 +1,10 @@
 import logging
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Dict, List, Optional
 
 from gw.errors import DcError
 
 from gwbase.data_classes.gps_point import GpsPoint
-from gwbase.enums import GNodeRole
-from gwbase.enums import GNodeStatus
-
+from gwbase.enums import GNodeRole, GNodeStatus
 
 LOG_FORMAT = (
     "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "

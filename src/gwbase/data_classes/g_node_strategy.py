@@ -1,8 +1,6 @@
-from typing import Dict
-from typing import Optional
+from typing import Dict, Optional
 
-from gwbase.enums import GNodeRole
-from gwbase.enums import StrategyName
+from gwbase.enums import GNodeRole, StrategyName
 
 
 class GNodeStrategy:

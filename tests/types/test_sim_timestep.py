@@ -4,10 +4,9 @@ import json
 
 import pytest
 from gw.errors import GwTypeError
-from pydantic import ValidationError
-
 from gwbase.types import SimTimestep
 from gwbase.types import SimTimestep_Maker as Maker
+from pydantic import ValidationError
 
 
 def test_sim_timestep_generated() -> None:

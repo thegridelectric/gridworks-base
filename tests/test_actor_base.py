@@ -3,15 +3,15 @@ import time
 import uuid
 
 from gw_test import wait_for
-
 from gwbase.config import GNodeSettings
 from gwbase.enums import GNodeRole
-from gwbase.types import HeartbeatA
-from gwbase.types import SimTimestep
-from gwbase_test import GNodeStubRecorder
-from gwbase_test import SupervisorStubRecorder
-from gwbase_test import TimeCoordinatorStubRecorder
-from gwbase_test import load_rabbit_exchange_bindings
+from gwbase.types import HeartbeatA, SimTimestep
+from gwbase_test import (
+    GNodeStubRecorder,
+    SupervisorStubRecorder,
+    TimeCoordinatorStubRecorder,
+    load_rabbit_exchange_bindings,
+)
 
 
 def test_actor_base():
@@ -33,7 +33,9 @@ def test_actor_base():
 
     payload = HeartbeatA(my_hex="0", your_last_hex="0")
     gn.send_message(
-        payload=payload, to_role=GNodeRole.Supervisor, to_g_node_alias=su.alias
+        payload=payload,
+        to_role=GNodeRole.Supervisor,
+        to_g_node_alias=su.alias,
     )
 
     wait_for(lambda: su.messages_received > 0, 2, "supervisor received message")

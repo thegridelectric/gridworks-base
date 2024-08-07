@@ -5,7 +5,6 @@ from gw.errors import GwTypeError
 from gwbase.types.asl_types import TypeMakerByName
 from gwbase.types.heartbeat_a import HeartbeatA
 
-
 type_list = list(TypeMakerByName.keys())
 
 

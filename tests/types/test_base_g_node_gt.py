@@ -4,12 +4,10 @@ import json
 
 import pytest
 from gw.errors import GwTypeError
-from pydantic import ValidationError
-
-from gwbase.enums import CoreGNodeRole
-from gwbase.enums import GNodeStatus
+from gwbase.enums import CoreGNodeRole, GNodeStatus
 from gwbase.types import BaseGNodeGt
 from gwbase.types import BaseGNodeGt_Maker as Maker
+from pydantic import ValidationError
 
 
 def test_base_g_node_gt_generated() -> None:

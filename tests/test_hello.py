@@ -1,9 +1,7 @@
 from gw.enums import MessageCategory
 from gw_test import wait_for
-
 from gwbase.actor_base import ActorBase
 from gwbase.config import GNodeSettings
-from gwbase.enums import GNodeRole
 from gwbase.types import HeartbeatA
 
 

@@ -1,6 +1,6 @@
 """Gridworks Base for rabbit actors."""
 
-import gw.errors as errors
+from gw import errors
 
 from gwbase.actor_base import (
     ActorBase,

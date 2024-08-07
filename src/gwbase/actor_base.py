@@ -10,14 +10,14 @@ from abc import ABC, abstractmethod
 from enum import auto
 from typing import Dict, List, Optional, no_type_check
 
-import gw.utils as utils
 import pika
+from gw import utils
 from gw.enums import GwStrEnum
 from gw.errors import GwTypeError
 from pika.channel import Channel as PikaChannel
 from pika.spec import Basic, BasicProperties
 
-import gwbase.codec as codec
+from gwbase import codec
 from gwbase.config import GNodeSettings
 from gwbase.enums import GNodeRole, MessageCategory, MessageCategorySymbol, UniverseType
 from gwbase.types import HeartbeatA, HeartbeatA_Maker, SimTimestep, SimTimestep_Maker
@@ -229,8 +229,7 @@ class ActorBase(ABC):
             self._reconnect_delay = 0
         else:
             self._reconnect_delay += 1
-        if self._reconnect_delay > 30:
-            self._reconnect_delay = 30
+        self._reconnect_delay = min(self._reconnect_delay, 30)
         return self._reconnect_delay
 
     def connect_consumer(self) -> pika.SelectConnection:

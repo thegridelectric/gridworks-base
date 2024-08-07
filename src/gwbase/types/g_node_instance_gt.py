@@ -335,7 +335,7 @@ def check_is_algo_address_string_format(v: str) -> None:
 
     at = algosdk.abi.AddressType()
     try:
-        result = at.decode(at.encode(v))
+        at.decode(at.encode(v))
     except Exception as e:
         raise ValueError(f"Not AlgoAddressStringFormat: {e}")
 

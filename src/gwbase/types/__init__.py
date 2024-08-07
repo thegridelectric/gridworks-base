@@ -1,4 +1,4 @@
-""" List of all the types """
+"""List of all the types"""
 
 from gwbase.types.base_g_node_gt import BaseGNodeGt
 from gwbase.types.base_g_node_gt import BaseGNodeGt_Maker

@@ -102,6 +102,7 @@ LOGGER.setLevel(logging.INFO)
 
 class ActorBase(ABC):
     "This is the base class for GNodes, used to communicate via RabbitMQ"
+
     _url: str
 
     SHUTDOWN_INTERVAL: float = 0.1

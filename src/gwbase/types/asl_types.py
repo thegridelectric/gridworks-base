@@ -1,4 +1,4 @@
-""" List of all the types used by the actor."""
+"""List of all the types used by the actor."""
 
 from typing import Dict
 from typing import List

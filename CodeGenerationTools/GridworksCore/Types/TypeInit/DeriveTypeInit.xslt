@@ -25,9 +25,6 @@
                 <OverwriteMode>Always</OverwriteMode>
                 <xsl:element name="FileContents">
 <xsl:text>""" List of all the types """
-
-from gwbase.types.codec import gw_deserializer
-from gwbase.types.codec import gw_serializer
 </xsl:text>
 <xsl:for-each select="$airtable//VersionedTypes/VersionedType[
   count(Protocols[text()='gwbase']) > 0 and
@@ -63,9 +60,7 @@ from gwbase.types.</xsl:text>
 <xsl:text>
 
 
-__all__ = [
-    "gw_deserializer",
-    "gw_serializer",</xsl:text>
+__all__ = [</xsl:text>
 
 
 <xsl:for-each select="$airtable//VersionedTypes/VersionedType[

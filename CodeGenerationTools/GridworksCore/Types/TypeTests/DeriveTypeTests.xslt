@@ -100,6 +100,7 @@ def test_</xsl:text><xsl:value-of select="translate($type-name,'.','_')"/>
         <xsl:call-template name="python-case">
             <xsl:with-param name="camel-case-text" select="Value"/>
         </xsl:call-template>
+
         <!-- If attribute is associated to a data class, add Id to the Attribute name-->
         <xsl:if test="not(normalize-space(SubTypeDataClass) = '') and not(IsList='true')">
         <xsl:text>_id</xsl:text>
@@ -108,7 +109,19 @@ def test_</xsl:text><xsl:value-of select="translate($type-name,'.','_')"/>
         <xsl:text>&#10;        </xsl:text>
         <xsl:value-of select="$attribute-name"  />
         <xsl:text>=</xsl:text>
+        <xsl:if test="not(IsEnum='true')">
         <xsl:value-of select="normalize-space(TestValue)"/>
+        </xsl:if>
+         <xsl:if test="(IsEnum='true')">
+         <xsl:if test="UseEnumAlias = 'true'">
+                <xsl:text>Enum</xsl:text>
+                </xsl:if>
+        <xsl:call-template name="nt-case">
+                <xsl:with-param name="type-name-text" select="EnumLocalName" />
+        </xsl:call-template>
+         <xsl:text>.</xsl:text>
+        <xsl:value-of select="EnumTestTranslation"/>
+        </xsl:if>
         <xsl:text>,</xsl:text>
         </xsl:for-each>
 
@@ -170,11 +183,10 @@ def test_</xsl:text><xsl:value-of select="translate($type-name,'.','_')"/>
     </xsl:text>
     </xsl:for-each>
     <xsl:text>
-    assert t == Maker.dict_to_tuple(d2)
-    </xsl:text>
+    assert t == Maker.dict_to_tuple(d2)</xsl:text>
     </xsl:if>
     <xsl:text>
-    
+
     with pytest.raises(GwTypeError):
         Maker.type_to_tuple(d)
 
@@ -349,17 +361,17 @@ def test_</xsl:text><xsl:value-of select="translate($type-name,'.','_')"/>
     <xsl:if test= "(IsType='true')  and (IsList = 'true')">
     <xsl:text>
 
-    d2  = dict(d, </xsl:text>
+    d2 = dict(d, </xsl:text>
     <xsl:value-of  select="Value"/><xsl:text>="Not a list.")
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)
 
-    d2  = dict(d, </xsl:text>
+    d2 = dict(d, </xsl:text>
     <xsl:value-of  select="Value"/><xsl:text>=["Not a list of dicts"])
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)
 
-    d2  = dict(d, </xsl:text>
+    d2 = dict(d, </xsl:text>
     <xsl:value-of  select="Value"/><xsl:text>= [{"Failed": "Not a GtSimpleSingleStatus"}])
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)</xsl:text>

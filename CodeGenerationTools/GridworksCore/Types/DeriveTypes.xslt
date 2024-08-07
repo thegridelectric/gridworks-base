@@ -638,7 +638,7 @@ class </xsl:text>
                 raise ValueError(
                     f"</xsl:text><xsl:value-of select="Value"/><xsl:text> element {elt} failed </xsl:text>
                 <xsl:value-of select="PrimitiveFormat" />
-                <xsl:text> format validation: {e}"
+                <xsl:text> format validation: {e}",
                 )
         return v</xsl:text>
         </xsl:when>
@@ -651,7 +651,7 @@ class </xsl:text>
         except ValueError as e:
             raise ValueError(
                 f"</xsl:text>
-                <xsl:value-of select="Value"/><xsl:text>Id failed UuidCanonicalTextual format validation: {e}"
+                <xsl:value-of select="Value"/><xsl:text>Id failed UuidCanonicalTextual format validation: {e}",
             )
         return v</xsl:text>
         </xsl:when>
@@ -666,7 +666,7 @@ class </xsl:text>
                 raise ValueError(
                     f"</xsl:text><xsl:value-of select="Value"/><xsl:text> element {elt} failed </xsl:text>
                 <xsl:value-of select="PrimitiveFormat" />
-                <xsl:text> format validation: {e}"
+                <xsl:text> format validation: {e}",
                 )
         return v</xsl:text>
         </xsl:when>

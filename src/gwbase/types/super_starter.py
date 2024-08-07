@@ -64,7 +64,7 @@ class SuperStarter(BaseModel):
                 check_is_left_right_dot(elt)
             except ValueError as e:
                 raise ValueError(
-                    f"AliasWithKeyList element {elt} failed LeftRightDot format validation: {e}"
+                    f"AliasWithKeyList element {elt} failed LeftRightDot format validation: {e}",
                 )
         return v
 

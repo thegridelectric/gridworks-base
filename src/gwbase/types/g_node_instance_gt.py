@@ -86,7 +86,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeInstanceId failed UuidCanonicalTextual format validation: {e}"
+                f"GNodeInstanceId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -96,7 +96,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeId failed UuidCanonicalTextual format validation: {e}"
+                f"GNodeId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -106,7 +106,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"SupervisorContainerId failed UuidCanonicalTextual format validation: {e}"
+                f"SupervisorContainerId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -116,7 +116,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_reasonable_unix_time_s(v)
         except ValueError as e:
             raise ValueError(
-                f"StartTimeUnixS failed ReasonableUnixTimeS format validation: {e}"
+                f"StartTimeUnixS failed ReasonableUnixTimeS format validation: {e}",
             )
         return v
 
@@ -128,7 +128,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"AlgoAddress failed AlgoAddressStringFormat format validation: {e}"
+                f"AlgoAddress failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 

@@ -70,7 +70,7 @@ class SupervisorContainerGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"SupervisorContainerId failed UuidCanonicalTextual format validation: {e}"
+                f"SupervisorContainerId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -80,7 +80,7 @@ class SupervisorContainerGt(BaseModel):
             check_is_world_instance_name_format(v)
         except ValueError as e:
             raise ValueError(
-                f"WorldInstanceName failed WorldInstanceNameFormat format validation: {e}"
+                f"WorldInstanceName failed WorldInstanceNameFormat format validation: {e}",
             )
         return v
 
@@ -90,7 +90,7 @@ class SupervisorContainerGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"SupervisorGNodeInstanceId failed UuidCanonicalTextual format validation: {e}"
+                f"SupervisorGNodeInstanceId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -100,7 +100,7 @@ class SupervisorContainerGt(BaseModel):
             check_is_left_right_dot(v)
         except ValueError as e:
             raise ValueError(
-                f"SupervisorGNodeAlias failed LeftRightDot format validation: {e}"
+                f"SupervisorGNodeAlias failed LeftRightDot format validation: {e}",
             )
         return v
 

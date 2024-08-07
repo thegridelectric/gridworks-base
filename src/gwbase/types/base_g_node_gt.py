@@ -102,7 +102,7 @@ class BaseGNodeGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeId failed UuidCanonicalTextual format validation: {e}"
+                f"GNodeId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -120,7 +120,7 @@ class BaseGNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeRegistryAddr failed AlgoAddressStringFormat format validation: {e}"
+                f"GNodeRegistryAddr failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -142,7 +142,7 @@ class BaseGNodeGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GpsPointId failed UuidCanonicalTextual format validation: {e}"
+                f"GpsPointId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -154,7 +154,7 @@ class BaseGNodeGt(BaseModel):
             check_is_positive_integer(v)
         except ValueError as e:
             raise ValueError(
-                f"OwnershipDeedId failed PositiveInteger format validation: {e}"
+                f"OwnershipDeedId failed PositiveInteger format validation: {e}",
             )
         return v
 
@@ -166,7 +166,7 @@ class BaseGNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"OwnershipDeedValidatorAddr failed AlgoAddressStringFormat format validation: {e}"
+                f"OwnershipDeedValidatorAddr failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -178,7 +178,7 @@ class BaseGNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"OwnerAddr failed AlgoAddressStringFormat format validation: {e}"
+                f"OwnerAddr failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -190,7 +190,7 @@ class BaseGNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"DaemonAddr failed AlgoAddressStringFormat format validation: {e}"
+                f"DaemonAddr failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -202,7 +202,7 @@ class BaseGNodeGt(BaseModel):
             check_is_positive_integer(v)
         except ValueError as e:
             raise ValueError(
-                f"TradingRightsId failed PositiveInteger format validation: {e}"
+                f"TradingRightsId failed PositiveInteger format validation: {e}",
             )
         return v
 
@@ -214,7 +214,7 @@ class BaseGNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"ScadaAlgoAddr failed AlgoAddressStringFormat format validation: {e}"
+                f"ScadaAlgoAddr failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -226,7 +226,7 @@ class BaseGNodeGt(BaseModel):
             check_is_positive_integer(v)
         except ValueError as e:
             raise ValueError(
-                f"ScadaCertId failed PositiveInteger format validation: {e}"
+                f"ScadaCertId failed PositiveInteger format validation: {e}",
             )
         return v
 

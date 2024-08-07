@@ -64,7 +64,7 @@ class Ready(BaseModel):
             check_is_left_right_dot(v)
         except ValueError as e:
             raise ValueError(
-                f"FromGNodeAlias failed LeftRightDot format validation: {e}"
+                f"FromGNodeAlias failed LeftRightDot format validation: {e}",
             )
         return v
 
@@ -74,7 +74,7 @@ class Ready(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"FromGNodeInstanceId failed UuidCanonicalTextual format validation: {e}"
+                f"FromGNodeInstanceId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 

@@ -1,14 +1,10 @@
 import datetime
 
 import pytest
-from pydantic import SecretStr
-
-from gwbase.config import EnumSettings
-from gwbase.config import GNodeSettings
-from gwbase.config.algo_settings import AlgoApiSecrets
-from gwbase.config.algo_settings import Public
+from gwbase.config import EnumSettings, GNodeSettings
+from gwbase.config.algo_settings import AlgoApiSecrets, Public
 from gwbase.config.rabbit_settings import RabbitBrokerClient
-
+from pydantic import SecretStr
 
 # TODO: implement paths and clean_g_node_env like for scada
 

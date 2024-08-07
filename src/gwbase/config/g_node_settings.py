@@ -1,20 +1,17 @@
 import datetime
 
-from pydantic import SecretStr
-from pydantic import field_validator
-from pydantic import model_validator
+from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings
 from typing_extensions import Self
 
-from gwbase.config.algo_settings import AlgoApiSecrets
-from gwbase.config.algo_settings import Public
+from gwbase.config.algo_settings import AlgoApiSecrets, Public
 from gwbase.config.rabbit_settings import RabbitBrokerClient
-from gwbase.config.utils import check_g_node_alias
-from gwbase.config.utils import check_is_algo_secret_key_format
-from gwbase.config.utils import check_is_reasonable_unix_time_s
-from gwbase.enums import GNodeRole
-from gwbase.enums import UniverseType
-
+from gwbase.config.utils import (
+    check_g_node_alias,
+    check_is_algo_secret_key_format,
+    check_is_reasonable_unix_time_s,
+)
+from gwbase.enums import GNodeRole, UniverseType
 
 DEFAULT_ENV_FILE = ".env"
 

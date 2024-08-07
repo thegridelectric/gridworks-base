@@ -6,32 +6,21 @@ import random
 import threading
 import time
 import uuid
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from enum import auto
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import no_type_check
+from typing import Dict, List, Optional, no_type_check
 
 import gw.utils as utils
 import pika
 from gw.enums import GwStrEnum
 from gw.errors import GwTypeError
 from pika.channel import Channel as PikaChannel
-from pika.spec import Basic
-from pika.spec import BasicProperties
+from pika.spec import Basic, BasicProperties
 
 import gwbase.codec as codec
 from gwbase.config import GNodeSettings
-from gwbase.enums import GNodeRole
-from gwbase.enums import MessageCategory
-from gwbase.enums import MessageCategorySymbol
-from gwbase.enums import UniverseType
-from gwbase.types import HeartbeatA
-from gwbase.types import HeartbeatA_Maker
-from gwbase.types import SimTimestep
-from gwbase.types import SimTimestep_Maker
+from gwbase.enums import GNodeRole, MessageCategory, MessageCategorySymbol, UniverseType
+from gwbase.types import HeartbeatA, HeartbeatA_Maker, SimTimestep, SimTimestep_Maker
 
 
 class RabbitRole(GwStrEnum):

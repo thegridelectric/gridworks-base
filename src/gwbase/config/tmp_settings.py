@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings
 
-
 DEFAULT_ENV_FILE = ".env"
 
 

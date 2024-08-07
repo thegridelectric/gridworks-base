@@ -1,6 +1,5 @@
 from enum import auto
-from typing import List
-from typing import Optional
+from typing import List, Optional
 
 from gw.enums import GwStrEnum
 

@@ -4,10 +4,9 @@ import json
 
 import pytest
 from gw.errors import GwTypeError
-from pydantic import ValidationError
-
 from gwbase.types import Ready
 from gwbase.types import Ready_Maker as Maker
+from pydantic import ValidationError
 
 
 def test_ready_generated() -> None:

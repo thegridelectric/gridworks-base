@@ -2,25 +2,16 @@
 
 import json
 import logging
-from typing import Any
-from typing import Dict
-from typing import Literal
-from typing import Optional
+from typing import Any, Dict, Literal, Optional
 
 import dotenv
 from gw.errors import GwTypeError
-from gw.utils import is_pascal_case
-from gw.utils import pascal_to_snake
-from gw.utils import snake_to_pascal
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic import field_validator
+from gw.utils import is_pascal_case, pascal_to_snake, snake_to_pascal
+from pydantic import BaseModel, Field, field_validator
 
 from gwbase.config import EnumSettings
 from gwbase.data_classes.base_g_node import BaseGNode
-from gwbase.enums import CoreGNodeRole
-from gwbase.enums import GNodeStatus
-
+from gwbase.enums import CoreGNodeRole, GNodeStatus
 
 ENCODE_ENUMS = EnumSettings(_env_file=dotenv.find_dotenv()).encode
 

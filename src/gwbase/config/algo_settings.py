@@ -1,5 +1,4 @@
-from pydantic import BaseModel
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 from pydantic_settings import BaseSettings
 
 

@@ -1,18 +1,16 @@
 import copy
 import datetime
-from typing import List
-from typing import Optional
+from typing import List, Optional
 
-from pika.channel import Channel as PikaChannel
-from pydantic import BaseModel
-
-from gwbase.actor_base import ActorBase  # TODO: from gwatn import ActorBase
-from gwbase.actor_base import RabbitRole
+from gwbase.actor_base import (
+    ActorBase,  # TODO: from gwatn import ActorBase
+    RabbitRole,
+)
 from gwbase.config import GNodeSettings
 from gwbase.enums import GNodeRole
-from gwbase.types import HeartbeatA
-from gwbase.types import Ready
-from gwbase.types import Ready_Maker
+from gwbase.types import HeartbeatA, Ready, Ready_Maker
+from pika.channel import Channel as PikaChannel
+from pydantic import BaseModel
 
 
 class ExchangeBinding(BaseModel):

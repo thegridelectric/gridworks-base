@@ -40,7 +40,6 @@ from gwbase.enums.strategy_name import StrategyName
 from gwbase.enums.supervisor_container_status import SupervisorContainerStatus
 from gwbase.enums.universe_type import UniverseType
 
-
 __all__ = [
     "CoreGNodeRole",  # [core.g.node.role.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#coregnoderole)
     "GNodeRole",  # [g.node.role.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#gnoderole)

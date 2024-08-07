@@ -4,12 +4,10 @@ import json
 
 import pytest
 from gw.errors import GwTypeError
-from pydantic import ValidationError
-
 from gwbase.enums import SupervisorContainerStatus
-from gwbase.types import SuperStarter
+from gwbase.types import SuperStarter, SupervisorContainerGt
 from gwbase.types import SuperStarter_Maker as Maker
-from gwbase.types import SupervisorContainerGt
+from pydantic import ValidationError
 
 
 def test_super_starter_generated() -> None:

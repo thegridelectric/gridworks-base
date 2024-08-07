@@ -47,8 +47,7 @@ def check_is_reasonable_unix_time_s(v: int) -> None:
     Raises:
         ValueError: if not ReasonableUnixTimeS format
     """
-    from datetime import datetime
-    from datetime import timezone
+    from datetime import datetime, timezone
 
     start_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
     end_date = datetime(3000, 1, 1, tzinfo=timezone.utc)

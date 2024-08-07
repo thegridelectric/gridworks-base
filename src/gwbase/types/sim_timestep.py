@@ -2,21 +2,14 @@
 
 import json
 import logging
-from typing import Any
-from typing import Dict
-from typing import Literal
+from typing import Any, Dict, Literal
 
 import dotenv
 from gw.errors import GwTypeError
-from gw.utils import is_pascal_case
-from gw.utils import pascal_to_snake
-from gw.utils import snake_to_pascal
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic import field_validator
+from gw.utils import is_pascal_case, pascal_to_snake, snake_to_pascal
+from pydantic import BaseModel, Field, field_validator
 
 from gwbase.config import EnumSettings
-
 
 ENCODE_ENUMS = EnumSettings(_env_file=dotenv.find_dotenv()).encode
 
@@ -261,8 +254,7 @@ def check_is_reasonable_unix_time_ms(v: int) -> None:
     Raises:
         ValueError: if v is not ReasonableUnixTimeMs format
     """
-    from datetime import datetime
-    from datetime import timezone
+    from datetime import datetime, timezone
 
     start_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
     end_date = datetime(3000, 1, 1, tzinfo=timezone.utc)
@@ -287,8 +279,7 @@ def check_is_reasonable_unix_time_s(v: int) -> None:
     Raises:
         ValueError: if v is not ReasonableUnixTimeS format
     """
-    from datetime import datetime
-    from datetime import timezone
+    from datetime import datetime, timezone
 
     start_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
     end_date = datetime(3000, 1, 1, tzinfo=timezone.utc)

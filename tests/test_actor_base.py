@@ -3,15 +3,15 @@ import time
 import uuid
 
 from gw_test import wait_for
-
 from gwbase.config import GNodeSettings
 from gwbase.enums import GNodeRole
-from gwbase.types import HeartbeatA
-from gwbase.types import SimTimestep
-from gwbase_test import GNodeStubRecorder
-from gwbase_test import SupervisorStubRecorder
-from gwbase_test import TimeCoordinatorStubRecorder
-from gwbase_test import load_rabbit_exchange_bindings
+from gwbase.types import HeartbeatA, SimTimestep
+from gwbase_test import (
+    GNodeStubRecorder,
+    SupervisorStubRecorder,
+    TimeCoordinatorStubRecorder,
+    load_rabbit_exchange_bindings,
+)
 
 
 def test_actor_base():

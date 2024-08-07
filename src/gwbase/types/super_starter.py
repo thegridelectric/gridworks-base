@@ -57,7 +57,7 @@ class SuperStarter(BaseModel):
                 check_is_left_right_dot(elt)
             except ValueError as e:
                 raise ValueError(
-                    f"AliasWithKeyList element {elt} failed LeftRightDot format validation: {e}"
+                    f"AliasWithKeyList element {elt} failed LeftRightDot format validation: {e}",
                 )
         return v
 
@@ -166,10 +166,10 @@ class SuperStarter_Maker:
             raise GwTypeError(f"dict missing SupervisorContainer: <{d2}>")
         if not isinstance(d2["SupervisorContainer"], dict):
             raise GwTypeError(
-                f"SupervisorContainer <{d2['SupervisorContainer']}> must be a SupervisorContainerGt!"
+                f"SupervisorContainer <{d2['SupervisorContainer']}> must be a SupervisorContainerGt!",
             )
         supervisor_container = SupervisorContainerGt_Maker.dict_to_tuple(
-            d2["SupervisorContainer"]
+            d2["SupervisorContainer"],
         )
         d2["SupervisorContainer"] = supervisor_container
         if "GniList" not in d2.keys():
@@ -180,7 +180,7 @@ class SuperStarter_Maker:
         for elt in d2["GniList"]:
             if not isinstance(elt, dict):
                 raise GwTypeError(
-                    f"GniList <{d2['GniList']}> must be a List of GNodeInstanceGt types"
+                    f"GniList <{d2['GniList']}> must be a List of GNodeInstanceGt types",
                 )
             t = GNodeInstanceGt_Maker.dict_to_tuple(elt)
             gni_list.append(t)
@@ -195,7 +195,7 @@ class SuperStarter_Maker:
             raise GwTypeError(f"Version missing from dict <{d2}>")
         if d2["Version"] != "000":
             LOGGER.debug(
-                f"Attempting to interpret super.starter version {d2['Version']} as version 000"
+                f"Attempting to interpret super.starter version {d2['Version']} as version 000",
             )
             d2["Version"] = "000"
         d3 = {pascal_to_snake(key): value for key, value in d2.items()}
@@ -224,7 +224,7 @@ def check_is_left_right_dot(v: str) -> None:
     first_char = first_word[0]
     if not first_char.isalpha():
         raise ValueError(
-            f"Most significant word of <{v}> must start with alphabet char."
+            f"Most significant word of <{v}> must start with alphabet char.",
         )
     for word in x:
         if not word.isalnum():

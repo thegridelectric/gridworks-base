@@ -21,7 +21,7 @@ def test_g_node_settings_defaults():
         g_node_instance_id="00000000-0000-0000-0000-000000000000",
         g_node_role_value="GNode",
         sk=SecretStr(
-            "3g+IYDCVM84Ady7a8fGImRkEZ77+a4e3i14ub0QMjM/JKlzB2GNdv0S+lqMsYgPiGbd7aAp5943X5NzvdQJohw=="
+            "3g+IYDCVM84Ady7a8fGImRkEZ77+a4e3i14ub0QMjM/JKlzB2GNdv0S+lqMsYgPiGbd7aAp5943X5NzvdQJohw==",
         ),
         universe_type_value="Dev",
         my_super_alias="d1.super1",
@@ -34,7 +34,7 @@ def test_g_node_settings_defaults():
                 hour=4,
                 minute=20,
                 tzinfo=datetime.timezone.utc,
-            ).timestamp()
+            ).timestamp(),
         ),
         log_level="INFO",
         minute_cron_file="cron_last_minute.txt",

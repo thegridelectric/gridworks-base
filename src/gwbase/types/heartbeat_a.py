@@ -160,7 +160,7 @@ class HeartbeatA_Maker:
             raise GwTypeError(f"Version missing from dict <{d2}>")
         if d2["Version"] != "100":
             LOGGER.debug(
-                f"Attempting to interpret heartbeat.a version {d2['Version']} as version 100"
+                f"Attempting to interpret heartbeat.a version {d2['Version']} as version 100",
             )
             d2["Version"] = "100"
         d3 = {pascal_to_snake(key): value for key, value in d2.items()}

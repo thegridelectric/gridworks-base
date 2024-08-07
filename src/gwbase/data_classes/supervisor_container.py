@@ -16,7 +16,10 @@ class SupervisorContainer:
     by_id: Dict[str, "SupervisorContainer"] = {}
 
     def __new__(
-        cls, supervisor_container_id: str, *args, **kwargs
+        cls,
+        supervisor_container_id: str,
+        *args,
+        **kwargs,
     ) -> "SupervisorContainer":  # type: ignore
         try:
             return cls.by_id[supervisor_container_id]

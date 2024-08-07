@@ -30,7 +30,7 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
         raise Exception("Channel is None! Make sure you have started the actor")
     if not ch.is_open:
         raise Exception(
-            "Channel is not open yet! Make sure the channel is open before calling"
+            "Channel is not open yet! Make sure the channel is open before calling",
         )
 
     ch.exchange_declare(
@@ -69,7 +69,9 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
         ExchangeBinding(From="gnode", To="ear", Key="#"),
         ExchangeBinding(From="gnode", To="supervisor", Key="*.*.gnode.*.supervisor.*"),
         ExchangeBinding(
-            From="gnode", To="timecoordinator", Key="*.*.gnode.*.timecoordinator.*"
+            From="gnode",
+            To="timecoordinator",
+            Key="*.*.gnode.*.timecoordinator.*",
         ),
         ExchangeBinding(From="marketmaker", To="ear", Key="#"),
         ExchangeBinding(
@@ -94,7 +96,9 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
             Key="*.*.supervisor.*.marketmaker.*",
         ),
         ExchangeBinding(
-            From="supervisor", To="supervisor", Key="*.*.supervisor*.supervisor.*"
+            From="supervisor",
+            To="supervisor",
+            Key="*.*.supervisor*.supervisor.*",
         ),
         ExchangeBinding(
             From="supervisor",
@@ -103,7 +107,9 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
         ),
         ExchangeBinding(From="world", To="ear", Key="#"),
         ExchangeBinding(
-            From="world", To="timecoordinator", Key="*.*.world.*.timecoordinator.*"
+            From="world",
+            To="timecoordinator",
+            Key="*.*.world.*.timecoordinator.*",
         ),
     ]
 
@@ -138,7 +144,10 @@ class GNodeStubRecorder(ActorBase):
             self.heartbeat_a_received(from_alias, from_role, payload)
 
     def heartbeat_a_received(
-        self, from_alias: str, from_role: GNodeRole, payload: HeartbeatA
+        self,
+        from_alias: str,
+        from_role: GNodeRole,
+        payload: HeartbeatA,
     ):
         if (
             from_alias == self.settings.my_super_alias
@@ -168,7 +177,10 @@ class SupervisorStubRecorder(GNodeStubRecorder):
         self.my_single_sub = subordinate_alias
 
     def heartbeat_a_received(
-        self, from_alias: str, from_role: GNodeRole, payload: HeartbeatA
+        self,
+        from_alias: str,
+        from_role: GNodeRole,
+        payload: HeartbeatA,
     ):
         """Used to test that a Supervisor gets a message from GNode"""
         if from_alias == self.my_single_sub:
@@ -181,8 +193,12 @@ class TimeCoordinatorStubRecorder(GNodeStubRecorder):
     def __init__(self, settings: GNodeSettings):
         self._time: int = int(
             datetime.datetime(
-                year=2020, month=1, day=1, hour=5, tzinfo=datetime.timezone.utc
-            ).timestamp()
+                year=2020,
+                month=1,
+                day=1,
+                hour=5,
+                tzinfo=datetime.timezone.utc,
+            ).timestamp(),
         )
         my_settings = copy.deepcopy(settings)
         my_settings.g_node_alias = "d1.time"

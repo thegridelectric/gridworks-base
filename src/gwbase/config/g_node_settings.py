@@ -37,13 +37,13 @@ class GNodeSettings(BaseSettings):
     my_super_alias: str = "d1.super1"
     g_node_role_value: str = "GNode"
     sk: SecretStr = SecretStr(
-        "3g+IYDCVM84Ady7a8fGImRkEZ77+a4e3i14ub0QMjM/JKlzB2GNdv0S+lqMsYgPiGbd7aAp5943X5NzvdQJohw=="
+        "3g+IYDCVM84Ady7a8fGImRkEZ77+a4e3i14ub0QMjM/JKlzB2GNdv0S+lqMsYgPiGbd7aAp5943X5NzvdQJohw==",
     )
     # Secret key for public Algorand adress ZEVFZQOYMNO36RF6S2RSYYQD4IM3O63IBJ47PDOX4TOO65ICNCDUF4HMLE
     universe_type_value: str = "Dev"
     my_time_coordinator_alias: str = "d1.time"
     initial_time_unix_s: int = int(
-        datetime.datetime(2020, 1, 1, 4, 20, tzinfo=datetime.timezone.utc).timestamp()
+        datetime.datetime(2020, 1, 1, 4, 20, tzinfo=datetime.timezone.utc).timestamp(),
     )
 
     log_level: str = "INFO"
@@ -77,7 +77,8 @@ class GNodeSettings(BaseSettings):
             raise ValueError("g_node_role_value must belong to GNodeRole.values()")
         check_g_node_alias(alias=self.g_node_alias, universe_type=universe_type)
         check_g_node_alias(
-            alias=self.my_time_coordinator_alias, universe_type=universe_type
+            alias=self.my_time_coordinator_alias,
+            universe_type=universe_type,
         )
         check_g_node_alias(alias=self.my_super_alias, universe_type=universe_type)
         check_is_algo_secret_key_format(self.sk.get_secret_value())

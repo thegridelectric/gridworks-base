@@ -145,7 +145,7 @@ class GNodeGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeId failed UuidCanonicalTextual format validation: {e}"
+                f"GNodeId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -163,7 +163,7 @@ class GNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeRegistryAddr failed AlgoAddressStringFormat format validation: {e}"
+                f"GNodeRegistryAddr failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -185,7 +185,7 @@ class GNodeGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GpsPointId failed UuidCanonicalTextual format validation: {e}"
+                f"GpsPointId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -197,7 +197,7 @@ class GNodeGt(BaseModel):
             check_is_positive_integer(v)
         except ValueError as e:
             raise ValueError(
-                f"OwnershipDeedId failed PositiveInteger format validation: {e}"
+                f"OwnershipDeedId failed PositiveInteger format validation: {e}",
             )
         return v
 
@@ -209,7 +209,7 @@ class GNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"OwnershipDeedValidatorAddr failed AlgoAddressStringFormat format validation: {e}"
+                f"OwnershipDeedValidatorAddr failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -221,7 +221,7 @@ class GNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"OwnerAddr failed AlgoAddressStringFormat format validation: {e}"
+                f"OwnerAddr failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -233,7 +233,7 @@ class GNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"DaemonAddr failed AlgoAddressStringFormat format validation: {e}"
+                f"DaemonAddr failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -245,7 +245,7 @@ class GNodeGt(BaseModel):
             check_is_positive_integer(v)
         except ValueError as e:
             raise ValueError(
-                f"TradingRightsId failed PositiveInteger format validation: {e}"
+                f"TradingRightsId failed PositiveInteger format validation: {e}",
             )
         return v
 
@@ -257,7 +257,7 @@ class GNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"ScadaAlgoAddr failed AlgoAddressStringFormat format validation: {e}"
+                f"ScadaAlgoAddr failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -269,7 +269,7 @@ class GNodeGt(BaseModel):
             check_is_positive_integer(v)
         except ValueError as e:
             raise ValueError(
-                f"ScadaCertId failed PositiveInteger format validation: {e}"
+                f"ScadaCertId failed PositiveInteger format validation: {e}",
             )
         return v
 
@@ -281,7 +281,7 @@ class GNodeGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"ComponentId failed UuidCanonicalTextual format validation: {e}"
+                f"ComponentId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -395,7 +395,7 @@ class GNodeGt_Maker:
                 d2["Status"] = GNodeStatus(d2["Status"])
         else:
             raise GwTypeError(
-                f"both StatusGtEnumSymbol and Status missing from dict <{d2}>"
+                f"both StatusGtEnumSymbol and Status missing from dict <{d2}>",
             )
         if "RoleGtEnumSymbol" in d2.keys():
             value = GNodeRole.symbol_to_value(d2["RoleGtEnumSymbol"])
@@ -408,7 +408,7 @@ class GNodeGt_Maker:
                 d2["Role"] = GNodeRole(d2["Role"])
         else:
             raise GwTypeError(
-                f"both RoleGtEnumSymbol and Role missing from dict <{d2}>"
+                f"both RoleGtEnumSymbol and Role missing from dict <{d2}>",
             )
         if "GNodeRegistryAddr" not in d2.keys():
             raise GwTypeError(f"dict missing GNodeRegistryAddr: <{d2}>")
@@ -418,7 +418,7 @@ class GNodeGt_Maker:
             raise GwTypeError(f"Version missing from dict <{d2}>")
         if d2["Version"] != "002":
             LOGGER.debug(
-                f"Attempting to interpret g.node.gt version {d2['Version']} as version 002"
+                f"Attempting to interpret g.node.gt version {d2['Version']} as version 002",
             )
             d2["Version"] = "002"
         d3 = {pascal_to_snake(key): value for key, value in d2.items()}
@@ -523,7 +523,7 @@ def check_is_left_right_dot(v: str) -> None:
     first_char = first_word[0]
     if not first_char.isalpha():
         raise ValueError(
-            f"Most significant word of <{v}> must start with alphabet char."
+            f"Most significant word of <{v}> must start with alphabet char.",
         )
     for word in x:
         if not word.isalnum():

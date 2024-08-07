@@ -33,7 +33,9 @@ def test_actor_base():
 
     payload = HeartbeatA(my_hex="0", your_last_hex="0")
     gn.send_message(
-        payload=payload, to_role=GNodeRole.Supervisor, to_g_node_alias=su.alias
+        payload=payload,
+        to_role=GNodeRole.Supervisor,
+        to_g_node_alias=su.alias,
     )
 
     wait_for(lambda: su.messages_received > 0, 2, "supervisor received message")

@@ -43,7 +43,7 @@ class GNodeInstance:
         self.g_node: GNode = g_node
         if not isinstance(strategy, StrategyName):
             raise DcError(
-                f"strategy {strategy} must be StrategyName, got {type(strategy)}"
+                f"strategy {strategy} must be StrategyName, got {type(strategy)}",
             )
 
         self.strategy: StrategyName = strategy
@@ -181,5 +181,5 @@ class GNodeInstance:
     def children(self) -> List["GNodeInstance"]:
         """Returns the list of BaseGnodes identifying this node as parent"""
         return list(
-            filter(lambda x: x.parent() == self, GNodeInstance.by_alias.values())
+            filter(lambda x: x.parent() == self, GNodeInstance.by_alias.values()),
         )

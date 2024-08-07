@@ -76,7 +76,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeInstanceId failed UuidCanonicalTextual format validation: {e}"
+                f"GNodeInstanceId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -86,7 +86,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeId failed UuidCanonicalTextual format validation: {e}"
+                f"GNodeId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -96,7 +96,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"SupervisorContainerId failed UuidCanonicalTextual format validation: {e}"
+                f"SupervisorContainerId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -106,7 +106,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_reasonable_unix_time_s(v)
         except ValueError as e:
             raise ValueError(
-                f"StartTimeUnixS failed ReasonableUnixTimeS format validation: {e}"
+                f"StartTimeUnixS failed ReasonableUnixTimeS format validation: {e}",
             )
         return v
 
@@ -118,7 +118,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"AlgoAddress failed AlgoAddressStringFormat format validation: {e}"
+                f"AlgoAddress failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -232,7 +232,7 @@ class GNodeInstanceGt_Maker:
                 d2["Strategy"] = StrategyName(d2["Strategy"])
         else:
             raise GwTypeError(
-                f"both StrategyGtEnumSymbol and Strategy missing from dict <{d2}>"
+                f"both StrategyGtEnumSymbol and Strategy missing from dict <{d2}>",
             )
         if "StatusGtEnumSymbol" in d2.keys():
             value = GniStatus.symbol_to_value(d2["StatusGtEnumSymbol"])
@@ -245,7 +245,7 @@ class GNodeInstanceGt_Maker:
                 d2["Status"] = GniStatus(d2["Status"])
         else:
             raise GwTypeError(
-                f"both StatusGtEnumSymbol and Status missing from dict <{d2}>"
+                f"both StatusGtEnumSymbol and Status missing from dict <{d2}>",
             )
         if "SupervisorContainerId" not in d2.keys():
             raise GwTypeError(f"dict missing SupervisorContainerId: <{d2}>")
@@ -259,7 +259,7 @@ class GNodeInstanceGt_Maker:
             raise GwTypeError(f"Version missing from dict <{d2}>")
         if d2["Version"] != "000":
             LOGGER.debug(
-                f"Attempting to interpret g.node.instance.gt version {d2['Version']} as version 000"
+                f"Attempting to interpret g.node.instance.gt version {d2['Version']} as version 000",
             )
             d2["Version"] = "000"
         d3 = {pascal_to_snake(key): value for key, value in d2.items()}

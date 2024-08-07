@@ -16,7 +16,7 @@ class HelloGNode(ActorBase):
 
 def demo():
     input(
-        "Go to http://0.0.0.0:15672/#/queues/d1__1/dummy_ear_q and purge the messages from the dummy ear queue"
+        "Go to http://0.0.0.0:15672/#/queues/d1__1/dummy_ear_q and purge the messages from the dummy ear queue",
     )
     settings = GNodeSettings()
 
@@ -27,7 +27,7 @@ def demo():
     gn.start()
 
     input(
-        "Go to http://0.0.0.0:15672/#/queues and wait for the d1.hello-Fxxxx queue to appear."
+        "Go to http://0.0.0.0:15672/#/queues and wait for the d1.hello-Fxxxx queue to appear.",
     )
     assert gn.g_node_role == GNodeRole.GNode
     hb = HeartbeatA(my_hex=0, your_last_hex="a")

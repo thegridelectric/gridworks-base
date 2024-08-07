@@ -46,19 +46,23 @@ class HeartbeatA(BaseModel):
         alias_generator = snake_to_pascal
 
     @field_validator("my_hex")
+    @classmethod
     def _check_my_hex(cls, v: str) -> str:
         try:
             check_is_hex_char(v)
         except ValueError as e:
-            raise ValueError(f"MyHex failed HexChar format validation: {e}")
+            raise ValueError(f"MyHex failed HexChar format validation: {e}") from e
         return v
 
     @field_validator("your_last_hex")
+    @classmethod
     def _check_your_last_hex(cls, v: str) -> str:
         try:
             check_is_hex_char(v)
         except ValueError as e:
-            raise ValueError(f"YourLastHex failed HexChar format validation: {e}")
+            raise ValueError(
+                f"YourLastHex failed HexChar format validation: {e}"
+            ) from e
         return v
 
     def as_dict(self) -> Dict[str, Any]:
@@ -134,8 +138,8 @@ class HeartbeatA_Maker:
         """
         try:
             d = json.loads(b)
-        except TypeError:
-            raise GwTypeError("Type must be string or bytes!")
+        except TypeError as e:
+            raise GwTypeError("Type must be string or bytes!") from e
         if not isinstance(d, dict):
             raise GwTypeError(f"Deserializing  must result in dict!\n <{b}>")
         return cls.dict_to_tuple(d)
@@ -160,7 +164,7 @@ class HeartbeatA_Maker:
             raise GwTypeError(f"Version missing from dict <{d2}>")
         if d2["Version"] != "100":
             LOGGER.debug(
-                f"Attempting to interpret heartbeat.a version {d2['Version']} as version 100",
+                f"Attempting to interpret heartbeat.a version {d2['Version']} as version 100"
             )
             d2["Version"] = "100"
         d3 = {pascal_to_snake(key): value for key, value in d2.items()}

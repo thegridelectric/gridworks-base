@@ -58,43 +58,47 @@ class SupervisorContainerGt(BaseModel):
         alias_generator = snake_to_pascal
 
     @field_validator("supervisor_container_id")
+    @classmethod
     def _check_supervisor_container_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
                 f"SupervisorContainerId failed UuidCanonicalTextual format validation: {e}",
-            )
+            ) from e
         return v
 
     @field_validator("world_instance_name")
+    @classmethod
     def _check_world_instance_name(cls, v: str) -> str:
         try:
             check_is_world_instance_name_format(v)
         except ValueError as e:
             raise ValueError(
                 f"WorldInstanceName failed WorldInstanceNameFormat format validation: {e}",
-            )
+            ) from e
         return v
 
     @field_validator("supervisor_g_node_instance_id")
+    @classmethod
     def _check_supervisor_g_node_instance_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
                 f"SupervisorGNodeInstanceId failed UuidCanonicalTextual format validation: {e}",
-            )
+            ) from e
         return v
 
     @field_validator("supervisor_g_node_alias")
+    @classmethod
     def _check_supervisor_g_node_alias(cls, v: str) -> str:
         try:
             check_is_left_right_dot(v)
         except ValueError as e:
             raise ValueError(
                 f"SupervisorGNodeAlias failed LeftRightDot format validation: {e}",
-            )
+            ) from e
         return v
 
     def as_dict(self) -> Dict[str, Any]:
@@ -173,8 +177,8 @@ class SupervisorContainerGt_Maker:
         """
         try:
             d = json.loads(b)
-        except TypeError:
-            raise GwTypeError("Type must be string or bytes!")
+        except TypeError as e:
+            raise GwTypeError("Type must be string or bytes!") from e
         if not isinstance(d, dict):
             raise GwTypeError(f"Deserializing  must result in dict!\n <{b}>")
         return cls.dict_to_tuple(d)
@@ -216,7 +220,7 @@ class SupervisorContainerGt_Maker:
             raise GwTypeError(f"Version missing from dict <{d2}>")
         if d2["Version"] != "000":
             LOGGER.debug(
-                f"Attempting to interpret supervisor.container.gt version {d2['Version']} as version 000",
+                f"Attempting to interpret supervisor.container.gt version {d2['Version']} as version 000"
             )
             d2["Version"] = "000"
         d3 = {pascal_to_snake(key): value for key, value in d2.items()}
@@ -239,13 +243,13 @@ def check_is_left_right_dot(v: str) -> None:
 
     try:
         x: List[str] = v.split(".")
-    except:
-        raise ValueError(f"Failed to seperate <{v}> into words with split'.'")
+    except Exception as e:
+        raise ValueError(f"Failed to seperate <{v}> into words with split'.'") from e
     first_word = x[0]
     first_char = first_word[0]
     if not first_char.isalpha():
         raise ValueError(
-            f"Most significant word of <{v}> must start with alphabet char.",
+            f"Most significant word of <{v}> must start with alphabet char."
         )
     for word in x:
         if not word.isalnum():
@@ -269,14 +273,14 @@ def check_is_uuid_canonical_textual(v: str) -> None:
     try:
         x = v.split("-")
     except AttributeError as e:
-        raise ValueError(f"Failed to split on -: {e}")
+        raise ValueError(f"Failed to split on -: {e}") from e
     if len(x) != 5:
         raise ValueError(f"<{v}> split by '-' did not have 5 words")
     for hex_word in x:
         try:
             int(hex_word, 16)
-        except ValueError:
-            raise ValueError(f"Words of <{v}> are not all hex")
+        except ValueError as e:
+            raise ValueError(f"Words of <{v}> are not all hex") from e
     if len(x[0]) != 8:
         raise ValueError(f"<{v}> word lengths not 8-4-4-4-12")
     if len(x[1]) != 4:
@@ -304,14 +308,14 @@ def check_is_world_instance_name_format(v: str) -> None:
     """
     try:
         words = v.split("__")
-    except:
-        raise ValueError(f"<{v}> is not split by '__'")
+    except Exception as e:
+        raise ValueError(f"<{v}> is not split by '__'") from e
     if len(words) != 2:
         raise ValueError(f"<{v}> not 2 words separated by '__'")
     try:
         int(words[1])
-    except:
-        raise ValueError(f"<{v}> second word not an int")
+    except Exception as e:
+        raise ValueError(f"<{v}> second word not an int") from e
 
     root_g_node_alias = words[0]
     first_char = root_g_node_alias[0]

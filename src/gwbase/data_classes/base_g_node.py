@@ -358,7 +358,7 @@ class BaseGNode:
         roots = list(filter(lambda x: len(x.split(".")) == 1, aliases))
         if len(roots) > 1:
             raise DcError(
-                f"Joint Axiom 1: There is at most one root GNode. Already have {set(roots) -  {attributes['alias']} }",
+                f"Joint Axiom 1: There is at most one root GNode. Already have {set(roots) - {attributes['alias']}}",
             )
 
     @classmethod

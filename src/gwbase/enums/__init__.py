@@ -28,7 +28,7 @@ on these ideas:
   - [GridWorks Enums](https://gridwork-type-registry.readthedocs.io/en/latest/types.html)
   - [GridWorks Types](https://gridwork-type-registry.readthedocs.io/en/latest/types.html)
   - [ASLs](https://gridwork-type-registry.readthedocs.io/en/latest/asls.html)
- """
+"""
 
 from gwbase.enums.core_g_node_role import CoreGNodeRole
 from gwbase.enums.g_node_role import GNodeRole

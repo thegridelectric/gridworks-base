@@ -80,8 +80,6 @@ exclude = [
     ".github",
     "CodeGenerationTools",
     "for_docker",
-    "docs",
-    "for_docker",
     "rabbit",
     ".git",
     ".mypy_cache",

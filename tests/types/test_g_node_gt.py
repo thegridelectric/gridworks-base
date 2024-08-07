@@ -89,17 +89,17 @@ def test_g_node_gt_generated() -> None:
     # GwTypeError raised if missing a required attribute
     ######################################
 
-    d2 = dict(d)
+    d2 = d.copy()
     del d2["TypeName"]
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)
 
-    d2 = dict(d)
+    d2 = d.copy()
     del d2["GNodeId"]
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)
 
-    d2 = dict(d)
+    d2 = d.copy()
     del d2["Alias"]
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)
@@ -114,7 +114,7 @@ def test_g_node_gt_generated() -> None:
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)
 
-    d2 = dict(d)
+    d2 = d.copy()
     del d2["GNodeRegistryAddr"]
     with pytest.raises(GwTypeError):
         Maker.dict_to_tuple(d2)

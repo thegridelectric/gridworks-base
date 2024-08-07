@@ -14,8 +14,8 @@ class HeartbeatA001(BaseModel):
     YourLastHex are single character hexes - just that they are strings
     """
 
-    my_hex: str  #
-    your_last_hex: str  #
+    my_hex: str
+    your_last_hex: str
     type_name: Literal["heartbeat.a"] = "heartbeat.a"
     version: str = "001"
 

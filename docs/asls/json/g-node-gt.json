@@ -123,14 +123,15 @@
     }
   },
   "example": {
-    "GNodeId": "575f374f-8533-4733-baf7-91146c607445",
-    "Alias": "d1.isone.ver.keene",
-    "StatusGtEnumSymbol": "a2cfc2f7",
-    "RoleGtEnumSymbol": "234cfaa2",
-    "GNodeRegistryAddr": "MONSDN5MXG4VMIOHJNCJJBVASG7HEZQSCEIKJAPEPVI5ZJUMQGXQKSOAYU",
-    "TypeName": "g.node.gt",
-    "Version": "000"
-  },
+        "GNodeId": "575f374f-8533-4733-baf7-91146c607445",
+        "Alias": "d1.isone.ver.keene",
+        "StatusGtEnumSymbol": "a2cfc2f7",
+        "RoleGtEnumSymbol": "234cfaa2",
+        "GNodeRegistryAddr": "MONSDN5MXG4VMIOHJNCJJBVASG7HEZQSCEIKJAPEPVI5ZJUMQGXQKSOAYU",
+        "TypeName": "g.node.gt",
+        "Version": "000"
+    }
+,
   "formats": {
     "UuidCanonicalTextual": {
       "type": "string",

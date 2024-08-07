@@ -537,12 +537,11 @@ class BaseGNode:
                     "Update Axiom 6: If alias has changed, then new prev_alias "
                     "must equal original alias prior to the change.",
                 )
-        else:
-            if prev_alias != self.prev_alias:
-                raise DcError(
-                    "Update Axiom 6: If alias has NOT changed then new "
-                    "prev_alias must equal original prev_alias.",
-                )
+        elif prev_alias != self.prev_alias:
+            raise DcError(
+                "Update Axiom 6: If alias has NOT changed then new "
+                "prev_alias must equal original prev_alias.",
+            )
 
 
 def check_is_uuid_canonical_textual(v: str) -> None:

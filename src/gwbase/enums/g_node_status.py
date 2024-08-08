@@ -1,6 +1,5 @@
 from enum import auto
-from typing import List
-from typing import Optional
+from typing import List, Optional
 
 from gw.enums import GwStrEnum
 
@@ -65,7 +64,7 @@ class GNodeStatus(GwStrEnum):
         if value is None:
             return "100"
         if not isinstance(value, str):
-            raise ValueError(f"This method applies to strings, not enums")
+            raise ValueError("This method applies to strings, not enums")
         if value not in value_to_version.keys():
             raise ValueError(f"Unknown enum value: {value}")
         return value_to_version[value]

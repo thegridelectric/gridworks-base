@@ -2,25 +2,17 @@
 
 import json
 import logging
-from typing import Any
-from typing import Dict
-from typing import Literal
-from typing import Optional
+from typing import Any, Dict, Literal, Optional
 
+import algosdk
 import dotenv
 from gw.errors import GwTypeError
-from gw.utils import is_pascal_case
-from gw.utils import pascal_to_snake
-from gw.utils import snake_to_pascal
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic import field_validator
+from gw.utils import is_pascal_case, pascal_to_snake, snake_to_pascal
+from pydantic import BaseModel, Field, field_validator
 
 from gwbase.config import EnumSettings
 from gwbase.data_classes.g_node import GNode
-from gwbase.enums import GNodeRole
-from gwbase.enums import GNodeStatus
-
+from gwbase.enums import GNodeRole, GNodeStatus
 
 ENCODE_ENUMS = EnumSettings(_env_file=dotenv.find_dotenv()).encode
 
@@ -149,44 +141,51 @@ class GNodeGt(BaseModel):
         alias_generator = snake_to_pascal
 
     @field_validator("g_node_id")
+    @classmethod
     def _check_g_node_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeId failed UuidCanonicalTextual format validation: {e}"
-            )
+                f"GNodeId failed UuidCanonicalTextual format validation: {e}",
+            ) from e
         return v
 
     @field_validator("alias")
+    @classmethod
     def _check_alias(cls, v: str) -> str:
         try:
             check_is_left_right_dot(v)
         except ValueError as e:
-            raise ValueError(f"Alias failed LeftRightDot format validation: {e}")
+            raise ValueError(f"Alias failed LeftRightDot format validation: {e}") from e
         return v
 
     @field_validator("g_node_registry_addr")
+    @classmethod
     def _check_g_node_registry_addr(cls, v: str) -> str:
         try:
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeRegistryAddr failed AlgoAddressStringFormat format validation: {e}"
-            )
+                f"GNodeRegistryAddr failed AlgoAddressStringFormat format validation: {e}",
+            ) from e
         return v
 
     @field_validator("prev_alias")
+    @classmethod
     def _check_prev_alias(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
         try:
             check_is_left_right_dot(v)
         except ValueError as e:
-            raise ValueError(f"PrevAlias failed LeftRightDot format validation: {e}")
+            raise ValueError(
+                f"PrevAlias failed LeftRightDot format validation: {e}"
+            ) from e
         return v
 
     @field_validator("gps_point_id")
+    @classmethod
     def _check_gps_point_id(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -194,11 +193,12 @@ class GNodeGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GpsPointId failed UuidCanonicalTextual format validation: {e}"
-            )
+                f"GpsPointId failed UuidCanonicalTextual format validation: {e}",
+            ) from e
         return v
 
     @field_validator("ownership_deed_id")
+    @classmethod
     def _check_ownership_deed_id(cls, v: Optional[int]) -> Optional[int]:
         if v is None:
             return v
@@ -206,11 +206,12 @@ class GNodeGt(BaseModel):
             check_is_positive_integer(v)
         except ValueError as e:
             raise ValueError(
-                f"OwnershipDeedId failed PositiveInteger format validation: {e}"
-            )
+                f"OwnershipDeedId failed PositiveInteger format validation: {e}",
+            ) from e
         return v
 
     @field_validator("ownership_deed_validator_addr")
+    @classmethod
     def _check_ownership_deed_validator_addr(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -218,11 +219,12 @@ class GNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"OwnershipDeedValidatorAddr failed AlgoAddressStringFormat format validation: {e}"
-            )
+                f"OwnershipDeedValidatorAddr failed AlgoAddressStringFormat format validation: {e}",
+            ) from e
         return v
 
     @field_validator("owner_addr")
+    @classmethod
     def _check_owner_addr(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -230,11 +232,12 @@ class GNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"OwnerAddr failed AlgoAddressStringFormat format validation: {e}"
-            )
+                f"OwnerAddr failed AlgoAddressStringFormat format validation: {e}",
+            ) from e
         return v
 
     @field_validator("daemon_addr")
+    @classmethod
     def _check_daemon_addr(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -242,11 +245,12 @@ class GNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"DaemonAddr failed AlgoAddressStringFormat format validation: {e}"
-            )
+                f"DaemonAddr failed AlgoAddressStringFormat format validation: {e}",
+            ) from e
         return v
 
     @field_validator("trading_rights_id")
+    @classmethod
     def _check_trading_rights_id(cls, v: Optional[int]) -> Optional[int]:
         if v is None:
             return v
@@ -254,11 +258,12 @@ class GNodeGt(BaseModel):
             check_is_positive_integer(v)
         except ValueError as e:
             raise ValueError(
-                f"TradingRightsId failed PositiveInteger format validation: {e}"
-            )
+                f"TradingRightsId failed PositiveInteger format validation: {e}",
+            ) from e
         return v
 
     @field_validator("scada_algo_addr")
+    @classmethod
     def _check_scada_algo_addr(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -266,11 +271,12 @@ class GNodeGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"ScadaAlgoAddr failed AlgoAddressStringFormat format validation: {e}"
-            )
+                f"ScadaAlgoAddr failed AlgoAddressStringFormat format validation: {e}",
+            ) from e
         return v
 
     @field_validator("scada_cert_id")
+    @classmethod
     def _check_scada_cert_id(cls, v: Optional[int]) -> Optional[int]:
         if v is None:
             return v
@@ -278,11 +284,12 @@ class GNodeGt(BaseModel):
             check_is_positive_integer(v)
         except ValueError as e:
             raise ValueError(
-                f"ScadaCertId failed PositiveInteger format validation: {e}"
-            )
+                f"ScadaCertId failed PositiveInteger format validation: {e}",
+            ) from e
         return v
 
     @field_validator("component_id")
+    @classmethod
     def _check_component_id(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
@@ -290,8 +297,8 @@ class GNodeGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"ComponentId failed UuidCanonicalTextual format validation: {e}"
-            )
+                f"ComponentId failed UuidCanonicalTextual format validation: {e}",
+            ) from e
         return v
 
     def as_dict(self) -> Dict[str, Any]:
@@ -373,8 +380,8 @@ class GNodeGt_Maker:
         """
         try:
             d = json.loads(b)
-        except TypeError:
-            raise GwTypeError("Type must be string or bytes!")
+        except TypeError as e:
+            raise GwTypeError("Type must be string or bytes!") from e
         if not isinstance(d, dict):
             raise GwTypeError(f"Deserializing  must result in dict!\n <{b}>")
         return cls.dict_to_tuple(d)
@@ -404,7 +411,7 @@ class GNodeGt_Maker:
                 d2["Status"] = GNodeStatus(d2["Status"])
         else:
             raise GwTypeError(
-                f"both StatusGtEnumSymbol and Status missing from dict <{d2}>"
+                f"both StatusGtEnumSymbol and Status missing from dict <{d2}>",
             )
         if "RoleGtEnumSymbol" in d2.keys():
             value = GNodeRole.symbol_to_value(d2["RoleGtEnumSymbol"])
@@ -417,7 +424,7 @@ class GNodeGt_Maker:
                 d2["Role"] = GNodeRole(d2["Role"])
         else:
             raise GwTypeError(
-                f"both RoleGtEnumSymbol and Role missing from dict <{d2}>"
+                f"both RoleGtEnumSymbol and Role missing from dict <{d2}>",
             )
         if "GNodeRegistryAddr" not in d2.keys():
             raise GwTypeError(f"dict missing GNodeRegistryAddr: <{d2}>")
@@ -501,13 +508,12 @@ def check_is_algo_address_string_format(v: str) -> None:
     Raises:
         ValueError: if not AlgoAddressStringFormat format
     """
-    import algosdk
 
     at = algosdk.abi.AddressType()
     try:
-        result = at.decode(at.encode(v))
+        at.decode(at.encode(v))
     except Exception as e:
-        raise ValueError(f"Not AlgoAddressStringFormat: {e}")
+        raise ValueError(f"Not AlgoAddressStringFormat: {e}") from e
 
 
 def check_is_left_right_dot(v: str) -> None:
@@ -526,8 +532,8 @@ def check_is_left_right_dot(v: str) -> None:
 
     try:
         x: List[str] = v.split(".")
-    except:
-        raise ValueError(f"Failed to seperate <{v}> into words with split'.'")
+    except Exception as e:
+        raise ValueError(f"Failed to seperate <{v}> into words with split'.'") from e
     first_word = x[0]
     first_char = first_word[0]
     if not first_char.isalpha():
@@ -574,14 +580,14 @@ def check_is_uuid_canonical_textual(v: str) -> None:
     try:
         x = v.split("-")
     except AttributeError as e:
-        raise ValueError(f"Failed to split on -: {e}")
+        raise ValueError(f"Failed to split on -: {e}") from e
     if len(x) != 5:
         raise ValueError(f"<{v}> split by '-' did not have 5 words")
     for hex_word in x:
         try:
             int(hex_word, 16)
-        except ValueError:
-            raise ValueError(f"Words of <{v}> are not all hex")
+        except ValueError as e:
+            raise ValueError(f"Words of <{v}> are not all hex") from e
     if len(x[0]) != 8:
         raise ValueError(f"<{v}> word lengths not 8-4-4-4-12")
     if len(x[1]) != 4:

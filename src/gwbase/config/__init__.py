@@ -1,9 +1,10 @@
-""" Base GNodeSettings """
+"""Base GNodeSettings"""
 
-from gwbase.config.g_node_settings import EnumSettings
-from gwbase.config.g_node_settings import GNodeSettings
-from gwbase.config.g_node_settings import SupervisorSettings
-
+from gwbase.config.g_node_settings import (
+    EnumSettings,
+    GNodeSettings,
+    SupervisorSettings,
+)
 
 __all__ = [
     "EnumSettings",

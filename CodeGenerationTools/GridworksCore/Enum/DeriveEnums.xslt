@@ -179,7 +179,7 @@ class </xsl:text><xsl:value-of select="$enum-class-name"/>
         if value is None:
             return "</xsl:text><xsl:value-of select="$enum-version"/><xsl:text>"
         if not isinstance(value, str):
-            raise ValueError(f"This method applies to strings, not enums")
+            raise ValueError("This method applies to strings, not enums")
         if value not in value_to_version.keys():
             raise ValueError(f"Unknown enum value: {value}")
         return value_to_version[value]

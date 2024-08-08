@@ -11,10 +11,8 @@ from textwrap import dedent
 
 import nox  # noqa
 
-
 try:
-    from nox_poetry import Session
-    from nox_poetry import session
+    from nox_poetry import Session, session
 except ImportError:
     message = f"""\
     Nox failed to import the 'nox-poetry' package.
@@ -121,13 +119,7 @@ def precommit(session: Session) -> None:
         "--show-diff-on-failure",
     ]
     session.install(
-        "black",
-        # "flake8",
-        # "flake8-bandit",
-        # "flake8-bugbear",
-        # "flake8-docstrings",
-        # "flake8-rst-docstrings",
-        "isort",
+        "ruff",
         "pep8-naming",
         "pre-commit",
         "pre-commit-hooks",

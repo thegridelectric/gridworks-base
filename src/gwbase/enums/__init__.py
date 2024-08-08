@@ -28,7 +28,7 @@ on these ideas:
   - [GridWorks Enums](https://gridwork-type-registry.readthedocs.io/en/latest/types.html)
   - [GridWorks Types](https://gridwork-type-registry.readthedocs.io/en/latest/types.html)
   - [ASLs](https://gridwork-type-registry.readthedocs.io/en/latest/asls.html)
- """
+"""
 
 from gwbase.enums.core_g_node_role import CoreGNodeRole
 from gwbase.enums.g_node_role import GNodeRole
@@ -39,7 +39,6 @@ from gwbase.enums.message_category_symbol import MessageCategorySymbol
 from gwbase.enums.strategy_name import StrategyName
 from gwbase.enums.supervisor_container_status import SupervisorContainerStatus
 from gwbase.enums.universe_type import UniverseType
-
 
 __all__ = [
     "CoreGNodeRole",  # [core.g.node.role.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#coregnoderole)

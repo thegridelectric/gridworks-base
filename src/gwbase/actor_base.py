@@ -7,31 +7,20 @@ import threading
 import time
 import uuid
 from abc import ABC
-from abc import abstractmethod
 from enum import auto
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import no_type_check
+from typing import Dict, List, Optional, no_type_check
 
-import gw.utils as utils
 import pika
+from gw import utils
 from gw.enums import GwStrEnum
 from gw.errors import GwTypeError
 from pika.channel import Channel as PikaChannel
-from pika.spec import Basic
-from pika.spec import BasicProperties
+from pika.spec import Basic, BasicProperties
 
-import gwbase.codec as codec
+from gwbase import codec
 from gwbase.config import GNodeSettings
-from gwbase.enums import GNodeRole
-from gwbase.enums import MessageCategory
-from gwbase.enums import MessageCategorySymbol
-from gwbase.enums import UniverseType
-from gwbase.types import HeartbeatA
-from gwbase.types import HeartbeatA_Maker
-from gwbase.types import SimTimestep
-from gwbase.types import SimTimestep_Maker
+from gwbase.enums import GNodeRole, MessageCategory, MessageCategorySymbol, UniverseType
+from gwbase.types import HeartbeatA, HeartbeatA_Maker, SimTimestep, SimTimestep_Maker
 
 
 class RabbitRole(GwStrEnum):
@@ -102,6 +91,7 @@ LOGGER.setLevel(logging.INFO)
 
 class ActorBase(ABC):
     "This is the base class for GNodes, used to communicate via RabbitMQ"
+
     _url: str
 
     SHUTDOWN_INTERVAL: float = 0.1
@@ -146,10 +136,10 @@ class ActorBase(ABC):
 
         self.is_debug_mode: bool = False
         self.consuming_thread: threading.Thread = threading.Thread(
-            target=self.run_reconnecting_consumer
+            target=self.run_reconnecting_consumer,
         )
         self.publishing_thread: threading.Thread = threading.Thread(
-            target=self.run_publisher
+            target=self.run_publisher,
         )
         self._publish_connection: Optional[
             pika.adapters.select_connection.SelectConnection
@@ -167,9 +157,6 @@ class ActorBase(ABC):
 
     def stop(self) -> None:
         self.shutting_down = True
-        self.prepare_for_death()
-        while self._main_loop_running:
-            time.sleep(self.SHUTDOWN_INTERVAL)
         # self.stop_publisher()
         self.stop_consumer()
         self.local_stop()
@@ -190,19 +177,17 @@ class ActorBase(ABC):
         self.start_consuming()"""
         pass
 
-    @abstractmethod
-    def prepare_for_death(self) -> None:
-        """Use _main_loop_running to exit out of any threads in the derived class. Then
-        use local_stop to join those threads.
-
-        If there are no threads in the derived class, copy this method into the derived
-        class, get rid of the abstractmethod decorator, and delete the exception"""
-        self._main_loop_running = False
-        raise NotImplementedError
-
     def local_stop(self) -> None:
         """Join any threads in the derived class."""
         self._main_loop_running = False
+
+    @property
+    def main_loop_running(self) -> bool:
+        return self._main_loop_running
+
+    @property
+    def consuming(self) -> bool:
+        return self._consuming
 
     def __repr__(self) -> str:
         return f"{self.alias}"
@@ -239,8 +224,7 @@ class ActorBase(ABC):
             self._reconnect_delay = 0
         else:
             self._reconnect_delay += 1
-        if self._reconnect_delay > 30:
-            self._reconnect_delay = 30
+        self._reconnect_delay = min(self._reconnect_delay, 30)
         return self._reconnect_delay
 
     def connect_consumer(self) -> pika.SelectConnection:
@@ -268,7 +252,8 @@ class ActorBase(ABC):
                 self._consume_connection.close()
 
     def on_consumer_connection_open(
-        self, _unused_connection: pika.SelectConnection
+        self,
+        _unused_connection: pika.SelectConnection,
     ) -> None:
         """This method is called by pika once the connection to RabbitMQ has
         been established. It passes the handle to the connection object in
@@ -279,7 +264,9 @@ class ActorBase(ABC):
         self.open_single_channel()
 
     def on_consumer_connection_open_error(
-        self, _unused_connection: pika.SelectConnection, err: Exception
+        self,
+        _unused_connection: pika.SelectConnection,
+        err: Exception,
     ) -> None:
         """This method is called by pika if the connection to RabbitMQ
         can't be established.
@@ -290,7 +277,9 @@ class ActorBase(ABC):
         self.reconnect_consumer()
 
     def on_consumer_connection_closed(
-        self, _unused_connection: pika.SelectConnection, reason: Exception
+        self,
+        _unused_connection: pika.SelectConnection,
+        reason: Exception,
     ) -> None:
         """This method is invoked by pika when the connection to RabbitMQ is
         closed unexpectedly. Since it is unexpected, we will reconnect to
@@ -348,7 +337,9 @@ class ActorBase(ABC):
 
     @no_type_check
     def on_consumer_channel_closed(
-        self, channel: PikaChannel, reason: Exception
+        self,
+        channel: PikaChannel,
+        reason: Exception,
     ) -> None:
         """Invoked by pika when the RabbitMQ channel is unexpectedly closed.
 
@@ -376,7 +367,8 @@ class ActorBase(ABC):
         # Note: using functools.partial is not required, it is demonstrating
         # how arbitrary data can be passed to the callback when it is called
         cb = functools.partial(
-            self.on_exchange_declareok, userdata=self._consume_exchange
+            self.on_exchange_declareok,
+            userdata=self._consume_exchange,
         )
         self._single_channel.exchange_declare(
             exchange=self._consume_exchange,
@@ -406,7 +398,9 @@ class ActorBase(ABC):
         LOGGER.info(f"Declaring queue {self.queue_name}")
         cb = functools.partial(self.on_queue_declareok)
         self._single_channel.queue_declare(
-            queue=self.queue_name, auto_delete=True, callback=cb
+            queue=self.queue_name,
+            auto_delete=True,
+            callback=cb,
         )
 
     @no_type_check
@@ -430,7 +424,8 @@ class ActorBase(ABC):
             direct_message_to_me_binding,
         )
         cb = functools.partial(
-            self.on_direct_message_bindok, binding=direct_message_to_me_binding
+            self.on_direct_message_bindok,
+            binding=direct_message_to_me_binding,
         )
         self._single_channel.queue_bind(
             self.queue_name,
@@ -457,7 +452,8 @@ class ActorBase(ABC):
         with different prefetch values to achieve desired performance.
         """
         self._single_channel.basic_qos(
-            prefetch_count=self._prefetch_count, callback=self.on_basic_qos_ok
+            prefetch_count=self._prefetch_count,
+            callback=self.on_basic_qos_ok,
         )
 
     @no_type_check
@@ -483,7 +479,8 @@ class ActorBase(ABC):
         LOGGER.info("Start consuming")
         self.add_on_cancel_consumer_callback()
         self._consumer_tag = self._single_channel.basic_consume(
-            self.queue_name, self.on_message
+            self.queue_name,
+            self.on_message,
         )
         self.was_consuming = True
         self._consuming = True
@@ -525,7 +522,8 @@ class ActorBase(ABC):
         if self._single_channel:
             LOGGER.info("Sending a Basic.Cancel RPC command to RabbitMQ")
             cb = functools.partial(
-                self.on_cancelconsumer_ok, userdata=self._consumer_tag
+                self.on_cancelconsumer_ok,
+                userdata=self._consumer_tag,
             )
             self._single_channel.basic_cancel(self._consumer_tag, cb)  # type: ignore[arg-type]
 
@@ -540,7 +538,8 @@ class ActorBase(ABC):
         """
         self._consuming = False
         LOGGER.info(
-            "RabbitMQ acknowledged the cancellation of the consumer: %s", userdata
+            "RabbitMQ acknowledged the cancellation of the consumer: %s",
+            userdata,
         )
         self.close_consumer_channel()
         self._closing_consumer = False
@@ -615,7 +614,8 @@ class ActorBase(ABC):
         """
         LOGGER.error("Producer connection open failed, reopening in 1 second: %s", err)
         self._publish_connection.ioloop.call_later(
-            1, self._publish_connection.ioloop.stop
+            1,
+            self._publish_connection.ioloop.stop,
         )
 
     @no_type_check
@@ -633,7 +633,8 @@ class ActorBase(ABC):
         else:
             LOGGER.warning("Connection closed, reopening in 1 second: %s", reason)
             self._publish_connection.ioloop.call_later(
-                1, self._publish_connection.ioloop.stop
+                1,
+                self._publish_connection.ioloop.stop,
             )
 
     def open_publish_channel(self) -> None:
@@ -669,7 +670,9 @@ class ActorBase(ABC):
 
     @no_type_check
     def on_publish_channel_closed(
-        self, channel: PikaChannel, reason: Exception
+        self,
+        channel: PikaChannel,
+        reason: Exception,
     ) -> None:
         """Invoked by pika when the RabbitMQ channel is unexpectedly closed.
 
@@ -715,7 +718,7 @@ class ActorBase(ABC):
         disconnect from RabbitMQ.
         """
         LOGGER.info(
-            "Stopping RabbitMq message production - closing channel and connection"
+            "Stopping RabbitMq message production - closing channel and connection",
         )
         self._stopping = True
         self.close_publish_channel()
@@ -774,11 +777,13 @@ class ActorBase(ABC):
             )
         except GwTypeError as e:
             LOGGER.info(f"Could not figure out TypeName: {e}")
-            raise GwTypeError(f"{e}")
+            raise GwTypeError(f"{e}") from e
         return type_name
 
     def broadcast_routing_key(
-        self, payload: HeartbeatA, radio_channel: Optional[str]
+        self,
+        payload: HeartbeatA,
+        radio_channel: Optional[str],
     ) -> str:
         msg_type = MessageCategorySymbol.rjb.value
         from_alias_lrh = self.alias.replace(".", "-")
@@ -792,7 +797,7 @@ class ActorBase(ABC):
 
     def scada_routing_key(self, payload: HeartbeatA, to_g_node_alias: str) -> str:
         if self.g_node_role != GNodeRole.AtomicTNode:
-            raise Exception(f"Only send messages to SCADA if role is AtomicTNode!")
+            raise Exception("Only send messages to SCADA if role is AtomicTNode!")
         msg_type = MessageCategorySymbol.gw.value
         from_alias_lrh = self.alias.replace(".", "-")
         type_name_lrh = payload.type_name.replace(".", "-")
@@ -801,7 +806,10 @@ class ActorBase(ABC):
         return scada_routing_key
 
     def direct_routing_key(
-        self, to_role: GNodeRole, payload: HeartbeatA, to_g_node_alias: str
+        self,
+        to_role: GNodeRole,
+        payload: HeartbeatA,
+        to_g_node_alias: str,
     ) -> str:
         msg_type = MessageCategorySymbol.rj.value
         from_lrh_alias = self.alias.replace(".", "-")
@@ -830,13 +838,13 @@ class ActorBase(ABC):
 
         try:
             msg_category_symbol = MessageCategorySymbol(msg_category_symbol_value)
-        except ValueError:
+        except ValueError as e:
             self._latest_on_message_diagnostic = (
                 OnReceiveMessageDiagnostic.UNKNOWN_MESSAGE_CATEGORY_SYMBOL
             )
             raise GwTypeError(
-                f"First  word of {routing_key} not a known MessageCategorySymbol!"
-            )
+                f"First  word of {routing_key} not a known MessageCategorySymbol!",
+            ) from e
         msg_category = utils.message_category_from_symbol(msg_category_symbol)
         allowable_categories = [
             MessageCategory.RabbitJsonDirect,
@@ -848,7 +856,7 @@ class ActorBase(ABC):
                 OnReceiveMessageDiagnostic.UNHANDLED_ROUTING_KEY_TYPE
             )
             raise GwTypeError(
-                f"Rabbit messages do not handle {msg_category_symbol.value}"
+                f"Rabbit messages do not handle {msg_category_symbol.value}",
             )
         return msg_category
 
@@ -879,7 +887,7 @@ class ActorBase(ABC):
                 OnReceiveMessageDiagnostic.TYPE_NAME_DECODING_PROBLEM
             )
             raise GwTypeError(
-                f"TypeName {type_name_lrh} in {routing_key} message not lrh_alias_format!"
+                f"TypeName {type_name_lrh} in {routing_key} message not lrh_alias_format!",
             )
         type_name = type_name_lrh.replace("-", ".")
         return type_name
@@ -894,12 +902,12 @@ class ActorBase(ABC):
         routing_key_words = routing_key.split(".")
         try:
             from_g_node_alias_lrh = routing_key_words[1]
-        except:
-            raise GwTypeError(f"{routing_key} must have at least two words!")
+        except Exception as e:
+            raise GwTypeError(f"{routing_key} must have at least two words!") from e
 
         if not is_lrh_alias_format(from_g_node_alias_lrh):
             raise GwTypeError(
-                f"GNodeAlias not is_lrh_alias_format for routing key {routing_key}!"
+                f"GNodeAlias not is_lrh_alias_format for routing key {routing_key}!",
             )
         from_g_node_alias = from_g_node_alias_lrh.replace("-", ".")
         return from_g_node_alias
@@ -920,20 +928,20 @@ class ActorBase(ABC):
         msg_category = self.message_category_from_routing_key(routing_key)
         if msg_category == MessageCategory.MqttJsonBroadcast:
             raise Exception(
-                "MqttJsonBroadcast does not contain FromRole in routing key"
+                "MqttJsonBroadcast does not contain FromRole in routing key",
             )
         routing_key_words = routing_key.split(".")
         try:
             from_g_node_rabbit_role = routing_key_words[2]
-        except:
-            raise GwTypeError(f"{routing_key} must have at least three words!")
+        except Exception as e:
+            raise GwTypeError(f"{routing_key} must have at least three words!") from e
         try:
             rabbit_role = RabbitRole(from_g_node_rabbit_role)
-        except ValueError:
+        except ValueError as e:
             raise GwTypeError(
                 f"Unknown short alias {from_g_node_rabbit_role} in {routing_key}"
-                f" Must belong to {RabbitRole}"
-            )
+                f" Must belong to {RabbitRole}",
+            ) from e
 
         return RoleByRabbitRole[rabbit_role]
 
@@ -985,10 +993,10 @@ class ActorBase(ABC):
                 raise Exception("Must include to_role for a direct message")
             try:
                 check_is_left_right_dot(to_g_node_alias)
-            except:
+            except Exception as e:
                 raise Exception(
-                    f"to_g_node_alias must have LrdAliasFormat. Got {to_g_node_alias}"
-                )
+                    f"to_g_node_alias must have LrdAliasFormat. Got {to_g_node_alias}",
+                ) from e
             routing_key = self.direct_routing_key(
                 to_role=to_role,
                 payload=payload,
@@ -996,11 +1004,13 @@ class ActorBase(ABC):
             )
         elif message_category == MessageCategory.RabbitJsonBroadcast:
             routing_key = self.broadcast_routing_key(
-                payload=payload, radio_channel=radio_channel
+                payload=payload,
+                radio_channel=radio_channel,
             )
         elif message_category == MessageCategory.MqttJsonBroadcast:
             routing_key = self.scada_routing_key(
-                payload=payload, to_g_node_alias=to_g_node_alias
+                payload=payload,
+                to_g_node_alias=to_g_node_alias,
             )
             publish_exchange = "amq.topic"
         else:
@@ -1077,7 +1087,7 @@ class ActorBase(ABC):
         self.latest_routing_key = basic_deliver.routing_key
 
         LOGGER.debug(
-            f"{self.alias}: Got {basic_deliver.routing_key} with delivery tag {basic_deliver.delivery_tag}"
+            f"{self.alias}: Got {basic_deliver.routing_key} with delivery tag {basic_deliver.delivery_tag}",
         )
         self.acknowledge_message(basic_deliver.delivery_tag)
         try:
@@ -1090,15 +1100,15 @@ class ActorBase(ABC):
                 OnReceiveMessageDiagnostic.UNKNOWN_TYPE_NAME
             )
             LOGGER.warning(
-                f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {type_name}"
+                f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {type_name}",
             )
             return
 
         try:
             payload = codec.deserializer(body)
-        except Exception as e:
+        except Exception:
             LOGGER.warning(
-                f"TypeName for incoming message claimed to be {type_name}, but was not true!"
+                f"TypeName for incoming message claimed to be {type_name}, but was not true!",
             )
             return
 
@@ -1111,7 +1121,7 @@ class ActorBase(ABC):
                 OnReceiveMessageDiagnostic.FROM_GNODE_DECODING_PROBLEM
             )
             LOGGER.warning(
-                f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {e}"
+                f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {e}",
             )
             return
         if msg_category == MessageCategory.MqttJsonBroadcast:
@@ -1124,7 +1134,7 @@ class ActorBase(ABC):
                 OnReceiveMessageDiagnostic.FROM_GNODE_DECODING_PROBLEM
             )
             LOGGER.warning(
-                f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {e}"
+                f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {e}",
             )
             return
 
@@ -1142,7 +1152,10 @@ class ActorBase(ABC):
     ########################
 
     def route_message(
-        self, from_alias: str, from_role: GNodeRole, payload: SimTimestep
+        self,
+        from_alias: str,
+        from_role: GNodeRole,
+        payload: SimTimestep,
     ) -> None:
         """
         Base class for message routing in GNode Actors, handling interactions
@@ -1157,13 +1170,13 @@ class ActorBase(ABC):
             if from_role != GNodeRole.Supervisor:
                 LOGGER.info(
                     f"Ignoring HeartbeatA from GNode {from_alias} with GNodeRole {from_role}; expects"
-                    f"Supervisor as the GNodeRole"
+                    f"Supervisor as the GNodeRole",
                 )
                 return
             elif from_alias != self.settings.my_super_alias:
                 LOGGER.info(
                     f"Ignoring HeartbeatA from supervisor {from_alias}; "
-                    f"my supervisor is {self.settings.my_super_alias}"
+                    f"my supervisor is {self.settings.my_super_alias}",
                 )
                 return
 
@@ -1174,7 +1187,7 @@ class ActorBase(ABC):
         elif payload.type_name == SimTimestep_Maker.type_name:
             try:
                 self.timestep_from_timecoordinator(payload)
-            except:
+            except:  # noqa
                 LOGGER.exception("Error in timestep_from_timecoordinator")
 
     def route_mqtt_message(self, from_alias: str, payload: HeartbeatA) -> None:
@@ -1213,10 +1226,11 @@ class ActorBase(ABC):
             raise ValueError(
                 f"from_alias {from_alias} does not match my supervisor"
                 f" {self.settings.my_super_alias}. This message should"
-                f"have been filtered out in the route_message method."
+                f"have been filtered out in the route_message method.",
             )
         pong = HeartbeatA_Maker(
-            my_hex=str(random.choice("0123456789abcdef")), your_last_hex=ping.MyHex
+            my_hex=str(random.choice("0123456789abcdef")),
+            your_last_hex=ping.MyHex,
         ).tuple
 
         self.send_message(
@@ -1226,7 +1240,7 @@ class ActorBase(ABC):
         )
 
         LOGGER.debug(
-            f"[{self.alias}] Sent HB: SuHex {pong.YourLastHex}, AtnHex {pong.MyHex}"
+            f"[{self.alias}] Sent HB: SuHex {pong.YourLastHex}, AtnHex {pong.MyHex}",
         )
 
     ########################
@@ -1279,17 +1293,15 @@ def check_is_left_right_dot(v: str) -> None:
     Raises:
         ValueError: if v is not LeftRightDot format
     """
-    from typing import List
-
     try:
         x: List[str] = v.split(".")
-    except:
-        raise ValueError(f"Failed to seperate <{v}> into words with split'.'")
+    except Exception as e:
+        raise ValueError(f"Failed to seperate <{v}> into words with split'.'") from e
     first_word = x[0]
     first_char = first_word[0]
     if not first_char.isalpha():
         raise ValueError(
-            f"Most significant word of <{v}> must start with alphabet char."
+            f"Most significant word of <{v}> must start with alphabet char.",
         )
     for word in x:
         if not word.isalnum():
@@ -1306,7 +1318,7 @@ def is_lrh_alias_format(candidate: str) -> bool:
     an alphabet charecter"""
     try:
         x = candidate.split("-")
-    except:
+    except:  # noqa
         return False
     first_word = x[0]
     first_char = first_word[0]

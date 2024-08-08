@@ -1,17 +1,11 @@
 import logging
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Dict, List, Optional
 
 from gw.errors import DcError
 
 from gwbase.data_classes.g_node import GNode
 from gwbase.data_classes.gps_point import GpsPoint
-from gwbase.enums import GniStatus
-from gwbase.enums import GNodeRole
-from gwbase.enums import GNodeStatus
-from gwbase.enums import StrategyName
-
+from gwbase.enums import GniStatus, GNodeRole, GNodeStatus, StrategyName
 
 LOG_FORMAT = (
     "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "
@@ -49,7 +43,7 @@ class GNodeInstance:
         self.g_node: GNode = g_node
         if not isinstance(strategy, StrategyName):
             raise DcError(
-                f"strategy {strategy} must be StrategyName, got {type(strategy)}"
+                f"strategy {strategy} must be StrategyName, got {type(strategy)}",
             )
 
         self.strategy: StrategyName = strategy
@@ -187,5 +181,5 @@ class GNodeInstance:
     def children(self) -> List["GNodeInstance"]:
         """Returns the list of BaseGnodes identifying this node as parent"""
         return list(
-            filter(lambda x: x.parent() == self, GNodeInstance.by_alias.values())
+            filter(lambda x: x.parent() == self, GNodeInstance.by_alias.values()),
         )

@@ -11,7 +11,7 @@ def check_is_algo_secret_key_format(v: str) -> None:
             f"Not Algorand Secret Key format! Generate one by: \n"
             f"import algosdk\n"
             "private_key, address = algosdk.account.generate_account()\n"
-            f"incorrect sk: {v}"
+            f"incorrect sk: {v}",
         ) from e
 
 
@@ -47,8 +47,7 @@ def check_is_reasonable_unix_time_s(v: int) -> None:
     Raises:
         ValueError: if not ReasonableUnixTimeS format
     """
-    from datetime import datetime
-    from datetime import timezone
+    from datetime import datetime, timezone
 
     start_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
     end_date = datetime(3000, 1, 1, tzinfo=timezone.utc)
@@ -68,15 +67,15 @@ def check_g_node_alias(alias: str, universe_type: UniverseType) -> None:
     if universe_type == UniverseType.Dev:
         if not first_word.startswith("d"):
             raise ValueError(
-                f"Bad alias {alias} ... Dev universe GNode alias must start with d."
+                f"Bad alias {alias} ... Dev universe GNode alias must start with d.",
             )
     elif universe_type == UniverseType.Hybrid:
         if not first_word.startswith("h"):
             raise ValueError(
-                f"Bad alias {alias} ... Hybrid universe GNode alias must start with h."
+                f"Bad alias {alias} ... Hybrid universe GNode alias must start with h.",
             )
     elif universe_type == UniverseType.Production:
         if not first_word == "w":
             raise ValueError(
-                f"Bad alias {alias} ... Production universe GNode alias must have w as first word."
+                f"Bad alias {alias} ... Production universe GNode alias must have w as first word.",
             )

@@ -2,21 +2,14 @@
 
 import json
 import logging
-from typing import Any
-from typing import Dict
-from typing import Literal
+from typing import Any, Dict, Literal
 
 import dotenv
 from gw.errors import GwTypeError
-from gw.utils import is_pascal_case
-from gw.utils import pascal_to_snake
-from gw.utils import snake_to_pascal
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic import field_validator
+from gw.utils import is_pascal_case, pascal_to_snake, snake_to_pascal
+from pydantic import BaseModel, Field, field_validator
 
 from gwbase.config import EnumSettings
-
 
 ENCODE_ENUMS = EnumSettings(_env_file=dotenv.find_dotenv()).encode
 
@@ -58,53 +51,58 @@ class SimTimestep(BaseModel):
         alias_generator = snake_to_pascal
 
     @field_validator("from_g_node_alias")
+    @classmethod
     def _check_from_g_node_alias(cls, v: str) -> str:
         try:
             check_is_left_right_dot(v)
         except ValueError as e:
             raise ValueError(
-                f"FromGNodeAlias failed LeftRightDot format validation: {e}"
-            )
+                f"FromGNodeAlias failed LeftRightDot format validation: {e}",
+            ) from e
         return v
 
     @field_validator("from_g_node_instance_id")
+    @classmethod
     def _check_from_g_node_instance_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"FromGNodeInstanceId failed UuidCanonicalTextual format validation: {e}"
-            )
+                f"FromGNodeInstanceId failed UuidCanonicalTextual format validation: {e}",
+            ) from e
         return v
 
     @field_validator("time_unix_s")
+    @classmethod
     def _check_time_unix_s(cls, v: int) -> int:
         try:
             check_is_reasonable_unix_time_s(v)
         except ValueError as e:
             raise ValueError(
-                f"TimeUnixS failed ReasonableUnixTimeS format validation: {e}"
-            )
+                f"TimeUnixS failed ReasonableUnixTimeS format validation: {e}",
+            ) from e
         return v
 
     @field_validator("timestep_created_ms")
+    @classmethod
     def _check_timestep_created_ms(cls, v: int) -> int:
         try:
             check_is_reasonable_unix_time_ms(v)
         except ValueError as e:
             raise ValueError(
-                f"TimestepCreatedMs failed ReasonableUnixTimeMs format validation: {e}"
-            )
+                f"TimestepCreatedMs failed ReasonableUnixTimeMs format validation: {e}",
+            ) from e
         return v
 
     @field_validator("message_id")
+    @classmethod
     def _check_message_id(cls, v: str) -> str:
         try:
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"MessageId failed UuidCanonicalTextual format validation: {e}"
-            )
+                f"MessageId failed UuidCanonicalTextual format validation: {e}",
+            ) from e
         return v
 
     def as_dict(self) -> Dict[str, Any]:
@@ -180,8 +178,8 @@ class SimTimestep_Maker:
         """
         try:
             d = json.loads(b)
-        except TypeError:
-            raise GwTypeError("Type must be string or bytes!")
+        except TypeError as e:
+            raise GwTypeError("Type must be string or bytes!") from e
         if not isinstance(d, dict):
             raise GwTypeError(f"Deserializing  must result in dict!\n <{b}>")
         return cls.dict_to_tuple(d)
@@ -235,8 +233,8 @@ def check_is_left_right_dot(v: str) -> None:
 
     try:
         x: List[str] = v.split(".")
-    except:
-        raise ValueError(f"Failed to seperate <{v}> into words with split'.'")
+    except Exception as e:
+        raise ValueError(f"Failed to seperate <{v}> into words with split'.'") from e
     first_word = x[0]
     first_char = first_word[0]
     if not first_char.isalpha():
@@ -261,8 +259,7 @@ def check_is_reasonable_unix_time_ms(v: int) -> None:
     Raises:
         ValueError: if v is not ReasonableUnixTimeMs format
     """
-    from datetime import datetime
-    from datetime import timezone
+    from datetime import datetime, timezone
 
     start_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
     end_date = datetime(3000, 1, 1, tzinfo=timezone.utc)
@@ -287,8 +284,7 @@ def check_is_reasonable_unix_time_s(v: int) -> None:
     Raises:
         ValueError: if v is not ReasonableUnixTimeS format
     """
-    from datetime import datetime
-    from datetime import timezone
+    from datetime import datetime, timezone
 
     start_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
     end_date = datetime(3000, 1, 1, tzinfo=timezone.utc)
@@ -317,14 +313,14 @@ def check_is_uuid_canonical_textual(v: str) -> None:
     try:
         x = v.split("-")
     except AttributeError as e:
-        raise ValueError(f"Failed to split on -: {e}")
+        raise ValueError(f"Failed to split on -: {e}") from e
     if len(x) != 5:
         raise ValueError(f"<{v}> split by '-' did not have 5 words")
     for hex_word in x:
         try:
             int(hex_word, 16)
-        except ValueError:
-            raise ValueError(f"Words of <{v}> are not all hex")
+        except ValueError as e:
+            raise ValueError(f"Words of <{v}> are not all hex") from e
     if len(x[0]) != 8:
         raise ValueError(f"<{v}> word lengths not 8-4-4-4-12")
     if len(x[1]) != 4:

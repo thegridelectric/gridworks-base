@@ -2,27 +2,17 @@
 
 import json
 import logging
-from typing import Any
-from typing import Dict
-from typing import Literal
-from typing import Optional
+from typing import Any, Dict, Literal, Optional
 
 import dotenv
-from gw.errors import DcError
-from gw.errors import GwTypeError
-from gw.utils import is_pascal_case
-from gw.utils import pascal_to_snake
-from gw.utils import snake_to_pascal
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic import field_validator
+from gw.errors import DcError, GwTypeError
+from gw.utils import is_pascal_case, pascal_to_snake, snake_to_pascal
+from pydantic import BaseModel, Field, field_validator
 
 from gwbase.config import EnumSettings
 from gwbase.data_classes.g_node import GNode
 from gwbase.data_classes.g_node_instance import GNodeInstance
-from gwbase.enums import GniStatus
-from gwbase.enums import StrategyName
-
+from gwbase.enums import GniStatus, StrategyName
 
 ENCODE_ENUMS = EnumSettings(_env_file=dotenv.find_dotenv()).encode
 
@@ -86,7 +76,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeInstanceId failed UuidCanonicalTextual format validation: {e}"
+                f"GNodeInstanceId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -96,7 +86,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"GNodeId failed UuidCanonicalTextual format validation: {e}"
+                f"GNodeId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -106,7 +96,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_uuid_canonical_textual(v)
         except ValueError as e:
             raise ValueError(
-                f"SupervisorContainerId failed UuidCanonicalTextual format validation: {e}"
+                f"SupervisorContainerId failed UuidCanonicalTextual format validation: {e}",
             )
         return v
 
@@ -116,7 +106,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_reasonable_unix_time_s(v)
         except ValueError as e:
             raise ValueError(
-                f"StartTimeUnixS failed ReasonableUnixTimeS format validation: {e}"
+                f"StartTimeUnixS failed ReasonableUnixTimeS format validation: {e}",
             )
         return v
 
@@ -128,7 +118,7 @@ class GNodeInstanceGt(BaseModel):
             check_is_algo_address_string_format(v)
         except ValueError as e:
             raise ValueError(
-                f"AlgoAddress failed AlgoAddressStringFormat format validation: {e}"
+                f"AlgoAddress failed AlgoAddressStringFormat format validation: {e}",
             )
         return v
 
@@ -242,7 +232,7 @@ class GNodeInstanceGt_Maker:
                 d2["Strategy"] = StrategyName(d2["Strategy"])
         else:
             raise GwTypeError(
-                f"both StrategyGtEnumSymbol and Strategy missing from dict <{d2}>"
+                f"both StrategyGtEnumSymbol and Strategy missing from dict <{d2}>",
             )
         if "StatusGtEnumSymbol" in d2.keys():
             value = GniStatus.symbol_to_value(d2["StatusGtEnumSymbol"])
@@ -255,7 +245,7 @@ class GNodeInstanceGt_Maker:
                 d2["Status"] = GniStatus(d2["Status"])
         else:
             raise GwTypeError(
-                f"both StatusGtEnumSymbol and Status missing from dict <{d2}>"
+                f"both StatusGtEnumSymbol and Status missing from dict <{d2}>",
             )
         if "SupervisorContainerId" not in d2.keys():
             raise GwTypeError(f"dict missing SupervisorContainerId: <{d2}>")
@@ -269,7 +259,7 @@ class GNodeInstanceGt_Maker:
             raise GwTypeError(f"Version missing from dict <{d2}>")
         if d2["Version"] != "000":
             LOGGER.debug(
-                f"Attempting to interpret g.node.instance.gt version {d2['Version']} as version 000"
+                f"Attempting to interpret g.node.instance.gt version {d2['Version']} as version 000",
             )
             d2["Version"] = "000"
         d3 = {pascal_to_snake(key): value for key, value in d2.items()}
@@ -335,7 +325,7 @@ def check_is_algo_address_string_format(v: str) -> None:
 
     at = algosdk.abi.AddressType()
     try:
-        result = at.decode(at.encode(v))
+        at.decode(at.encode(v))
     except Exception as e:
         raise ValueError(f"Not AlgoAddressStringFormat: {e}")
 
@@ -351,8 +341,7 @@ def check_is_reasonable_unix_time_s(v: int) -> None:
     Raises:
         ValueError: if v is not ReasonableUnixTimeS format
     """
-    from datetime import datetime
-    from datetime import timezone
+    from datetime import datetime, timezone
 
     start_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
     end_date = datetime(3000, 1, 1, tzinfo=timezone.utc)

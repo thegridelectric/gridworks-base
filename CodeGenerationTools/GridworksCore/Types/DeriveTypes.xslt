@@ -58,21 +58,24 @@
 
 import json
 import logging
-from typing import Any
-from typing import Dict</xsl:text>
-<xsl:if test="count($airtable//TypeAttributes/TypeAttribute[(VersionedType = $versioned-type-id) and (IsList = 'true')])>0">
-<xsl:text>
-from typing import List</xsl:text>
+from typing import Any, Dict</xsl:text>
+	<xsl:if test="count($airtable//TypeAttributes/TypeAttribute[(VersionedType = $versioned-type-id) and (IsList = 'true')])>0">
+<xsl:text>, List</xsl:text>
 </xsl:if>
-<xsl:text>
-from typing import Literal</xsl:text>
+<xsl:text>, Literal</xsl:text>
 
 <xsl:if test="count($airtable//TypeAttributes/TypeAttribute[(VersionedType = $versioned-type-id) and not (IsRequired = 'true')]) > 0">
-<xsl:text>
-from typing import Optional</xsl:text>
+<xsl:text>, Optional</xsl:text>
 </xsl:if>
-<xsl:text>
 
+<xsl:if test="count(PropertyFormatsUsed)>0">
+<xsl:for-each select="$airtable//PropertyFormats/PropertyFormat[(normalize-space(Name) ='AlgoAddressStringFormat')  and (count(TypesThatUse[text()=$versioned-type-id])>0)]">
+<xsl:text>
+import algosdk</xsl:text>
+</xsl:for-each>
+</xsl:if>
+
+<xsl:text>
 import dotenv
 from gw.errors import GwTypeError
 from gw.utils import is_pascal_case
@@ -185,7 +188,7 @@ from gwbase.enums import </xsl:text>
 <xsl:text>
 
 
-ENCODE_ENUMS = GNodeSettings(_env_file=dotenv.find_dotenv()).encode_enums
+ENCODE_ENUMS = EnumSettings(_env_file=dotenv.find_dotenv()).encode
 
 LOG_FORMAT = (
     "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "
@@ -410,7 +413,7 @@ class </xsl:text>
 <xsl:if test="ExtraAllowed='true'"><xsl:text>
 
     class Config:
-        extra = 'allow'
+        extra = "allow"
         populate_by_name = True
         alias_generator = snake_to_pascal</xsl:text>
 </xsl:if>
@@ -507,6 +510,7 @@ class </xsl:text>
     <xsl:text>, mode='before'</xsl:text>
     </xsl:if>
     <xsl:text>)
+    @classmethod
     def </xsl:text>
 
     <!-- add an underscore if there are no axioms getting checked, in which case its just property formats and/or enums -->
@@ -610,14 +614,14 @@ class </xsl:text>
             raise ValueError(
                 f"</xsl:text><xsl:value-of select="Value"/><xsl:text> failed </xsl:text>
             <xsl:value-of select="PrimitiveFormat"/>
-            <xsl:text> format validation: {e}"
-            )</xsl:text>
+            <xsl:text> format validation: {e}",
+            ) from e</xsl:text>
             </xsl:when>
             <xsl:otherwise>
             <xsl:text>
             raise ValueError(f"</xsl:text><xsl:value-of select="Value"/><xsl:text> failed </xsl:text>
             <xsl:value-of select="PrimitiveFormat"/>
-            <xsl:text> format validation: {e}")</xsl:text>
+            <xsl:text> format validation: {e}") from e</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
         <xsl:text>
@@ -638,8 +642,8 @@ class </xsl:text>
                 raise ValueError(
                     f"</xsl:text><xsl:value-of select="Value"/><xsl:text> element {elt} failed </xsl:text>
                 <xsl:value-of select="PrimitiveFormat" />
-                <xsl:text> format validation: {e}"
-                )
+                <xsl:text> format validation: {e}",
+                ) from e
         return v</xsl:text>
         </xsl:when>
 
@@ -651,8 +655,8 @@ class </xsl:text>
         except ValueError as e:
             raise ValueError(
                 f"</xsl:text>
-                <xsl:value-of select="Value"/><xsl:text>Id failed UuidCanonicalTextual format validation: {e}"
-            )
+                <xsl:value-of select="Value"/><xsl:text>Id failed UuidCanonicalTextual format validation: {e}",
+            ) from e
         return v</xsl:text>
         </xsl:when>
 
@@ -666,8 +670,8 @@ class </xsl:text>
                 raise ValueError(
                     f"</xsl:text><xsl:value-of select="Value"/><xsl:text> element {elt} failed </xsl:text>
                 <xsl:value-of select="PrimitiveFormat" />
-                <xsl:text> format validation: {e}"
-                )
+                <xsl:text> format validation: {e}",
+                ) from e
         return v</xsl:text>
         </xsl:when>
 
@@ -724,10 +728,10 @@ class </xsl:text>
     <!-- AS_DICT ######################################################################-->
     <!-- AS_DICT ######################################################################-->
     <xsl:text>
-    
+
     def as_dict(self) -> Dict[str, Any]:
         """
-        Main step in serializing the object. Encodes enums as their 8-digit random hex symbol if 
+        Main step in serializing the object. Encodes enums as their 8-digit random hex symbol if
         settings.encode_enums = 1.
         """
         if ENCODE_ENUMS:
@@ -1169,14 +1173,14 @@ class </xsl:text>
         Raises:
            GwTypeError: if the bytes are not a </xsl:text>
         <xsl:value-of select="VersionedTypeName"/>  <xsl:text> type
-        
+
         Returns:
             </xsl:text><xsl:value-of select="$python-class-name"/><xsl:text> instance
         """
         try:
             d = json.loads(b)
-        except TypeError:
-            raise GwTypeError("Type must be string or bytes!")
+        except TypeError as e:
+            raise GwTypeError("Type must be string or bytes!") from e
         if not isinstance(d, dict):
             raise GwTypeError(f"Deserializing  must result in dict!\n &lt;{b}>")
         return cls.dict_to_tuple(d)
@@ -1253,11 +1257,13 @@ class </xsl:text>
             <xsl:text>(d2["</xsl:text>
                 <xsl:value-of select="Value"/><xsl:text>"])
         else:
-            raise GwTypeError(f"both </xsl:text>
+            raise GwTypeError(
+                f"both </xsl:text>
             <xsl:value-of select="Value" />
             <xsl:text>GtEnumSymbol and </xsl:text>
             <xsl:value-of select="Value" />
-            <xsl:text> missing from dict &lt;{d2}>")</xsl:text>
+            <xsl:text> missing from dict &lt;{d2}>",
+            )</xsl:text>
         
         </xsl:when>
 
@@ -1305,14 +1311,16 @@ class </xsl:text>
             raise GwTypeError(f"dict missing </xsl:text><xsl:value-of select="Value"/><xsl:text>: &lt;{d2}>")
         if not isinstance(d2["</xsl:text><xsl:value-of select="Value"/>
         <xsl:text>"], dict):
-            raise GwTypeError(f"</xsl:text>
+            raise GwTypeError(
+                f"</xsl:text>
             <xsl:value-of select="Value"/>
             <xsl:text> &lt;{d2['</xsl:text><xsl:value-of select="Value"/>
             <xsl:text>']}> must be a </xsl:text>
             <xsl:call-template name="nt-case">
                 <xsl:with-param name="type-name-text" select="SubTypeName" />
             </xsl:call-template>
-            <xsl:text>!")
+            <xsl:text>!"
+            )
         </xsl:text>
         <xsl:call-template name="python-case">
             <xsl:with-param name="camel-case-text" select="Value"  />
@@ -1321,9 +1329,11 @@ class </xsl:text>
         <xsl:call-template name="nt-case">
             <xsl:with-param name="type-name-text" select="SubTypeName" />
         </xsl:call-template>
-        <xsl:text>_Maker.dict_to_tuple(d2["</xsl:text>
+        <xsl:text>_Maker.dict_to_tuple(
+            d2["</xsl:text>
         <xsl:value-of select="Value"/>
-        <xsl:text>"])
+        <xsl:text>"]
+        )
         d2["</xsl:text><xsl:value-of select="Value"/>
         <xsl:text>"] = </xsl:text>
         <xsl:call-template name="python-case">
@@ -1350,14 +1360,16 @@ class </xsl:text>
         for elt in d2["</xsl:text><xsl:value-of select="Value"/>
         <xsl:text>"]:
             if not isinstance(elt, dict):
-                raise GwTypeError(f"</xsl:text>
+                raise GwTypeError(
+                    f"</xsl:text>
             <xsl:value-of select="Value"/>
             <xsl:text> &lt;{d2['</xsl:text><xsl:value-of select="Value"/>
             <xsl:text>']}> must be a List of </xsl:text>
             <xsl:call-template name="nt-case">
             <xsl:with-param name="type-name-text" select="SubTypeName" />
             </xsl:call-template>
-            <xsl:text> types")
+            <xsl:text> types"
+                )
             t = </xsl:text>
         <xsl:call-template name="nt-case">
             <xsl:with-param name="type-name-text" select="SubTypeName" />
@@ -1678,12 +1690,12 @@ def check_is_algo_address_string_format(v: str) -> None:
     Raises:
         ValueError: if not AlgoAddressStringFormat format
     """
-    import algosdk
+
     at = algosdk.abi.AddressType()
     try:
-        result = at.decode(at.encode(v))
+        at.decode(at.encode(v))
     except Exception as e:
-        raise ValueError(f"Not AlgoAddressStringFormat: {e}")</xsl:text>
+        raise ValueError(f"Not AlgoAddressStringFormat: {e}") from e</xsl:text>
     </xsl:when>
 
 
@@ -1700,11 +1712,11 @@ def check_is_algo_msg_pack_encoded(v: str) -> None:
     Raises:
         ValueError: if not AlgoMSgPackEncoded  format
     """
-    import algosdk
+
     try:
         algosdk.encoding.future_msgpack_decode(v)
     except Exception as e:
-        raise ValueError(f"Not AlgoMsgPackEncoded format: {e}")</xsl:text>
+        raise ValueError(f"Not AlgoMsgPackEncoded format: {e}") from e</xsl:text>
     </xsl:when>
 
     <xsl:when test="Name='Bit'">
@@ -1768,8 +1780,8 @@ def check_is_iso_format(v: str) -> None:
 
     try:
         datetime.datetime.fromisoformat(v.replace("Z", "+00:00"))
-    except:
-        raise ValueError(f"&lt;{v}> is not IsoFormat")</xsl:text>
+    except Exception as e:
+        raise ValueError(f"&lt;{v}> is not IsoFormat") from e</xsl:text>
     </xsl:when>
 
 
@@ -1793,8 +1805,8 @@ def check_is_left_right_dot(v: str) -> None:
 
     try:
         x: List[str] = v.split(".")
-    except:
-        raise ValueError(f"Failed to seperate &lt;{v}> into words with split'.'")
+    except Exception as e:
+        raise ValueError(f"Failed to seperate &lt;{v}> into words with split'.'") from e
     first_word = x[0]
     first_char = first_word[0]
     if not first_char.isalpha():
@@ -1829,8 +1841,8 @@ def check_is_log_style_date_with_millis(v: str) -> None:
     from datetime import datetime
     try:
         datetime.fromisoformat(v)
-    except ValueError:
-        raise ValueError(f"{v} is not in LogStyleDateWithMillis format")
+    except ValueError as e:
+        raise ValueError(f"{v} is not in LogStyleDateWithMillis format") from e
     # The python fromisoformat allows for either 3 digits (milli) or 6 (micro)
     # after the final period. Make sure its 3
     milliseconds_part = v.split(".")[1]
@@ -1916,7 +1928,9 @@ def check_is_reasonable_unix_time_ms(v: int) -> None:
     Raises:
         ValueError: if v is not ReasonableUnixTimeMs format
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
+    from datetime import timezone
+
     start_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
     end_date = datetime(3000, 1, 1, tzinfo=timezone.utc)
 
@@ -1946,7 +1960,9 @@ def check_is_reasonable_unix_time_s(v: int) -> None:
     Raises:
         ValueError: if v is not ReasonableUnixTimeS format
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
+    from datetime import timezone
+
     start_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
     end_date = datetime(3000, 1, 1, tzinfo=timezone.utc)
 
@@ -1981,8 +1997,8 @@ def check_is_spaceheat_name(v: str) -> None:
     from typing import List
     try:
         x: List[str] = v.split(".")
-    except:
-        raise ValueError(f"Failed to seperate &lt;{v}> into words with split'.'")
+    except Exception as e:
+        raise ValueError(f"Failed to seperate &lt;{v}> into words with split'.'") from e
     first_word = x[0]
     first_char = first_word[0]
     if not first_char.isalpha():
@@ -2017,14 +2033,14 @@ def check_is_uuid_canonical_textual(v: str) -> None:
     try:
         x = v.split("-")
     except AttributeError as e:
-        raise ValueError(f"Failed to split on -: {e}")
+        raise ValueError(f"Failed to split on -: {e}") from e
     if len(x) != 5:
         raise ValueError(f"&lt;{v}> split by '-' did not have 5 words")
     for hex_word in x:
         try:
             int(hex_word, 16)
-        except ValueError:
-            raise ValueError(f"Words of &lt;{v}> are not all hex")
+        except ValueError as e:
+            raise ValueError(f"Words of &lt;{v}> are not all hex") from e
     if len(x[0]) != 8:
         raise ValueError(f"&lt;{v}> word lengths not 8-4-4-4-12")
     if len(x[1]) != 4:
@@ -2058,14 +2074,14 @@ def check_is_world_instance_name_format(v: str) -> None:
     """
     try:
         words = v.split("__")
-    except:
-        raise ValueError(f"&lt;{v}> is not split by '__'")
+    except Exception as e:
+        raise ValueError(f"&lt;{v}> is not split by '__'") from e
     if len(words) != 2:
         raise ValueError(f"&lt;{v}> not 2 words separated by '__'")
     try:
         int(words[1])
-    except:
-        raise ValueError(f"&lt;{v}> second word not an int")
+    except Exception as e:
+        raise ValueError(f"&lt;{v}> second word not an int") from e
 
     root_g_node_alias = words[0]
     first_char = root_g_node_alias[0]

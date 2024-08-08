@@ -1,17 +1,11 @@
 """Type heartbeat.a, version 001 - sample of type evolution with versions."""
 
 import json
-from typing import Any
-from typing import Dict
-from typing import Literal
+from typing import Any, Dict, Literal
 
 from gw.errors import GwTypeError
 from pydantic import BaseModel
-from pydantic import field_validator
-from pydantic.alias_generators import to_pascal
-from pydantic.alias_generators import to_snake
-
-from gwbase.types import HeartbeatA
+from pydantic.alias_generators import to_pascal, to_snake
 
 
 class HeartbeatA001(BaseModel):
@@ -20,8 +14,8 @@ class HeartbeatA001(BaseModel):
     YourLastHex are single character hexes - just that they are strings
     """
 
-    my_hex: str  #
-    your_last_hex: str  #
+    my_hex: str
+    your_last_hex: str
     type_name: Literal["heartbeat.a"] = "heartbeat.a"
     version: str = "001"
 

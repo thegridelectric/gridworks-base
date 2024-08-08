@@ -2,21 +2,14 @@
 
 import json
 import logging
-from typing import Any
-from typing import Dict
-from typing import Literal
+from typing import Any, Dict, Literal
 
 import dotenv
 from gw.errors import GwTypeError
-from gw.utils import is_pascal_case
-from gw.utils import pascal_to_snake
-from gw.utils import snake_to_pascal
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic import field_validator
+from gw.utils import is_pascal_case, pascal_to_snake, snake_to_pascal
+from pydantic import BaseModel, Field, field_validator
 
 from gwbase.config import EnumSettings
-
 
 ENCODE_ENUMS = EnumSettings(_env_file=dotenv.find_dotenv()).encode
 
@@ -53,19 +46,23 @@ class HeartbeatA(BaseModel):
         alias_generator = snake_to_pascal
 
     @field_validator("my_hex")
+    @classmethod
     def _check_my_hex(cls, v: str) -> str:
         try:
             check_is_hex_char(v)
         except ValueError as e:
-            raise ValueError(f"MyHex failed HexChar format validation: {e}")
+            raise ValueError(f"MyHex failed HexChar format validation: {e}") from e
         return v
 
     @field_validator("your_last_hex")
+    @classmethod
     def _check_your_last_hex(cls, v: str) -> str:
         try:
             check_is_hex_char(v)
         except ValueError as e:
-            raise ValueError(f"YourLastHex failed HexChar format validation: {e}")
+            raise ValueError(
+                f"YourLastHex failed HexChar format validation: {e}"
+            ) from e
         return v
 
     def as_dict(self) -> Dict[str, Any]:
@@ -141,8 +138,8 @@ class HeartbeatA_Maker:
         """
         try:
             d = json.loads(b)
-        except TypeError:
-            raise GwTypeError("Type must be string or bytes!")
+        except TypeError as e:
+            raise GwTypeError("Type must be string or bytes!") from e
         if not isinstance(d, dict):
             raise GwTypeError(f"Deserializing  must result in dict!\n <{b}>")
         return cls.dict_to_tuple(d)

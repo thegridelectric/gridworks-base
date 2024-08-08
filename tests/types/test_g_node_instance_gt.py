@@ -3,17 +3,12 @@
 import json
 
 import pytest
-from gw.errors import DcError
-from gw.errors import GwTypeError
-from pydantic import ValidationError
-
+from gw.errors import DcError, GwTypeError
 from gwbase.data_classes.g_node import GNode
-from gwbase.enums import GniStatus
-from gwbase.enums import GNodeRole
-from gwbase.enums import GNodeStatus
-from gwbase.enums import StrategyName
+from gwbase.enums import GniStatus, GNodeRole, GNodeStatus, StrategyName
 from gwbase.types import GNodeInstanceGt
 from gwbase.types import GNodeInstanceGt_Maker as Maker
+from pydantic import ValidationError
 
 
 def test_g_node_instance_gt_generated() -> None:

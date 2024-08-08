@@ -181,6 +181,14 @@ class ActorBase(ABC):
         """Join any threads in the derived class."""
         self._main_loop_running = False
 
+    @property
+    def main_loop_running(self) -> bool:
+        return self._main_loop_running
+
+    @property
+    def consuming(self) -> bool:
+        return self._consuming
+
     def __repr__(self) -> str:
         return f"{self.alias}"
 

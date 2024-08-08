@@ -6,7 +6,7 @@ import random
 import threading
 import time
 import uuid
-from abc import ABC, abstractmethod
+from abc import ABC
 from enum import auto
 from typing import Dict, List, Optional, no_type_check
 
@@ -157,9 +157,6 @@ class ActorBase(ABC):
 
     def stop(self) -> None:
         self.shutting_down = True
-        self.prepare_for_death()
-        while self._main_loop_running:
-            time.sleep(self.SHUTDOWN_INTERVAL)
         # self.stop_publisher()
         self.stop_consumer()
         self.local_stop()
@@ -179,16 +176,6 @@ class ActorBase(ABC):
         bindings. DO NOT start queues here.  It is called at the end of
         self.start_consuming()"""
         pass
-
-    @abstractmethod
-    def prepare_for_death(self) -> None:
-        """Use _main_loop_running to exit out of any threads in the derived class. Then
-        use local_stop to join those threads.
-
-        If there are no threads in the derived class, copy this method into the derived
-        class, get rid of the abstractmethod decorator, and delete the exception"""
-        self._main_loop_running = False
-        raise NotImplementedError
 
     def local_stop(self) -> None:
         """Join any threads in the derived class."""
@@ -782,7 +769,7 @@ class ActorBase(ABC):
             )
         except GwTypeError as e:
             LOGGER.info(f"Could not figure out TypeName: {e}")
-            raise GwTypeError(f"{e}")
+            raise GwTypeError(f"{e}") from e
         return type_name
 
     def broadcast_routing_key(
@@ -843,13 +830,13 @@ class ActorBase(ABC):
 
         try:
             msg_category_symbol = MessageCategorySymbol(msg_category_symbol_value)
-        except ValueError:
+        except ValueError as e:
             self._latest_on_message_diagnostic = (
                 OnReceiveMessageDiagnostic.UNKNOWN_MESSAGE_CATEGORY_SYMBOL
             )
             raise GwTypeError(
                 f"First  word of {routing_key} not a known MessageCategorySymbol!",
-            )
+            ) from e
         msg_category = utils.message_category_from_symbol(msg_category_symbol)
         allowable_categories = [
             MessageCategory.RabbitJsonDirect,
@@ -907,8 +894,8 @@ class ActorBase(ABC):
         routing_key_words = routing_key.split(".")
         try:
             from_g_node_alias_lrh = routing_key_words[1]
-        except:
-            raise GwTypeError(f"{routing_key} must have at least two words!")
+        except Exception as e:
+            raise GwTypeError(f"{routing_key} must have at least two words!") from e
 
         if not is_lrh_alias_format(from_g_node_alias_lrh):
             raise GwTypeError(
@@ -938,15 +925,15 @@ class ActorBase(ABC):
         routing_key_words = routing_key.split(".")
         try:
             from_g_node_rabbit_role = routing_key_words[2]
-        except:
-            raise GwTypeError(f"{routing_key} must have at least three words!")
+        except Exception as e:
+            raise GwTypeError(f"{routing_key} must have at least three words!") from e
         try:
             rabbit_role = RabbitRole(from_g_node_rabbit_role)
-        except ValueError:
+        except ValueError as e:
             raise GwTypeError(
                 f"Unknown short alias {from_g_node_rabbit_role} in {routing_key}"
                 f" Must belong to {RabbitRole}",
-            )
+            ) from e
 
         return RoleByRabbitRole[rabbit_role]
 
@@ -998,10 +985,10 @@ class ActorBase(ABC):
                 raise Exception("Must include to_role for a direct message")
             try:
                 check_is_left_right_dot(to_g_node_alias)
-            except:
+            except Exception as e:
                 raise Exception(
                     f"to_g_node_alias must have LrdAliasFormat. Got {to_g_node_alias}",
-                )
+                ) from e
             routing_key = self.direct_routing_key(
                 to_role=to_role,
                 payload=payload,
@@ -1192,7 +1179,7 @@ class ActorBase(ABC):
         elif payload.type_name == SimTimestep_Maker.type_name:
             try:
                 self.timestep_from_timecoordinator(payload)
-            except:
+            except:  # noqa
                 LOGGER.exception("Error in timestep_from_timecoordinator")
 
     def route_mqtt_message(self, from_alias: str, payload: HeartbeatA) -> None:
@@ -1298,12 +1285,10 @@ def check_is_left_right_dot(v: str) -> None:
     Raises:
         ValueError: if v is not LeftRightDot format
     """
-    from typing import List
-
     try:
         x: List[str] = v.split(".")
-    except:
-        raise ValueError(f"Failed to seperate <{v}> into words with split'.'")
+    except Exception as e:
+        raise ValueError(f"Failed to seperate <{v}> into words with split'.'") from e
     first_word = x[0]
     first_char = first_word[0]
     if not first_char.isalpha():
@@ -1325,7 +1310,7 @@ def is_lrh_alias_format(candidate: str) -> bool:
     an alphabet charecter"""
     try:
         x = candidate.split("-")
-    except:
+    except:  # noqa
         return False
     first_word = x[0]
     first_char = first_word[0]

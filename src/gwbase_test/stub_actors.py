@@ -155,9 +155,6 @@ class GNodeStubRecorder(ActorBase):
         ):
             self.got_heartbeat_from_super = True
 
-    def prepare_for_death(self) -> None:
-        self._main_loop_running = False
-
     def summary_str(self):
         """Summarize results in a string"""
         return (
@@ -217,6 +214,3 @@ class TimeCoordinatorStubRecorder(GNodeStubRecorder):
         if set(self.ready) == set(self.my_actors):
             return True
         return False
-
-    def prepare_for_death(self):
-        self._main_loop_running = False

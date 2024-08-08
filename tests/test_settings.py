@@ -92,8 +92,8 @@ def test_g_node_settings_validations(monkeypatch):
     monkeypatch.setenv("GNODE_SK", default.sk.get_secret_value())
 
     # initial_time_unix_s is a reasonable unix time in ms
-    monkeypatch.setenv("GNODE_INITIAL_TIME_UNIX_S", 100)
+    monkeypatch.setenv("GNODE_INITIAL_TIME_UNIX_S", str(100))
     with pytest.raises(ValueError):
         GNodeSettings()
-    monkeypatch.setenv("GNODE_INITIAL_TIME_UNIX_S", default.initial_time_unix_s)
+    monkeypatch.setenv("GNODE_INITIAL_TIME_UNIX_S", str(default.initial_time_unix_s))
     GNodeSettings()

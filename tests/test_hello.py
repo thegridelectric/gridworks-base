@@ -10,9 +10,6 @@ class HelloGNode(ActorBase):
         super().__init__(settings=settings)
         self.settings: GNodeSettings = settings
 
-    def prepare_for_death(self) -> None:
-        self._main_loop_running = False
-
 
 def test_hello():
     settings = GNodeSettings()

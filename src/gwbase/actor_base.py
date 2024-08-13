@@ -86,8 +86,6 @@ LOG_FORMAT = (
 )
 LOGGER = logging.getLogger(__name__)
 
-LOGGER.setLevel(logging.INFO)
-
 
 class ActorBase(ABC):
     "This is the base class for GNodes, used to communicate via RabbitMQ"

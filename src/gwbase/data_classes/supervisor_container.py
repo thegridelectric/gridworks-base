@@ -9,8 +9,6 @@ LOG_FORMAT = (
 )
 LOGGER = logging.getLogger(__name__)
 
-LOGGER.setLevel(logging.INFO)
-
 
 class SupervisorContainer:
     by_id: Dict[str, "SupervisorContainer"] = {}

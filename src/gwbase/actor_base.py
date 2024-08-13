@@ -137,9 +137,11 @@ class ActorBase(ABC):
         self.is_debug_mode: bool = False
         self.consuming_thread: threading.Thread = threading.Thread(
             target=self.run_reconnecting_consumer,
+            daemon=True,
         )
         self.publishing_thread: threading.Thread = threading.Thread(
             target=self.run_publisher,
+            daemon=True,
         )
         self._publish_connection: Optional[
             pika.adapters.select_connection.SelectConnection

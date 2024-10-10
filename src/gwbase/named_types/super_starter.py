@@ -1,9 +1,10 @@
 """Type super.starter, version 000"""
 
-from typing import ConfigDict, List, Literal
+from typing import List, Literal
 
 from gw.named_types import GwBase
 from gw.utils import snake_to_pascal
+from pydantic import ConfigDict
 
 from gwbase.named_types.g_node_instance_gt import GNodeInstanceGt
 from gwbase.named_types.supervisor_container_gt import SupervisorContainerGt

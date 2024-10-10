@@ -20,17 +20,15 @@
         <FileSet>
 
             <FileSetFile>
-                    <xsl:element name="RelativePath"><xsl:text>../../../../src/gwbase/types/asl_types.py</xsl:text></xsl:element>
+                    <xsl:element name="RelativePath"><xsl:text>../../../../src/gwbase/named_types/asl_types.py</xsl:text></xsl:element>
 
                 <OverwriteMode>Always</OverwriteMode>
                 <xsl:element name="FileContents">
 <xsl:text>""" List of all the types used by the actor."""
 
-from typing import Dict
-from typing import List
-from typing import no_type_check
+from typing import Dict, List
 
-from gwbase.types.gw_base import GwBase
+from gw.named_types import GwBase
 </xsl:text>
 <xsl:for-each select="$airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase')]">
 <xsl:sort select="VersionedTypeName" data-type="text"/>
@@ -38,7 +36,7 @@ from gwbase.types.gw_base import GwBase
 <xsl:for-each select="$airtable//VersionedTypes/VersionedType[(VersionedTypeId = $versioned-type-id)  and (Status = 'Active' or Status = 'Pending') and (ProtocolCategory = 'Json' or ProtocolCategory = 'GwAlgoSerial')]">
 
 <xsl:text>
-from gwbase.types.</xsl:text>
+from gwbase.named_types.</xsl:text>
 <xsl:value-of select="translate(TypeName,'.','_')"/>
 <xsl:text> import </xsl:text>
 <xsl:call-template name="nt-case">
@@ -48,12 +46,10 @@ from gwbase.types.</xsl:text>
 </xsl:for-each>
 <xsl:text>
 
-
 TypeByName: Dict[str, GwBase] = {}
 
 
-@no_type_check
-def type_makers() -> List[GwBase]:
+def types() -> List[GwBase]:
     return [
         </xsl:text>
 <xsl:for-each select="$airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase') and (normalize-space(VersionedTypeName)!='')]">
@@ -80,77 +76,11 @@ def type_makers() -> List[GwBase]:
     <xsl:text>]
 
 
-for maker in type_makers():
-    TypeByName[maker.type_name_value()] = maker
-
-
-def version_by_type_name() -> Dict[str, str]:
-    """
-    Returns:
-        Dict[str, str]: Keys are TypeNames, values are versions
-    """
-
-    v: Dict[str, str] = {
-        </xsl:text>
-    <xsl:for-each select="$airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase')]">
-    <xsl:sort select="VersionedTypeName" data-type="text"/>
-    <xsl:variable name="versioned-type-id" select="VersionedType"/>
-    <xsl:for-each select="$airtable//VersionedTypes/VersionedType[(VersionedTypeId = $versioned-type-id)  and (Status = 'Active' or Status = 'Pending') and (ProtocolCategory = 'Json' or ProtocolCategory = 'GwAlgoSerial')]">
-
-    <xsl:text>"</xsl:text>
-    <xsl:value-of select="TypeName"/>
-    <xsl:text>": "</xsl:text>
-    <xsl:value-of select="Version"/>
-    <xsl:text>"</xsl:text>
-    </xsl:for-each>
-    <xsl:choose>
- <xsl:when test="position() != count($airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase')])">
-    <xsl:text>,
-        </xsl:text>
-    </xsl:when>
-    <xsl:otherwise>
-    <xsl:text>,
-    </xsl:text>
-    </xsl:otherwise>
-    </xsl:choose>
-    </xsl:for-each>
-    <xsl:text>}
-
-    return v
-
-
-def status_by_versioned_type_name() -> Dict[str, str]:
-    """
-    Returns:
-        Dict[str, str]: Keys are versioned TypeNames, values are type status
-    """
-
-    v: Dict[str, str] = {
-        </xsl:text>
-    <xsl:for-each select="$airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase')]">
-    <xsl:sort select="VersionedTypeName" data-type="text"/>
-    <xsl:variable name="versioned-type-id" select="VersionedType"/>
-    <xsl:for-each select="$airtable//VersionedTypes/VersionedType[(VersionedTypeId = $versioned-type-id)  and (Status = 'Active' or Status = 'Pending') and (ProtocolCategory = 'Json' or ProtocolCategory = 'GwAlgoSerial')]">
-    <xsl:text>"</xsl:text>
-    <xsl:value-of select="VersionedTypeName"/>
-    <xsl:text>": "</xsl:text>
-    <xsl:value-of select="Status"/>
-    <xsl:text>"</xsl:text>
-    </xsl:for-each>
-        <xsl:choose>
- <xsl:when test="position() != count($airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase')])">
-    <xsl:text>,
-        </xsl:text>
-    </xsl:when>
-    <xsl:otherwise>
-    <xsl:text>,
-    </xsl:text>
-    </xsl:otherwise>
-    </xsl:choose>
-    </xsl:for-each>
-    <xsl:text>}
-
-    return v
+for t in types():
+    try:
+        TypeByName[t.type_name_value()] = t
+    except Exception as e:
+        print(f"Problem w {t}")
 </xsl:text>
 
 

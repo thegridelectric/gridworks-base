@@ -38,7 +38,7 @@
                     <xsl:variable name="overwrite-mode">
 
                     <xsl:if test="not (Status = 'Pending')">
-                    <xsl:text>Always</xsl:text>
+                    <xsl:text>Never</xsl:text>
                     </xsl:if>
                     <xsl:if test="(Status = 'Pending')">
                     <xsl:text>Always</xsl:text>
@@ -66,7 +66,8 @@ from typing import Literal</xsl:text>
 <xsl:text>, Optional</xsl:text>
 </xsl:if>
 
-
+<xsl:text>
+from pydantic import BaseModel</xsl:text>
 <xsl:variable name="use-field-validator" select="count($airtable//TypeAttributes/TypeAttribute[(VersionedType = $versioned-type-id) and
                             ((Axiom != '') or
                             (not (PrimitiveFormat = '')
@@ -692,16 +693,6 @@ class </xsl:text>
 
     </xsl:for-each>
     </xsl:if>
-
-    <!-- DONE WITH VALIDATORS  -->
-    <!-- DONE WITH VALIDATORS  -->
-
-
-
-    <!-- AS_DICT ######################################################################-->
-    <!-- AS_DICT ######################################################################-->
-    <!-- AS_DICT ######################################################################-->
-    <!-- AS_DICT ######################################################################-->
 
 <!-- Add newline at EOF for git and pre-commit-->
 <xsl:text>&#10;</xsl:text>

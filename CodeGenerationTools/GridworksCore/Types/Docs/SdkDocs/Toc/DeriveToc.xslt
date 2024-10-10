@@ -38,7 +38,7 @@ The Python classes below also come with methods for translating back and
 forth between type instances and Python objects.
 
 
-.. automodule:: gwbase.types
+.. automodule:: gwbase.named_types
 
 .. toctree::
    :maxdepth: 1

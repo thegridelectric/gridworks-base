@@ -20,12 +20,12 @@
         <FileSet>
 
             <FileSetFile>
-                    <xsl:element name="RelativePath"><xsl:text>../../../../src/gwbase/types/__init__.py</xsl:text></xsl:element>
+                    <xsl:element name="RelativePath"><xsl:text>../../../../src/gwbase/named_types/__init__.py</xsl:text></xsl:element>
 
                 <OverwriteMode>Always</OverwriteMode>
                 <xsl:element name="FileContents">
 <xsl:text>""" List of all the types """
-from gwbase.types.gw_base import GwBase
+
 </xsl:text>
 <xsl:for-each select="$airtable//VersionedTypes/VersionedType[
   count(Protocols[text()='gwbase']) > 0 and
@@ -47,7 +47,7 @@ from gwbase.types.gw_base import GwBase
 </xsl:variable>
 
 <xsl:text>
-from gwbase.types.</xsl:text>
+from gwbase.named_types.</xsl:text>
 <xsl:value-of select="translate(TypeName,'.','_')"/>
 <xsl:text> import </xsl:text>
 <xsl:value-of select="$python-class-name"/>
@@ -57,7 +57,7 @@ from gwbase.types.</xsl:text>
 
 
 __all__ = [
-    "GwBase",</xsl:text>
+    </xsl:text>
 
 
 <xsl:for-each select="$airtable//VersionedTypes/VersionedType[
@@ -80,25 +80,11 @@ __all__ = [
 </xsl:choose>
 </xsl:variable>
 
-<xsl:choose>
-<!-- The type is not in the init, comment it out-->
-<xsl:when test="(NotInInit='true')">
-<xsl:text>
-    # "</xsl:text>
-    <xsl:value-of select="$python-class-name"/>
-    <xsl:text>",</xsl:text>
-</xsl:when>
 
-<!-- The type is in the init-->
-<xsl:otherwise>
 <xsl:text>
     "</xsl:text>
     <xsl:value-of select="$python-class-name"/>
     <xsl:text>",</xsl:text>
-</xsl:otherwise>
-</xsl:choose>
-
-
 
 </xsl:for-each>
 <xsl:text>

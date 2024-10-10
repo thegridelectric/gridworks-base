@@ -14,13 +14,16 @@ import pika
 from gw import utils
 from gw.enums import GwStrEnum
 from gw.errors import GwTypeError
+from gw.named_types import GwBase
 from pika.channel import Channel as PikaChannel
 from pika.spec import Basic, BasicProperties
 
-from gwbase import codec
+from gwbase.codec import GwCodec
 from gwbase.config import GNodeSettings
 from gwbase.enums import GNodeRole, MessageCategory, MessageCategorySymbol, UniverseType
-from gwbase.types import HeartbeatA, HeartbeatA_Maker, SimTimestep, SimTimestep_Maker
+from gwbase.named_types import HeartbeatA, SimTimestep
+from gwbase.named_types.asl_types import TypeByName
+from gwbase.property_format import is_left_right_dot
 
 
 class RabbitRole(GwStrEnum):
@@ -91,13 +94,23 @@ class ActorBase(ABC):
     "This is the base class for GNodes, used to communicate via RabbitMQ"
 
     _url: str
-
+    codec: GwCodec  # meant to be set by the derived object
     SHUTDOWN_INTERVAL: float = 0.1
 
     def __init__(
         self,
         settings: GNodeSettings,
+        codec: Optional[GwCodec] = None,
     ):
+        if codec is None:
+            self.codec = GwCodec()
+        else:
+            self.codec = codec
+
+        # add gwabse types
+        for name in TypeByName:
+            if name not in self.codec.type_by_name:
+                self.codec.type_by_name[name] = TypeByName[name]
         self.settings: GNodeSettings = settings
         self.latest_routing_key: Optional[str] = None
         self.shutting_down: bool = False
@@ -782,7 +795,7 @@ class ActorBase(ABC):
 
     def broadcast_routing_key(
         self,
-        payload: HeartbeatA,
+        payload: GwBase,
         radio_channel: Optional[str],
     ) -> str:
         msg_type = MessageCategorySymbol.rjb.value
@@ -792,10 +805,13 @@ class ActorBase(ABC):
         if radio_channel is None:
             return f"{msg_type}.{from_alias_lrh}.{from_role}.{type_name_lrh}"
         else:
-            check_is_left_right_dot(radio_channel)
+            try:
+                is_left_right_dot(radio_channel)
+            except ValueError as e:
+                raise Exception(e) from e
             return f"{msg_type}.{from_alias_lrh}.{from_role}.{type_name_lrh}.{radio_channel}"
 
-    def scada_routing_key(self, payload: HeartbeatA, to_g_node_alias: str) -> str:
+    def scada_routing_key(self, payload: GwBase) -> str:
         if self.g_node_role != GNodeRole.AtomicTNode:
             raise Exception("Only send messages to SCADA if role is AtomicTNode!")
         msg_type = MessageCategorySymbol.gw.value
@@ -948,7 +964,7 @@ class ActorBase(ABC):
     @no_type_check
     def send_message(
         self,
-        payload: HeartbeatA,
+        payload: GwBase,
         message_category: MessageCategory = MessageCategory.RabbitJsonDirect,
         to_role: Optional[GNodeRole] = None,
         to_g_node_alias: Optional[str] = None,
@@ -960,7 +976,7 @@ class ActorBase(ABC):
 
         Args:
             payload: Any GridWorks types with a json content-type
-            that includes TypeName as a json key, and has as_type()
+            that includes TypeName as a json key, and has to_type()
             as an encoding method.
             routing_key_type: for creating routing key
             to_role (Optional[GNodeRole]): used if a direct message
@@ -975,7 +991,7 @@ class ActorBase(ABC):
         if self._stopped:
             return OnSendMessageDiagnostic.STOPPED_SO_NOT_SENDING
 
-        if "MessageId" in payload.as_dict():
+        if "MessageId" in payload.to_dict():
             correlation_id = payload["MessageId"]
         else:
             correlation_id = str(uuid.uuid4())
@@ -992,7 +1008,7 @@ class ActorBase(ABC):
             if not isinstance(to_role, GNodeRole):
                 raise Exception("Must include to_role for a direct message")
             try:
-                check_is_left_right_dot(to_g_node_alias)
+                is_left_right_dot(to_g_node_alias)
             except Exception as e:
                 raise Exception(
                     f"to_g_node_alias must have LrdAliasFormat. Got {to_g_node_alias}",
@@ -1010,7 +1026,6 @@ class ActorBase(ABC):
         elif message_category == MessageCategory.MqttJsonBroadcast:
             routing_key = self.scada_routing_key(
                 payload=payload,
-                to_g_node_alias=to_g_node_alias,
             )
             publish_exchange = "amq.topic"
         else:
@@ -1034,16 +1049,18 @@ class ActorBase(ABC):
             self._single_channel.basic_publish(
                 exchange=publish_exchange,
                 routing_key=routing_key,
-                body=payload.as_type(),
+                body=payload.to_type(),
                 properties=properties,
             )
             # self._publish_channel.basic_publish(
             #     exchange=self._publish_exchange,
             #     routing_key=routing_key,
-            #     body=payload.as_type(),
+            #     body=payload.to_type(),
             #     properties=properties,
             # )
-            LOGGER.debug(f" [x] Sent {payload.type_name} w routing key {routing_key}")
+            LOGGER.debug(
+                f" [x] Sent {payload.type_name_value} w routing key {routing_key}"
+            )
             return OnSendMessageDiagnostic.MESSAGE_SENT
 
         except BaseException:
@@ -1095,7 +1112,7 @@ class ActorBase(ABC):
         except GwTypeError:
             return
 
-        if type_name not in codec.type_list:
+        if type_name not in self.codec.type_list:
             self._latest_on_message_diagnostic = (
                 OnReceiveMessageDiagnostic.UNKNOWN_TYPE_NAME
             )
@@ -1105,7 +1122,7 @@ class ActorBase(ABC):
             return
 
         try:
-            payload = codec.deserializer(body)
+            payload = self.codec.from_type(body)
         except Exception:
             LOGGER.warning(
                 f"TypeName for incoming message claimed to be {type_name}, but was not true!",
@@ -1166,7 +1183,7 @@ class ActorBase(ABC):
         at the end of the method if the message has not been routed yet.
         """
 
-        if payload.type_name == HeartbeatA_Maker.type_name:
+        if payload.type_name == HeartbeatA.type_name:
             if from_role != GNodeRole.Supervisor:
                 LOGGER.info(
                     f"Ignoring HeartbeatA from GNode {from_alias} with GNodeRole {from_role}; expects"
@@ -1182,12 +1199,12 @@ class ActorBase(ABC):
 
             try:
                 self.heartbeat_from_super(from_alias, payload)
-            except:
+            except Exception:
                 LOGGER.exception("Error in heartbeat_received")
-        elif payload.type_name == SimTimestep_Maker.type_name:
+        elif payload.type_name == SimTimestep.type_name:
             try:
                 self.timestep_from_timecoordinator(payload)
-            except:  # noqa
+            except Exception:
                 LOGGER.exception("Error in timestep_from_timecoordinator")
 
     def route_mqtt_message(self, from_alias: str, payload: HeartbeatA) -> None:
@@ -1228,11 +1245,11 @@ class ActorBase(ABC):
                 f" {self.settings.my_super_alias}. This message should"
                 f"have been filtered out in the route_message method.",
             )
-        pong = HeartbeatA_Maker(
-            my_hex=str(random.choice("0123456789abcdef")),
-            your_last_hex=ping.MyHex,
-        ).tuple
 
+        pong = HeartbeatA(
+            my_hex=str(random.choice("0123456789abcdef")),
+            your_last_hex=ping.my_hex,
+        )
         self.send_message(
             payload=pong,
             to_role=GNodeRole.Supervisor,
@@ -1240,7 +1257,7 @@ class ActorBase(ABC):
         )
 
         LOGGER.debug(
-            f"[{self.alias}] Sent HB: SuHex {pong.YourLastHex}, AtnHex {pong.MyHex}",
+            f"[{self.alias}] Sent HB: SuHex {pong.your_last_hex}, AtnHex {pong.my_hex}",
         )
 
     ########################
@@ -1248,18 +1265,20 @@ class ActorBase(ABC):
     ########################
 
     def timestep_from_timecoordinator(self, payload: SimTimestep) -> None:
-        if self._time < payload.TimeUnixS:
-            self._time = payload.TimeUnixS
+        if self._time < payload.time_unix_s:
+            self._time = payload.time_unix_s
             self.new_timestep(payload)
             LOGGER.debug(f"Time is now {self.time_str()}")
-        elif self._time == payload.TimeUnixS:
+        elif self._time == payload.time_unix_s:
             self.repeat_timestep(payload)
 
     def new_timestep(self, payload: SimTimestep) -> None:
-        LOGGER.info("New timestep")
+        ...
+        # LOGGER.info("New timestep")
 
     def repeat_timestep(self, payload: SimTimestep) -> None:
-        LOGGER.info("Timestep received again in atn_actor_base")
+        ...
+        # LOGGER.info("Timestep received again in atn_actor_base")
 
     def time(self) -> float:
         if self.universe_type == UniverseType.Dev:
@@ -1279,35 +1298,6 @@ class ActorBase(ABC):
     @property
     def short_alias(self) -> str:
         return self.alias.split(".")[-1]
-
-
-def check_is_left_right_dot(v: str) -> None:
-    """Checks LeftRightDot Format
-
-    LeftRightDot format: Lowercase alphanumeric words separated by periods, with
-    the most significant word (on the left) starting with an alphabet character.
-
-    Args:
-        v (str): the candidate
-
-    Raises:
-        ValueError: if v is not LeftRightDot format
-    """
-    try:
-        x: List[str] = v.split(".")
-    except Exception as e:
-        raise ValueError(f"Failed to seperate <{v}> into words with split'.'") from e
-    first_word = x[0]
-    first_char = first_word[0]
-    if not first_char.isalpha():
-        raise ValueError(
-            f"Most significant word of <{v}> must start with alphabet char.",
-        )
-    for word in x:
-        if not word.isalnum():
-            raise ValueError(f"words of <{v}> split by by '.' must be alphanumeric.")
-    if not v.islower():
-        raise ValueError(f"All characters of <{v}> must be lowercase.")
 
 
 def is_lrh_alias_format(candidate: str) -> bool:

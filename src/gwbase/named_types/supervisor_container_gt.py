@@ -1,9 +1,10 @@
 """Type supervisor.container.gt, version 000"""
 
-from typing import ConfigDict, Literal, field_validator
+from typing import Literal
 
 from gw.named_types import GwBase
 from gw.utils import snake_to_pascal
+from pydantic import ConfigDict, field_validator
 
 from gwbase.enums import SupervisorContainerStatus
 from gwbase.property_format import (

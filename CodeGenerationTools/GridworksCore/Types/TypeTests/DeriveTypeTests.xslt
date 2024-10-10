@@ -39,7 +39,7 @@
                 <xsl:variable name="overwrite-mode">
 
                     <xsl:if test="not (Status = 'Pending')">
-                    <xsl:text>Never</xsl:text>
+                    <xsl:text>Always</xsl:text>
                     </xsl:if>
                     <xsl:if test="(Status = 'Pending')">
                     <xsl:text>Always</xsl:text>
@@ -78,13 +78,13 @@ from gwbase.enums import </xsl:text>
 <xsl:choose>
 <xsl:when test="(NotInInit='true')">
 <xsl:text>
-from gwbase.types.</xsl:text><xsl:value-of select="translate($type-name,'.','_')"/>
+from gwbase.named_types.</xsl:text><xsl:value-of select="translate($type-name,'.','_')"/>
 <xsl:text> import </xsl:text><xsl:value-of select="$class-name"/>
 </xsl:when>
 
 <xsl:otherwise>
 <xsl:text>
-from gwbase.types import </xsl:text><xsl:value-of select="$class-name"/>
+from gwbase.named_types import </xsl:text><xsl:value-of select="$class-name"/>
 </xsl:otherwise>
 
 </xsl:choose>

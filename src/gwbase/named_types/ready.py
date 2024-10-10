@@ -1,8 +1,9 @@
 """Type ready, version 001"""
 
-from typing import Literal, StrictInt
+from typing import Literal
 
 from gw.named_types import GwBase
+from pydantic import StrictInt
 
 from gwbase.property_format import (
     LeftRightDot,

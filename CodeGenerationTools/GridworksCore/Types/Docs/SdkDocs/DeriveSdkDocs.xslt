@@ -52,7 +52,7 @@ Python pydantic class corresponding to json type `</xsl:text>
 <xsl:value-of select="$type-name"/><xsl:text>`, version `</xsl:text>
 <xsl:value-of select="Version"/><xsl:text>`.
 
-.. autoclass:: gwbase.types.</xsl:text><xsl:value-of select="$class-name"/><xsl:text>
+.. autoclass:: gwbase.named_types.</xsl:text><xsl:value-of select="$class-name"/><xsl:text>
     :members:</xsl:text>
 <xsl:for-each select="$airtable//TypeAttributes/TypeAttribute[(VersionedType = $versioned-type-id)]">
  <xsl:sort select="Idx" data-type="number"/>
@@ -99,7 +99,7 @@ Python pydantic class corresponding to json type `</xsl:text>
 
 <xsl:text>
 
-.. autoclass:: gwbase.types.</xsl:text>
+.. autoclass:: gwbase.named_types.</xsl:text>
 <xsl:value-of select="translate($type-name,'.','_')"/>
 <xsl:text>.check_is_</xsl:text>
 <xsl:call-template name="python-case">
@@ -112,7 +112,7 @@ Python pydantic class corresponding to json type `</xsl:text>
 
 <xsl:text>
 
-.. autoclass:: gwbase.types.</xsl:text>
+.. autoclass:: gwbase.named_types.</xsl:text>
 <xsl:value-of select="$class-name"/><xsl:text>_Maker
     :members:
 

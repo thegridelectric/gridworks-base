@@ -1,5 +1,5 @@
 from pydantic import BaseModel, SecretStr
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Public(BaseModel):
@@ -54,6 +54,6 @@ class VanillaSettings(BaseSettings):
     algo_api_secrets: AlgoApiSecrets = AlgoApiSecrets()
     public: Public = Public()
 
-    class Config:
-        env_prefix = "VANILLA_"
-        env_nested_delimiter = "__"
+    model_config = SettingsConfigDict(
+        env_prefix="VANILLA_", env_nested_delimiter="__", extra="ignore"
+    )

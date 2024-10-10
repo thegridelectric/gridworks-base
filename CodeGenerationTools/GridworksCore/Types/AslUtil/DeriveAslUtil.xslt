@@ -1,4 +1,4 @@
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:msxsl="urn:schemas-microsoft-com:xslt" exclude-result-prefixes="msxsl" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+﻿<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:msxsl="urn:schemas-microsoft-com:xslt" exclude-result-prefixes="msxsl" xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xsl:output method="xml" indent="yes" />
     <xsl:param name="root" />
     <xsl:param name="codee-root" />
@@ -29,6 +29,8 @@
 from typing import Dict
 from typing import List
 from typing import no_type_check
+
+from gwbase.types.gw_base import GwBase
 </xsl:text>
 <xsl:for-each select="$airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase')]">
 <xsl:sort select="VersionedTypeName" data-type="text"/>
@@ -42,17 +44,16 @@ from gwbase.types.</xsl:text>
 <xsl:call-template name="nt-case">
     <xsl:with-param name="type-name-text" select="TypeName" />
 </xsl:call-template>
-<xsl:text>_Maker</xsl:text>
 </xsl:for-each>
 </xsl:for-each>
 <xsl:text>
 
 
-TypeMakerByName: Dict[str, HeartbeatA_Maker] = {}
+TypeByName: Dict[str, GwBase] = {}
 
 
 @no_type_check
-def type_makers() -> List[HeartbeatA_Maker]:
+def type_makers() -> List[GwBase]:
     return [
         </xsl:text>
 <xsl:for-each select="$airtable//ProtocolTypes/ProtocolType[(normalize-space(ProtocolName) ='gwbase') and (normalize-space(VersionedTypeName)!='')]">
@@ -62,7 +63,6 @@ def type_makers() -> List[HeartbeatA_Maker]:
 <xsl:call-template name="nt-case">
     <xsl:with-param name="type-name-text" select="TypeName" />
 </xsl:call-template>
-<xsl:text>_Maker</xsl:text>
 </xsl:for-each>
 
 
@@ -81,7 +81,7 @@ def type_makers() -> List[HeartbeatA_Maker]:
 
 
 for maker in type_makers():
-    TypeMakerByName[maker.type_name] = maker
+    TypeByName[maker.type_name_value()] = maker
 
 
 def version_by_type_name() -> Dict[str, str]:

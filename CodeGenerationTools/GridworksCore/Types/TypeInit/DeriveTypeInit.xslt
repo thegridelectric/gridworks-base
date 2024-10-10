@@ -25,6 +25,7 @@
                 <OverwriteMode>Always</OverwriteMode>
                 <xsl:element name="FileContents">
 <xsl:text>""" List of all the types """
+from gwbase.types.gw_base import GwBase
 </xsl:text>
 <xsl:for-each select="$airtable//VersionedTypes/VersionedType[
   count(Protocols[text()='gwbase']) > 0 and
@@ -50,17 +51,13 @@ from gwbase.types.</xsl:text>
 <xsl:value-of select="translate(TypeName,'.','_')"/>
 <xsl:text> import </xsl:text>
 <xsl:value-of select="$python-class-name"/>
-<xsl:text>
-from gwbase.types.</xsl:text>
-<xsl:value-of select="translate(TypeName,'.','_')"/>
-<xsl:text> import </xsl:text><xsl:value-of select="$python-class-name"/>
-<xsl:text>_Maker</xsl:text>
 </xsl:for-each>
 
 <xsl:text>
 
 
-__all__ = [</xsl:text>
+__all__ = [
+    "GwBase",</xsl:text>
 
 
 <xsl:for-each select="$airtable//VersionedTypes/VersionedType[
@@ -89,10 +86,7 @@ __all__ = [</xsl:text>
 <xsl:text>
     # "</xsl:text>
     <xsl:value-of select="$python-class-name"/>
-    <xsl:text>",
-    # "</xsl:text>
-    <xsl:value-of select="$python-class-name"/>
-    <xsl:text>_Maker",</xsl:text>
+    <xsl:text>",</xsl:text>
 </xsl:when>
 
 <!-- The type is in the init-->
@@ -100,10 +94,7 @@ __all__ = [</xsl:text>
 <xsl:text>
     "</xsl:text>
     <xsl:value-of select="$python-class-name"/>
-    <xsl:text>",
-    "</xsl:text>
-    <xsl:value-of select="$python-class-name"/>
-    <xsl:text>_Maker",</xsl:text>
+    <xsl:text>",</xsl:text>
 </xsl:otherwise>
 </xsl:choose>
 

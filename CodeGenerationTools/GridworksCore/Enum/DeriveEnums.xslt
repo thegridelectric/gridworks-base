@@ -63,7 +63,7 @@ class </xsl:text><xsl:value-of select="$enum-class-name"/>
     Enum </xsl:text><xsl:value-of select="Name"/><xsl:text> version </xsl:text><xsl:value-of select="$enum-version"/>
     <xsl:text> in the GridWorks Type registry.
 
-    Used by used by multiple Application Shared Languages (ASLs). For more information:
+    Used by multiple Application Shared Languages (ASLs). For more information:
       - [ASLs](https://gridworks-type-registry.readthedocs.io/en/latest/)
       - [Global Authority](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#</xsl:text>
     <xsl:value-of select="translate($enum-name,'.','')"/>

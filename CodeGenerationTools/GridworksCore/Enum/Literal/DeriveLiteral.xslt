@@ -45,7 +45,7 @@
 from enum import auto
 from typing import List
 
-from gww.enums import GwStrEnum
+from gw.enums import GwStrEnum
 
 
 class </xsl:text><xsl:value-of select="$enum-class-name"/>

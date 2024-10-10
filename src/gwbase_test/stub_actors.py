@@ -8,7 +8,7 @@ from gwbase.actor_base import (
 )
 from gwbase.config import GNodeSettings
 from gwbase.enums import GNodeRole
-from gwbase.types import HeartbeatA, Ready, Ready_Maker
+from gwbase.named_types import HeartbeatA, Ready
 from pika.channel import Channel as PikaChannel
 from pydantic import BaseModel
 
@@ -205,7 +205,7 @@ class TimeCoordinatorStubRecorder(GNodeStubRecorder):
         self.ready: List[str] = []
 
     def route_message(self, from_alias: str, from_role: GNodeRole, payload: Ready):
-        if payload.TypeName == Ready_Maker.type_name:
+        if payload.type_name == Ready.type_name:
             if from_alias in self.my_actors:
                 if payload.TimeUnixS == self._time:
                     self.ready.append(from_alias)

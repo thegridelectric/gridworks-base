@@ -5,7 +5,7 @@ import uuid
 from gw_test import wait_for
 from gwbase.config import GNodeSettings
 from gwbase.enums import GNodeRole
-from gwbase.types import HeartbeatA, SimTimestep
+from gwbase.named_types import HeartbeatA, SimTimestep
 from gwbase_test import (
     GNodeStubRecorder,
     SupervisorStubRecorder,

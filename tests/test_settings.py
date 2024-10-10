@@ -1,7 +1,7 @@
 import datetime
 
 import pytest
-from gwbase.config import EnumSettings, GNodeSettings
+from gwbase.config import GNodeSettings
 from gwbase.config.algo_settings import AlgoApiSecrets, Public
 from gwbase.config.rabbit_settings import RabbitBrokerClient
 from pydantic import SecretStr
@@ -46,12 +46,6 @@ def test_g_node_settings_defaults():
         settings.rabbit.url.get_secret_value()
         == "amqp://smqPublic:smqPublic@localhost:5672/d1__1"
     )
-
-
-def test_enum_default_settings():
-    settings = EnumSettings()
-    expected = {"encode": 1}
-    assert settings.model_dump() == expected
 
 
 def test_g_node_settings_validations(monkeypatch):

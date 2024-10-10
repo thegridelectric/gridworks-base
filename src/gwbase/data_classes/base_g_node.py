@@ -5,6 +5,7 @@ from gw.errors import DcError, GwTypeError
 
 from gwbase.data_classes.gps_point import GpsPoint
 from gwbase.enums import CoreGNodeRole, GNodeStatus
+from gwbase.property_format import is_algo_address, is_uuid4_str
 
 LOG_FORMAT = (
     "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "
@@ -186,11 +187,11 @@ class BaseGNode:
         if not isinstance(g_node_id, str):
             raise DcError(f"g_node_id must be a string, got {type(g_node_id)}.")
         try:
-            check_is_uuid_canonical_textual(g_node_id)
-        except GwTypeError:
+            is_uuid4_str(g_node_id)
+        except GwTypeError as e:
             raise DcError(
                 f"g_node_id must have format UuidCanonicalTextutal. Got {g_node_id}.",
-            )
+            ) from e
 
     @classmethod
     def _creation_axiom_3(cls, attributes):
@@ -327,7 +328,7 @@ class BaseGNode:
                 if not isinstance(addr, str):
                     raise DcError(f"jSchema Axiom 2: {addr} must be a string")
                 try:
-                    check_is_algo_address_string_format(addr)
+                    is_algo_address(addr)
                 except GwTypeError as e:
                     raise DcError(
                         f"Schema Axiom 2: {addr} must have format AlgoAddressStringFormat",
@@ -542,60 +543,3 @@ class BaseGNode:
                 "Update Axiom 6: If alias has NOT changed then new "
                 "prev_alias must equal original prev_alias.",
             )
-
-
-def check_is_uuid_canonical_textual(v: str) -> None:
-    """
-    UuidCanonicalTextual format:  A string of hex words separated by hyphens
-    of length 8-4-4-4-12.
-
-    Raises:
-        ValueError: if not UuidCanonicalTextual format
-    """
-    try:
-        x = v.split("-")
-    except AttributeError as e:
-        raise ValueError(f"Failed to split on -: {e}")
-    if len(x) != 5:
-        raise ValueError(f"{v} split by '-' did not have 5 words")
-    for hex_word in x:
-        try:
-            int(hex_word, 16)
-        except ValueError:
-            raise ValueError(f"Words of {v} are not all hex")
-    if len(x[0]) != 8:
-        raise ValueError(f"{v} word lengths not 8-4-4-4-12")
-    if len(x[1]) != 4:
-        raise ValueError(f"{v} word lengths not 8-4-4-4-12")
-    if len(x[2]) != 4:
-        raise ValueError(f"{v} word lengths not 8-4-4-4-12")
-    if len(x[3]) != 4:
-        raise ValueError(f"{v} word lengths not 8-4-4-4-12")
-    if len(x[4]) != 12:
-        raise ValueError(f"{v} word lengths not 8-4-4-4-12")
-
-
-def check_is_algo_address_string_format(_: str) -> None:
-    """
-    Checks if a given string is in the correct format for an Algorand address.
-
-    AlgoAddressStringFormat format: The public key of a private/public Ed25519
-    key pair, transformed into an Algorand address, by adding a 4-byte checksum
-    to the end of the public key and then encoding in base32.
-
-    Raises:
-        ValueError: if not in AlgoAddressStringFormat format
-
-    Original (requires algosdk package):
-    at = algosdk.abi.AddressType()
-    try:
-        result = at.decode(at.encode(v))
-    except Exception as e:
-        raise ValueError(f"Not AlgoAddressStringFormat: {e}")
-
-    Sample:
-    import algosdk
-    private_key, address = algosdk.account.generate_account()
-    # address will look something like '7XGIDZ7SJZJHPFGOOG7OQJ4OBCTV6TIT3HI4TFWKPPQ7PP2X3R22QKXN4U'
-    """
-    return

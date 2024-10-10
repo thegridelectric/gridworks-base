@@ -459,13 +459,13 @@ sphinx-basic-ng = ">=1.0.0.beta2"
 
 [[package]]
 name = "gridworks"
-version = "1.2.0"
+version = "1.3.1"
 description = "Gridworks"
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "gridworks-1.2.0-py3-none-any.whl", hash = "sha256:ca3f1e6a6524af3f8ade539464fa98646ed4959fcf706f41d24910920e51bfae"},
-    {file = "gridworks-1.2.0.tar.gz", hash = "sha256:2def4fba9b56c4e9049ed5a15ae1d68cbf8e3b603be14b9fcc5ab8a1014adbc2"},
+    {file = "gridworks-1.3.1-py3-none-any.whl", hash = "sha256:54a8ce6e367a241617547403a80fb2b837be704cd87597e530628f3dd16ca396"},
+    {file = "gridworks-1.3.1.tar.gz", hash = "sha256:80d2c1a5faa4dd0417458a0a03a5ed3f9674d870209d9ab722ea17ab4e78be49"},
 ]
 
 [package.dependencies]
@@ -1981,4 +1981,4 @@ tests-strict = ["pytest (==4.6.0)", "pytest (==4.6.0)", "pytest (==6.2.5)", "pyt
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11, <4.0"
-content-hash = "363007b5994174bb4ece19d6aa4e50e5e7ba68e0dfc91e97ced3baece984743a"
+content-hash = "401bef1c5fcb36319b32f702afb5264753c74556b290c23a4e6225d341423d12"

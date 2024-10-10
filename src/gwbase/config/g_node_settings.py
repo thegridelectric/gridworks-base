@@ -1,7 +1,7 @@
 import datetime
 
 from pydantic import SecretStr, field_validator, model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
 from gwbase.config.algo_settings import AlgoApiSecrets, Public
@@ -14,15 +14,6 @@ from gwbase.config.utils import (
 from gwbase.enums import GNodeRole, UniverseType
 
 DEFAULT_ENV_FILE = ".env"
-
-
-class EnumSettings(BaseSettings):
-    encode: int = 1  # use 8-digit hex encoded enum symbol if 1
-
-    class Config:
-        env_prefix = "ENUM_"
-        env_nested_delimiter = "__"
-        extra = "ignore"  # Ignore extra fields in the environment
 
 
 class GNodeSettings(BaseSettings):
@@ -85,10 +76,9 @@ class GNodeSettings(BaseSettings):
         check_is_reasonable_unix_time_s(self.initial_time_unix_s)
         return self
 
-    class Config:
-        env_prefix = "GNODE_"
-        env_nested_delimiter = "__"
-        extra = "ignore"  # Ignore extra fields in the environment
+    model_config = SettingsConfigDict(
+        env_prefix="GNODE_", env_nested_delimiter="__", extra="ignore"
+    )
 
 
 class SupervisorSettings(BaseSettings):
@@ -103,6 +93,6 @@ class SupervisorSettings(BaseSettings):
     world_instance_name: str = "d1__1"
     rabbit: RabbitBrokerClient = RabbitBrokerClient()
 
-    class Config:
-        env_prefix = "SUPER_"
-        env_nested_delimiter = "__"
+    model_config = SettingsConfigDict(
+        env_prefix="SUPER_", env_nested_delimiter="__", extra="ignore"
+    )

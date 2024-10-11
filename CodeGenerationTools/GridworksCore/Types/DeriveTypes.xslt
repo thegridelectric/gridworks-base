@@ -348,7 +348,7 @@ class </xsl:text>
 <xsl:if test="ExtraAllowed='true'"><xsl:text>
 
     model_config = ConfigDict(
-        alias_generator=snake_to_pascal, extra="allow", frozen=True, populate_by_name=True, use_enum_values=True
+        alias_generator=snake_to_pascal, extra="allow", frozen=True, populate_by_name=True
     )</xsl:text>
 </xsl:if>
 

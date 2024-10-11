@@ -31,5 +31,4 @@ class GNodeInstanceGt(GwBase):
         extra="allow",
         frozen=True,
         populate_by_name=True,
-        use_enum_values=True,
     )

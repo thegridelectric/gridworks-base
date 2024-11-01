@@ -1161,7 +1161,10 @@ class ActorBase(ABC):
                 f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {e}",
             )
             return
-        if msg_category == MessageCategory.MqttJsonBroadcast:
+        if msg_category in {
+            MessageCategory.MqttJsonBroadcast,
+            MessageCategory.MqttDirect,
+        }:
             self.route_mqtt_message(from_alias=from_alias, payload=payload)
             return
         try:

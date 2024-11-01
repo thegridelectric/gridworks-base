@@ -15,10 +15,12 @@ class MessageCategory(GwStrEnum):
         by a GNode actor
       - RabbitGwSerial: GwSerial protocol message sent on the world rabbit broker
       - MqttJsonBroadcast: Serialized Json message following MQTT topic format, sent on
-        the world rabbit broker
+        the world rabbit broker. Format: gw/from-node/type-name (or gw.from-node.type-name in
+        rabbit broker)
       - RestApiPost: REST API post
       - RestApiPostResponse: REST API post response
       - RestApiGet: REST API GET
+      - MqttDirect: e.g gw/hw1-isone-me-versant-keene-beech-scada/to/a/report-event
 
     For more information:
       - [ASLs](https://gridworks-type-registry.readthedocs.io/en/latest/)
@@ -33,6 +35,7 @@ class MessageCategory(GwStrEnum):
     RestApiPost = auto()
     RestApiPostResponse = auto()
     RestApiGet = auto()
+    MqttDirect = auto()
 
     @classmethod
     def default(cls) -> "MessageCategory":
@@ -48,4 +51,4 @@ class MessageCategory(GwStrEnum):
 
     @classmethod
     def enum_version(cls) -> str:
-        return "000"
+        return "001"

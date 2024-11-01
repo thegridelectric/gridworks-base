@@ -45,7 +45,7 @@ __all__ = [
     "GNodeRole",  # [g.node.role.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#gnoderole)
     "GNodeStatus",  # [g.node.status.100](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#gnodestatus)
     "GniStatus",  # [gni.status.000](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#gnistatus)
-    "MessageCategory",  # [message.category.000](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#messagecategory)
+    "MessageCategory",  # [message.category.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#messagecategory)
     "MessageCategorySymbol",  # [message.category.symbol.000](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#messagecategorysymbol)
     "StrategyName",  # [strategy.name.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#strategyname)
     "SupervisorContainerStatus",  # [supervisor.container.status.000](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#supervisorcontainerstatus)

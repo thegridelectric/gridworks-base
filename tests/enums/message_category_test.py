@@ -1,5 +1,5 @@
 """
-Tests for enum message.category.000 from the GridWorks Type Registry.
+Tests for enum message.category.001 from the GridWorks Type Registry.
 """
 
 from gwbase.enums import MessageCategory
@@ -15,8 +15,9 @@ def test_message_category() -> None:
         "RestApiPost",
         "RestApiPostResponse",
         "RestApiGet",
+        "MqttDirect",
     }
 
     assert MessageCategory.default() == MessageCategory.Unknown
     assert MessageCategory.enum_name() == "message.category"
-    assert MessageCategory.enum_version() == "000"
+    assert MessageCategory.enum_version() == "001"

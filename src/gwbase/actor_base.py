@@ -818,7 +818,8 @@ class ActorBase(ABC):
         from_alias_lrh = self.alias.replace(".", "-")
         type_name_lrh = payload.type_name.replace(".", "-")
 
-        scada_routing_key = f"{msg_type}.{from_alias_lrh}.{type_name_lrh}"
+        # this follows the mqtt dirct pattern. Note "s" stands for "Scada.""
+        scada_routing_key = f"{msg_type}.{from_alias_lrh}.to.s.{type_name_lrh}"
         return scada_routing_key
 
     def direct_routing_key(
@@ -862,10 +863,24 @@ class ActorBase(ABC):
                 f"First  word of {routing_key} not a known MessageCategorySymbol!",
             ) from e
         msg_category = utils.message_category_from_symbol(msg_category_symbol)
+        # both MqttDirect and MqttJsonBroadcast use the symbol 'gw'
+        if msg_category == MessageCategory.MqttJsonBroadcast:
+            if len(routing_key_words) <= 2:
+                raise GwTypeError(
+                    f"gw messages should not have just 2 words: {routing_key}"
+                )
+            if routing_key_words[2] == "to":
+                if len(routing_key_words) != 5:
+                    raise GwTypeError(
+                        f"Expect MqttDirect messages to have 5 words! {routing_key}"
+                    )
+                msg_category = MessageCategory.MqttDirect
+
         allowable_categories = [
             MessageCategory.RabbitJsonDirect,
             MessageCategory.RabbitJsonBroadcast,
             MessageCategory.MqttJsonBroadcast,
+            MessageCategory.MqttDirect,
         ]
         if msg_category not in allowable_categories:
             self._latest_on_message_diagnostic = (
@@ -895,6 +910,8 @@ class ActorBase(ABC):
         msg_category = self.message_category_from_routing_key(routing_key)
         if msg_category == MessageCategory.MqttJsonBroadcast:
             type_name_lrh = routing_key_words[2]
+        elif msg_category == MessageCategory.MqttDirect:
+            type_name_lrh = routing_key_words[4]
         else:
             type_name_lrh = routing_key_words[3]
 
@@ -942,9 +959,12 @@ class ActorBase(ABC):
             GNodeRole: GNodeRole of the actor that sent the message
         """
         msg_category = self.message_category_from_routing_key(routing_key)
-        if msg_category == MessageCategory.MqttJsonBroadcast:
+        if msg_category in {
+            MessageCategory.MqttJsonBroadcast,
+            MessageCategory.MqttDirect,
+        }:
             raise Exception(
-                "MqttJsonBroadcast does not contain FromRole in routing key",
+                "MqttJsonBroadcast & MqttDirect do not contain FromRole in routing key",
             )
         routing_key_words = routing_key.split(".")
         try:
@@ -1023,7 +1043,7 @@ class ActorBase(ABC):
                 payload=payload,
                 radio_channel=radio_channel,
             )
-        elif message_category == MessageCategory.MqttJsonBroadcast:
+        elif message_category == MessageCategory.MqttDirect:
             routing_key = self.scada_routing_key(
                 payload=payload,
             )

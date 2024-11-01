@@ -15,7 +15,7 @@ __pycache__/
 .vscode
 .idea
 pythonProject
-
+CodeGenerationTools/SMQL/*.*
 
 # scratch files and folders
 scratch*

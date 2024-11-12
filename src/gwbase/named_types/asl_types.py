@@ -30,7 +30,10 @@ def types() -> List[GwBase]:
 
 
 for t in types():
+    version = t.model_fields["version"].default
+    versioned_type_name = f"{t.type_name_value()}.{version}"
+
     try:
-        TypeByName[t.type_name_value()] = t
+        TypeByName[versioned_type_name] = t
     except Exception:
         print(f"Problem w {t}")

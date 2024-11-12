@@ -1,6 +1,7 @@
 import datetime
 import enum
 import functools
+import json
 import logging
 import random
 import threading
@@ -763,7 +764,7 @@ class ActorBase(ABC):
     ########################
 
     @no_type_check
-    def get_payload_type_name(self, basic_deliver) -> str:
+    def get_payload_type_name(self, basic_deliver, body: bytes) -> str:
         """The TypeName is a string that provides the strongly typed specification
             (API/ABI) for the incoming message. This is similar to knowing
             the protobuf name/method or the ABI name/method.
@@ -791,7 +792,11 @@ class ActorBase(ABC):
         except GwTypeError as e:
             LOGGER.info(f"Could not figure out TypeName: {e}")
             raise GwTypeError(f"{e}") from e
-        return type_name
+        d = json.loads(body.decode("utf-8"))
+        if "Version" not in d.keys():
+            raise GwTypeError(f"Missing Version! keys: {d.keys()}")
+        versioned_type_name = f"{type_name}.{d["Version"]}"
+        return versioned_type_name
 
     def broadcast_routing_key(
         self,
@@ -1128,7 +1133,7 @@ class ActorBase(ABC):
         )
         self.acknowledge_message(basic_deliver.delivery_tag)
         try:
-            type_name = self.get_payload_type_name(basic_deliver)
+            type_name = self.get_payload_type_name(basic_deliver, body)
         except GwTypeError:
             return
 

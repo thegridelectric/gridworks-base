@@ -38,5 +38,10 @@ class GwCodec:
             data = data["Payload"]
             if "TypeName" not in data.keys():
                 raise GwTypeError(f"gw Payload must have TypeName. Keys: {data.keys()}")
+            if "Version" not in data.keys():
+                raise GwTypeError(f"No Version - so not a type. Keys: <{data.keys()}>")
+        elif "Version" not in data.keys():
+            raise GwTypeError(f"No Version - so not a type. Keys: <{data.keys()}>")
 
-        return self.type_by_name[data["TypeName"]].from_dict(data)
+        versioned_type_name = f"{data['TypeName']}.{data['Version']}"
+        return self.type_by_name[versioned_type_name].from_dict(data)

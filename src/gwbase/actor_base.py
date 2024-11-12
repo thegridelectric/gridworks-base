@@ -795,7 +795,7 @@ class ActorBase(ABC):
         d = json.loads(body.decode("utf-8"))
         if "Version" not in d.keys():
             raise GwTypeError(f"Missing Version! keys: {d.keys()}")
-        versioned_type_name = f"{type_name}.{d["Version"]}"
+        versioned_type_name = f"{type_name}.{d['Version']}"
         return versioned_type_name
 
     def broadcast_routing_key(

@@ -1145,13 +1145,16 @@ class ActorBase(ABC):
                 f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {type_name}",
             )
             return
-
+        this_type = TypeByName[type_name]
         try:
-            payload = self.codec.from_type(body)
-        except Exception:
-            LOGGER.warning(
-                f"TypeName for incoming message claimed to be {type_name}, but was not true!",
-            )
+            data = json.loads(body)
+        except Exception as e:
+            LOGGER.warning(f"json.loads failed! {e}")
+            return
+        try:
+            version = data["Version"]
+        except KeyError:
+            LOGGER.warning(f"message not well formed! No Version key: {data.keys()}")
             return
 
         routing_key: str = basic_deliver.routing_key
@@ -1166,6 +1169,16 @@ class ActorBase(ABC):
                 f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {e}",
             )
             return
+        try:
+            payload = self.codec.from_type(body)
+        except Exception as e:
+            LOGGER.warning(
+                f"Decode failed for Inbound {type_name}, Version {version} from {from_alias} - ",
+                f"expected version {this_type.version_value()}",
+            )
+            self.bad_body = json.loads(body.decode("utf-8"))
+            return
+
         if msg_category in {
             MessageCategory.MqttJsonBroadcast,
             MessageCategory.MqttDirect,

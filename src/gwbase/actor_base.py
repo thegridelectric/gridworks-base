@@ -1127,7 +1127,6 @@ class ActorBase(ABC):
         :param bytes body: The message body
         """
         self.latest_routing_key = basic_deliver.routing_key
-
         LOGGER.debug(
             f"{self.alias}: Got {basic_deliver.routing_key} with delivery tag {basic_deliver.delivery_tag}",
         )
@@ -1135,6 +1134,7 @@ class ActorBase(ABC):
         try:
             type_name = self.get_payload_type_name(basic_deliver, body)
         except GwTypeError:
+            print("get_payload_type_name failed")
             return
 
         if type_name not in self.codec.type_list:
@@ -1146,6 +1146,7 @@ class ActorBase(ABC):
             )
             return
         this_type = TypeByName[type_name]
+        print("1. Got here")
         try:
             data = json.loads(body)
         except Exception as e:
@@ -1156,7 +1157,7 @@ class ActorBase(ABC):
         except KeyError:
             LOGGER.warning(f"message not well formed! No Version key: {data.keys()}")
             return
-
+        print("2. Got here")
         routing_key: str = basic_deliver.routing_key
         msg_category = self.message_category_from_routing_key(routing_key)
         try:
@@ -1178,7 +1179,7 @@ class ActorBase(ABC):
             )
             self.bad_body = json.loads(body.decode("utf-8"))
             return
-
+        print("3. Got here.")
         if msg_category in {
             MessageCategory.MqttJsonBroadcast,
             MessageCategory.MqttDirect,

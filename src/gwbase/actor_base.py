@@ -101,14 +101,10 @@ class ActorBase(ABC):
     def __init__(
         self,
         settings: GNodeSettings,
-        codec: Optional[GwCodec] = None,
+        type_by_name: Dict[str, GwBase] = TypeByName,
     ):
-        if codec is None:
-            self.codec = GwCodec()
-        else:
-            self.codec = codec
-
-        # add gwabse types
+        self.codec = GwCodec(type_by_name)
+        # add gwbase types
         for name in TypeByName:
             if name not in self.codec.type_by_name:
                 self.codec.type_by_name[name] = TypeByName[name]
@@ -763,8 +759,18 @@ class ActorBase(ABC):
     # Message passing semantics
     ########################
 
+    def get_version_from_dict(self, d: Dict) -> str:
+        # Scada messages have TypeName gw
+        if d["TypeName"] == "gw":
+            payload_dict = d["Payload"]
+        else:
+            payload_dict = d
+        if "Version" not in payload_dict.keys():
+            raise GwTypeError(f"Missing Version! keys: {payload_dict.keys()}")
+        return payload_dict["Version"]
+
     @no_type_check
-    def get_payload_type_name(self, basic_deliver, body: bytes) -> str:
+    def get_type_name(self, basic_deliver, body: bytes) -> str:
         """The TypeName is a string that provides the strongly typed specification
             (API/ABI) for the incoming message. This is similar to knowing
             the protobuf name/method or the ABI name/method.
@@ -792,11 +798,17 @@ class ActorBase(ABC):
         except GwTypeError as e:
             LOGGER.info(f"Could not figure out TypeName: {e}")
             raise GwTypeError(f"{e}") from e
-        d = json.loads(body.decode("utf-8"))
-        if "Version" not in d.keys():
-            raise GwTypeError(f"Missing Version! keys: {d.keys()}")
-        versioned_type_name = f"{type_name}.{d['Version']}"
-        return versioned_type_name
+        # d = json.loads(body.decode("utf-8"))
+        # # Scada messages have TypeName gw
+        # if d["TypeName"] == "gw":
+        #     payload_dict = d["Payload"]
+        #     print(f"payload_dict keys are {payload_dict.keys()}")
+        # else:
+        #     payload_dict = d
+        # if "Version" not in payload_dict.keys():
+        #     raise GwTypeError(f"Missing Version! keys: {payload_dict.keys()}")
+        # versioned_type_name = f"{type_name}.{payload_dict['Version']}"
+        return type_name
 
     def broadcast_routing_key(
         self,
@@ -1132,11 +1144,12 @@ class ActorBase(ABC):
         )
         self.acknowledge_message(basic_deliver.delivery_tag)
         try:
-            type_name = self.get_payload_type_name(basic_deliver, body)
-        except GwTypeError:
-            print("get_payload_type_name failed")
+            type_name = self.get_type_name(basic_deliver, body)
+        except GwTypeError as e:
+            print(
+                f"Did not get type name from routing key {basic_deliver.routing_key}: {e}"
+            )
             return
-
         if type_name not in self.codec.type_list:
             self._latest_on_message_diagnostic = (
                 OnReceiveMessageDiagnostic.UNKNOWN_TYPE_NAME
@@ -1145,19 +1158,17 @@ class ActorBase(ABC):
                 f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {type_name}",
             )
             return
-        this_type = TypeByName[type_name]
-        print("1. Got here")
+        this_type = self.codec.type_by_name[type_name]
         try:
             data = json.loads(body)
         except Exception as e:
             LOGGER.warning(f"json.loads failed! {e}")
             return
         try:
-            version = data["Version"]
-        except KeyError:
-            LOGGER.warning(f"message not well formed! No Version key: {data.keys()}")
+            version = self.get_version_from_dict(data)
+        except GwTypeError as e:
+            LOGGER.warning(e)
             return
-        print("2. Got here")
         routing_key: str = basic_deliver.routing_key
         msg_category = self.message_category_from_routing_key(routing_key)
         try:
@@ -1173,13 +1184,12 @@ class ActorBase(ABC):
         try:
             payload = self.codec.from_type(body)
         except Exception as e:
+            # bad_body = json.loads(body.decode("utf-8"))
             LOGGER.warning(
                 f"Decode failed for Inbound {type_name}, Version {version} from {from_alias} - ",
-                f"expected version {this_type.version_value()}",
+                f"expected version {this_type.version_value()}. \n {e}",
             )
-            self.bad_body = json.loads(body.decode("utf-8"))
             return
-        print("3. Got here.")
         if msg_category in {
             MessageCategory.MqttJsonBroadcast,
             MessageCategory.MqttDirect,

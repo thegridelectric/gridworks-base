@@ -25,7 +25,7 @@ class GwCodec:
             return None
         return self.from_dict(data)
 
-    def from_dict(self, data: dict) -> Optional[GwBase]:
+    def from_dict(self, data: dict, use_version: bool = False) -> Optional[GwBase]:
         if "TypeName" not in data.keys():
             raise GwTypeError(f"No TypeName - so not a type. Keys: <{data.keys()}>")
         outer_type_name = data["TypeName"]
@@ -43,5 +43,8 @@ class GwCodec:
         elif "Version" not in data.keys():
             raise GwTypeError(f"No Version - so not a type. Keys: <{data.keys()}>")
 
-        versioned_type_name = f"{data['TypeName']}.{data['Version']}"
-        return self.type_by_name[versioned_type_name].from_dict(data)
+        if use_version:
+            type_name = f"{data['TypeName']}.{data['Version']}"
+        else:
+            type_name = data["TypeName"]
+        return self.type_by_name[type_name].from_dict(data)

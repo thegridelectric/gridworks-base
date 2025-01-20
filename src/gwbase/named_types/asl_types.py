@@ -14,6 +14,7 @@ from gwbase.named_types.super_starter import SuperStarter
 from gwbase.named_types.supervisor_container_gt import SupervisorContainerGt
 
 TypeByName: Dict[str, GwBase] = {}
+VersionedTypeByName: Dict[str, GwBase] = {}
 
 
 def types() -> List[GwBase]:
@@ -30,10 +31,10 @@ def types() -> List[GwBase]:
 
 
 for t in types():
-    version = t.model_fields["version"].default
-    versioned_type_name = f"{t.type_name_value()}.{version}"
-
+    versioned_type_name = f"{t.type_name_value()}.{t.version_value()}"
+    type_name = t.type_name_value()
     try:
-        TypeByName[versioned_type_name] = t
+        TypeByName[type_name] = t
+        VersionedTypeByName[versioned_type_name] = t
     except Exception:
         print(f"Problem w {t}")

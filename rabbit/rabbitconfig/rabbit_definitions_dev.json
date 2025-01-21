@@ -152,6 +152,24 @@
       "arguments": {}
     },
     {
+      "name": "ws_tx",
+      "vhost": "d1__1",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": true,
+      "arguments": {}
+    },
+    {
+      "name": "wsmic_tx",
+      "vhost": "d1__1",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
       "name": "world_tx",
       "vhost": "d1__1",
       "type": "topic",

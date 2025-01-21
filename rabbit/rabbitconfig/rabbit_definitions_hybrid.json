@@ -123,6 +123,24 @@
       "arguments": {}
     },
     {
+      "name": "ws_tx",
+      "vhost": "hw1__1",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": true,
+      "arguments": {}
+    },
+    {
+      "name": "wsmic_tx",
+      "vhost": "hw1__1",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
       "name": "ear_tx",
       "vhost": "hw1__1",
       "type": "topic",

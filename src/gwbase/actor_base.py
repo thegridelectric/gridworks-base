@@ -35,6 +35,7 @@ class RabbitRole(GwStrEnum):
     supervisor = auto()
     timecoordinator = auto()
     world = auto()
+    ws = auto()
 
     @classmethod
     def values(cls) -> List[str]:
@@ -49,6 +50,7 @@ RoleByRabbitRole: Dict[RabbitRole, GNodeRole] = {
     RabbitRole.supervisor: GNodeRole.Supervisor,
     RabbitRole.timecoordinator: GNodeRole.TimeCoordinator,
     RabbitRole.world: GNodeRole.World,
+    RabbitRole.ws: GNodeRole.WeatherService,
 }
 
 
@@ -60,6 +62,7 @@ RabbitRolebyRole: Dict[GNodeRole, RabbitRole] = {
     GNodeRole.Supervisor: RabbitRole.supervisor,
     GNodeRole.TimeCoordinator: RabbitRole.timecoordinator,
     GNodeRole.World: RabbitRole.world,
+    GNodeRole.WeatherService: RabbitRole.ws,
 }
 
 
@@ -1183,11 +1186,11 @@ class ActorBase(ABC):
             return
         try:
             payload = self.codec.from_type(body)
-        except Exception as e:
-            # bad_body = json.loads(body.decode("utf-8"))
+        except Exception:
+            # self.bad_body = json.loads(body.decode("utf-8"))
             LOGGER.warning(
                 f"Decode failed for Inbound {type_name}, Version {version} from {from_alias} - ",
-                f"expected version {this_type.version_value()}. \n {e}",
+                f"expected version {this_type.version_value()}.",
             )
             return
         if msg_category in {

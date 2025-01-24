@@ -845,7 +845,7 @@ class ActorBase(ABC):
     def direct_routing_key(
         self,
         to_role: GNodeRole,
-        payload: HeartbeatA,
+        payload: GwBase,
         to_g_node_alias: str,
     ) -> str:
         msg_type = MessageCategorySymbol.rj.value
@@ -1227,7 +1227,7 @@ class ActorBase(ABC):
         self,
         from_alias: str,
         from_role: GNodeRole,
-        payload: SimTimestep,
+        payload: GwBase,
     ) -> None:
         """
         Base class for message routing in GNode Actors, handling interactions
@@ -1238,7 +1238,7 @@ class ActorBase(ABC):
         at the end of the method if the message has not been routed yet.
         """
 
-        if payload.type_name == HeartbeatA.type_name:
+        if payload.type_name == HeartbeatA.type_name_value:
             if from_role != GNodeRole.Supervisor:
                 LOGGER.info(
                     f"Ignoring HeartbeatA from GNode {from_alias} with GNodeRole {from_role}; expects"
@@ -1256,13 +1256,13 @@ class ActorBase(ABC):
                 self.heartbeat_from_super(from_alias, payload)
             except Exception:
                 LOGGER.exception("Error in heartbeat_received")
-        elif payload.type_name == SimTimestep.type_name:
+        elif payload.type_name == SimTimestep.type_name_value:
             try:
                 self.timestep_from_timecoordinator(payload)
             except Exception:
                 LOGGER.exception("Error in timestep_from_timecoordinator")
 
-    def route_mqtt_message(self, from_alias: str, payload: HeartbeatA) -> None:
+    def route_mqtt_message(self, from_alias: str, payload: GwBase) -> None:
         """
         Base class for message routing from SCADA actors, which use
         MessageCategory.MqttJsonBroadcast

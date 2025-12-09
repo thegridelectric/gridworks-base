@@ -43,13 +43,32 @@ All GridWorks repos require a running rabbitMQ dev broker running to pass tests 
   - **x86 architecture**: `./x86.sh`
   - **arm architecture**: `./arm.sh`
 
+Note those scripts are just aliases so one doesn't need to remember the docker incantation. Also, if you have an older version of docker, you may need to use `docker-compose` instead of `docker compose`. That should also work.
+
 Tests for success:
 
 1. go to http://0.0.0.0:15672/ - it should look like this:
 
 ![alt_text](docs/images/dev-broker-login.png) - Username/password for the dev rabbit broker: `smqPublic/smqPublic` - [More info]](https://gridworks.readthedocs.io/en/latest/gridworks-broker.html) on the GridWorks use of rabbit brokers
 
-2. tests pass
+2. Test mqtt access via mqtt_sub:
+
+```
+mosquitto_sub -h localhost -p 1885 -u smqPublic -P smqPublic -t "#" -v
+```
+
+and go to `http://0.0.0.0:15672/queues` to confirm a new queue has showed up
+
+```
+docker exec -it gw-dev-rabbit rabbitmq-plugins list
+```
+
+And confirm:
+ [E*] rabbitmq_mqtt                     3.9.13
+
+
+
+3. tests pass
 
 ```
 poetry install

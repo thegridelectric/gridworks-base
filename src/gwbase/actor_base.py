@@ -3,16 +3,14 @@ import enum
 import functools
 import json
 import logging
-import random
 import threading
-import time
 import uuid
 from abc import ABC
+from dataclasses import dataclass
 from enum import auto
 from typing import Dict, List, Optional, no_type_check
 
 import pika
-from gw import utils
 from gw.enums import GwStrEnum
 from gw.errors import GwTypeError
 from gw.named_types import GwBase
@@ -21,49 +19,12 @@ from pika.spec import Basic, BasicProperties
 
 from gwbase.codec import GwCodec
 from gwbase.config import GNodeSettings
-from gwbase.enums import GNodeRole, MessageCategory, MessageCategorySymbol, UniverseType
-from gwbase.named_types import HeartbeatA, SimTimestep
+from gwbase.enums import GNodeClass
 from gwbase.named_types.asl_types import TypeByName
 from gwbase.property_format import is_left_right_dot
+from gwbase.transport_encoding import MessageCategory, RoutingClass, ROUTING_CLASS_BY_GNODE_CLASS
 
 
-class RabbitRole(GwStrEnum):
-    atomictnode = auto()
-    gnode = auto()
-    marketmaker = auto()
-    scada = auto()
-    supervisor = auto()
-    timecoordinator = auto()
-    world = auto()
-    ws = auto()
-
-    @classmethod
-    def values(cls) -> List[str]:
-        return [elt.value for elt in cls]
-
-
-RoleByRabbitRole: Dict[RabbitRole, GNodeRole] = {
-    RabbitRole.atomictnode: GNodeRole.AtomicTNode,
-    RabbitRole.gnode: GNodeRole.GNode,
-    RabbitRole.marketmaker: GNodeRole.MarketMaker,
-    RabbitRole.scada: GNodeRole.Scada,
-    RabbitRole.supervisor: GNodeRole.Supervisor,
-    RabbitRole.timecoordinator: GNodeRole.TimeCoordinator,
-    RabbitRole.world: GNodeRole.World,
-    RabbitRole.ws: GNodeRole.WeatherService,
-}
-
-
-RabbitRolebyRole: Dict[GNodeRole, RabbitRole] = {
-    GNodeRole.AtomicTNode: RabbitRole.atomictnode,
-    GNodeRole.GNode: RabbitRole.gnode,
-    GNodeRole.MarketMaker: RabbitRole.marketmaker,
-    GNodeRole.Scada: RabbitRole.scada,
-    GNodeRole.Supervisor: RabbitRole.supervisor,
-    GNodeRole.TimeCoordinator: RabbitRole.timecoordinator,
-    GNodeRole.World: RabbitRole.world,
-    GNodeRole.WeatherService: RabbitRole.ws,
-}
 
 
 class OnSendMessageDiagnostic(enum.Enum):
@@ -94,6 +55,141 @@ LOG_FORMAT = (
 LOGGER = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class Envelope:
+    routing_key: str
+    category: MessageCategory
+
+
+@dataclass(frozen=True)
+class JsonDirectEnvelope(Envelope):
+    from_alias: str
+    from_class: GNodeClass
+    type_name: str
+    to_class: GNodeClass
+    to_alias: str
+
+
+@dataclass(frozen=True)
+class JsonBroadcastEnvelope(Envelope):
+    from_alias: str
+    from_class: GNodeClass
+    type_name: str
+    radio_channel: Optional[str]
+
+
+@dataclass(frozen=True)
+class ScadaWrappedEnvelope(Envelope):
+    from_alias: str
+    type_name: str
+    to_class: GNodeClass
+
+
+def _parse_alias_token(token: str, routing_key: str, field_name: str) -> str:
+    if not is_lrh_alias_format(token):
+        raise GwTypeError(
+            f"{field_name} {token} in {routing_key} message not lrh_alias_format!",
+        )
+    return token.replace("-", ".")
+
+
+def _parse_routing_code_token(token: str, routing_key: str) -> RoutingClass:
+    try:
+        return RoutingClass[token]
+    except ValueError as e:
+        raise GwTypeError(
+            f"Unknown routing class {token} in {routing_key}. "
+            f"Must belong to {[x.value for x in RoutingClass]}"
+        ) from e
+
+def _parse_json_direct_envelope(tokens: List[str], routing_key: str) -> JsonDirectEnvelope:
+    if len(tokens) != 6:
+        raise GwTypeError(f"Expect JsonDirect messages to have 6 words! {routing_key}")
+    from_alias = _parse_alias_token(tokens[1], routing_key, "FromAlias")
+    from_class = _parse_routing_code_token(tokens[2], routing_key)
+    type_name = _parse_alias_token(tokens[3], routing_key, "TypeName")
+    to_class = _parse_routing_code_token(tokens[4], routing_key)
+    to_alias = _parse_alias_token(tokens[5], routing_key, "ToAlias")
+    return JsonDirectEnvelope(
+        routing_key=routing_key,
+        category=MessageCategory.JsonDirect,
+        from_alias=from_alias,
+        from_class=from_class,
+        type_name=type_name,
+        to_class=to_class,
+        to_alias=to_alias,
+    )
+
+
+def _parse_json_broadcast_envelope(
+    tokens: List[str], routing_key: str
+) -> JsonBroadcastEnvelope:
+    if len(tokens) < 4:
+        raise GwTypeError(
+            f"Expect JsonBroadcast messages to have at least 4 words! {routing_key}"
+        )
+    from_alias = _parse_alias_token(tokens[1], routing_key, "FromAlias")
+    from_class = _parse_routing_code_token(tokens[2], routing_key)
+    type_name = _parse_alias_token(tokens[3], routing_key, "TypeName")
+    radio_channel = None
+    if len(tokens) > 4:
+        radio_channel = ".".join(tokens[4:])
+        try:
+            is_left_right_dot(radio_channel)
+        except ValueError as e:
+            raise GwTypeError(str(e)) from e
+    return JsonBroadcastEnvelope(
+        routing_key=routing_key,
+        category=MessageCategory.JsonBroadcast,
+        from_alias=from_alias,
+        from_class=from_class,
+        type_name=type_name,
+        radio_channel=radio_channel,
+    )
+
+
+def _parse_scada_wrapped_envelope(
+    tokens: List[str], routing_key: str
+) -> ScadaWrappedEnvelope:
+    if len(tokens) == 5:
+        from_alias = _parse_alias_token(tokens[1], routing_key, "FromAlias")
+        if tokens[2] != "to":
+            raise GwTypeError(f"Wrapped messages with 5 words must use 'to'! {routing_key}")
+        to_class = _parse_routing_code_token(tokens[3], routing_key)
+        type_name = _parse_alias_token(tokens[4], routing_key, "TypeName")
+        return ScadaWrappedEnvelope(
+            routing_key=routing_key,
+            category=MessageCategory.Wrapped,
+            from_alias=from_alias,
+            type_name=type_name,
+            to_class=to_class,
+        )
+    raise GwTypeError(
+        f"Wrapped messages must have 5 words! {routing_key}"
+    )
+
+
+def parse_routing_key(routing_key: str) -> Envelope:
+    tokens = routing_key.split(".")
+    if not tokens or not tokens[0]:
+        raise GwTypeError(f"Empty routing key category in {routing_key}!")
+
+    try:
+        category = MessageCategory(tokens[0])
+    except ValueError as e:
+        raise GwTypeError(
+            f"First  word of {routing_key} not a known MessageCategorySymbol!",
+        ) from e
+
+    if category == MessageCategory.JsonDirect:
+        return _parse_json_direct_envelope(tokens, routing_key)
+    if category == MessageCategory.JsonBroadcast:
+        return _parse_json_broadcast_envelope(tokens, routing_key)
+    if category == MessageCategory.Wrapped:
+        return _parse_scada_wrapped_envelope(tokens, routing_key)
+    raise GwTypeError(f"Rabbit messages do not handle {category.value}")
+
+
 class ActorBase(ABC):
     "This is the base class for GNodes, used to communicate via RabbitMQ"
 
@@ -116,19 +212,14 @@ class ActorBase(ABC):
         self.shutting_down: bool = False
         self.alias: str = settings.g_node_alias
         self.g_node_instance_id: str = settings.g_node_instance_id
-        self.g_node_role: GNodeRole = GNodeRole(settings.g_node_role_value)
-        self.rabbit_role: RabbitRole = RabbitRolebyRole[self.g_node_role]
-        self.universe_type: UniverseType = UniverseType(settings.universe_type_value)
-        # Used for tracking time in simulated worlds
-        self._time: float = time.time()
-        if self.universe_type == UniverseType.Dev:
-            self._time = settings.initial_time_unix_s
+        self.g_node_class: GNodeClass = GNodeClass(settings.g_node_role_value)
+        self.routing_code: str = GNodeClassRoutingCode[self.g_node_class]
         self._main_loop_running: bool = False
 
         adder = "-F" + str(uuid.uuid4()).split("-")[0][0:3]
         self.queue_name: str = self.alias + adder
-        self._consume_exchange: str = self.rabbit_role.value + "_tx"
-        self._publish_exchange: str = self.rabbit_role.value + "mic_tx"
+        self._consume_exchange: str = self.routing_code + "_tx"
+        self._publish_exchange: str = self.routing_code + "mic_tx"
 
         self._consume_connection: Optional[
             pika.adapters.select_connection.SelectConnection
@@ -427,7 +518,7 @@ class ActorBase(ABC):
         :param str|unicode userdata: Extra user data (queue name)
         """
         lrh_alias = self.alias.replace(".", "-")
-        rj = MessageCategorySymbol.rj.value
+        rj = MessageCategory.JsonDirect.value
         direct_message_to_me_binding = f"{rj}.*.*.*.*.{lrh_alias}"
 
         LOGGER.info(
@@ -795,10 +886,9 @@ class ActorBase(ABC):
         # might be easier for developers to grock.
 
         try:
-            type_name = self.type_name_from_routing_key(
-                routing_key=basic_deliver.routing_key,
-            )
+            env = parse_routing_key(basic_deliver.routing_key)
         except GwTypeError as e:
+            self._set_routing_key_diagnostic(e)
             LOGGER.info(f"Could not figure out TypeName: {e}")
             raise GwTypeError(f"{e}") from e
         # d = json.loads(body.decode("utf-8"))
@@ -811,202 +901,77 @@ class ActorBase(ABC):
         # if "Version" not in payload_dict.keys():
         #     raise GwTypeError(f"Missing Version! keys: {payload_dict.keys()}")
         # versioned_type_name = f"{type_name}.{payload_dict['Version']}"
-        return type_name
+        return env.type_name
 
     def broadcast_routing_key(
         self,
         payload: GwBase,
         radio_channel: Optional[str],
     ) -> str:
-        msg_type = MessageCategorySymbol.rjb.value
+        msg_type = MessageCategory.JsonBroadcast.value
         from_alias_lrh = self.alias.replace(".", "-")
         type_name_lrh = payload.type_name.replace(".", "-")
-        from_role = self.rabbit_role.value
+        from_class = self.routing_code
         if radio_channel is None:
-            return f"{msg_type}.{from_alias_lrh}.{from_role}.{type_name_lrh}"
+            return f"{msg_type}.{from_alias_lrh}.{from_class}.{type_name_lrh}"
         else:
             try:
                 is_left_right_dot(radio_channel)
             except ValueError as e:
                 raise Exception(e) from e
-            return f"{msg_type}.{from_alias_lrh}.{from_role}.{type_name_lrh}.{radio_channel}"
+            return f"{msg_type}.{from_alias_lrh}.{from_class}.{type_name_lrh}.{radio_channel}"
 
     def scada_routing_key(self, payload: GwBase) -> str:
-        if self.g_node_role != GNodeRole.AtomicTNode:
-            raise Exception("Only send messages to SCADA if role is AtomicTNode!")
-        msg_type = MessageCategorySymbol.gw.value
+        if self.g_node_class != GNodeClass.LeafTransactiveNode:
+            raise Exception("Only send messages to SCADA if ActorClass is LeafTransactiveNode!")
+        msg_type = MessageCategory.Wrapped.value
         from_alias_lrh = self.alias.replace(".", "-")
         type_name_lrh = payload.type_name.replace(".", "-")
 
-        # this follows the mqtt dirct pattern. Note "s" stands for "Scada.""
-        scada_routing_key = f"{msg_type}.{from_alias_lrh}.to.s.{type_name_lrh}"
+        scada_routing_key = f"{msg_type}.{from_alias_lrh}.to.scada.{type_name_lrh}"
         return scada_routing_key
 
     def direct_routing_key(
         self,
-        to_role: GNodeRole,
+        to_class: GNodeClass,
         payload: GwBase,
         to_g_node_alias: str,
     ) -> str:
-        msg_type = MessageCategorySymbol.rj.value
+        msg_type = MessageCategory.JsonDirect.value
         from_lrh_alias = self.alias.replace(".", "-")
-        from_role = self.rabbit_role.value
-        to_role_val = RabbitRolebyRole[to_role].value
+        from_class = self.routing_code
+        to_class_code = GNodeClassRoutingCode[to_class]
         to_lrh_alias = to_g_node_alias.replace(".", "-")
         type_name_lrh = payload.type_name.replace(".", "-")
 
-        direct_routing_key = f"{msg_type}.{from_lrh_alias}.{from_role}.{type_name_lrh}.{to_role_val}.{to_lrh_alias}"
+        direct_routing_key = f"{msg_type}.{from_lrh_alias}.{from_class}.{type_name_lrh}.{to_class_code}.{to_lrh_alias}"
         return direct_routing_key
 
-    def message_category_from_routing_key(self, routing_key: str) -> MessageCategory:
-        """Returns the MessageCategory of the message given the routing key.
-
-        Raises a GwTypeError exception if there is a problem decoding the MessageCategory
-
-        Args:
-           routing_key (str): This is the basic_deliver.routing_key string
-           in a rabbit message
-
-        Returns:
-           MessageCategory: the MessageCategory, as enum
-        """
-        routing_key_words = routing_key.split(".")
-        msg_category_symbol_value = routing_key_words[0]
-
-        try:
-            msg_category_symbol = MessageCategorySymbol(msg_category_symbol_value)
-        except ValueError as e:
+    def _set_routing_key_diagnostic(self, error: GwTypeError) -> None:
+        error_text = str(error)
+        if "known MessageCategorySymbol" in error_text:
             self._latest_on_message_diagnostic = (
                 OnReceiveMessageDiagnostic.UNKNOWN_MESSAGE_CATEGORY_SYMBOL
             )
-            raise GwTypeError(
-                f"First  word of {routing_key} not a known MessageCategorySymbol!",
-            ) from e
-        msg_category = utils.message_category_from_symbol(msg_category_symbol)
-        # both MqttDirect and MqttJsonBroadcast use the symbol 'gw'
-        if msg_category == MessageCategory.MqttJsonBroadcast:
-            if len(routing_key_words) <= 2:
-                raise GwTypeError(
-                    f"gw messages should not have just 2 words: {routing_key}"
-                )
-            if routing_key_words[2] == "to":
-                if len(routing_key_words) != 5:
-                    raise GwTypeError(
-                        f"Expect MqttDirect messages to have 5 words! {routing_key}"
-                    )
-                msg_category = MessageCategory.MqttDirect
-
-        allowable_categories = [
-            MessageCategory.RabbitJsonDirect,
-            MessageCategory.RabbitJsonBroadcast,
-            MessageCategory.MqttJsonBroadcast,
-            MessageCategory.MqttDirect,
-        ]
-        if msg_category not in allowable_categories:
-            self._latest_on_message_diagnostic = (
-                OnReceiveMessageDiagnostic.UNHANDLED_ROUTING_KEY_TYPE
-            )
-            raise GwTypeError(
-                f"Rabbit messages do not handle {msg_category_symbol.value}",
-            )
-        return msg_category
-
-    def type_name_from_routing_key(
-        self,
-        routing_key: str,
-    ) -> str:
-        """Returns the TypeName of the message given the routing key. Raises a GwTypeError
-        exception if there is a problem decoding the TypeName, or if it does not have
-        the appropriate left-right-dot format.
-
-        Args:
-            routing_key (str): This is the basic_deliver.routing_key string
-            in a rabbit message
-
-        Returns:
-            str: the TypeName of the payload, in Lrd format
-        """
-        routing_key_words = routing_key.split(".")
-        msg_category = self.message_category_from_routing_key(routing_key)
-        if msg_category == MessageCategory.MqttJsonBroadcast:
-            type_name_lrh = routing_key_words[2]
-        elif msg_category == MessageCategory.MqttDirect:
-            type_name_lrh = routing_key_words[4]
-        else:
-            type_name_lrh = routing_key_words[3]
-
-        if not is_lrh_alias_format(type_name_lrh):
+        elif "TypeName" in error_text:
             self._latest_on_message_diagnostic = (
                 OnReceiveMessageDiagnostic.TYPE_NAME_DECODING_PROBLEM
             )
-            raise GwTypeError(
-                f"TypeName {type_name_lrh} in {routing_key} message not lrh_alias_format!",
+        elif "FromAlias" in error_text or "Unknown short alias" in error_text:
+            self._latest_on_message_diagnostic = (
+                OnReceiveMessageDiagnostic.FROM_GNODE_DECODING_PROBLEM
             )
-        type_name = type_name_lrh.replace("-", ".")
-        return type_name
-
-    def from_alias_from_routing_key(self, routing_key: str) -> str:
-        """Returns the GNodeAlias in left-right-dot format. Raises a GwTypeError
-        if there is trouble getting this.
-        Args:
-            routing_key (str): This is the basic_deliver.routing_key string
-            in a rabbit message
-        """
-        routing_key_words = routing_key.split(".")
-        try:
-            from_g_node_alias_lrh = routing_key_words[1]
-        except Exception as e:
-            raise GwTypeError(f"{routing_key} must have at least two words!") from e
-
-        if not is_lrh_alias_format(from_g_node_alias_lrh):
-            raise GwTypeError(
-                f"GNodeAlias not is_lrh_alias_format for routing key {routing_key}!",
+        else:
+            self._latest_on_message_diagnostic = (
+                OnReceiveMessageDiagnostic.UNHANDLED_ROUTING_KEY_TYPE
             )
-        from_g_node_alias = from_g_node_alias_lrh.replace("-", ".")
-        return from_g_node_alias
-
-    def from_role_from_routing_key(self, routing_key: str) -> GNodeRole:
-        """Returns the GNodeRole that the message came from. Raises a GwTypeError
-        if there is trouble getting this.
-        Args:
-            routing_key (str): basic_deliver.routing_key string
-            in a rabbit message
-
-        Raises:
-            GwTypeError: Error in message construction
-
-        Returns:
-            GNodeRole: GNodeRole of the actor that sent the message
-        """
-        msg_category = self.message_category_from_routing_key(routing_key)
-        if msg_category in {
-            MessageCategory.MqttJsonBroadcast,
-            MessageCategory.MqttDirect,
-        }:
-            raise Exception(
-                "MqttJsonBroadcast & MqttDirect do not contain FromRole in routing key",
-            )
-        routing_key_words = routing_key.split(".")
-        try:
-            from_g_node_rabbit_role = routing_key_words[2]
-        except Exception as e:
-            raise GwTypeError(f"{routing_key} must have at least three words!") from e
-        try:
-            rabbit_role = RabbitRole(from_g_node_rabbit_role)
-        except ValueError as e:
-            raise GwTypeError(
-                f"Unknown short alias {from_g_node_rabbit_role} in {routing_key}"
-                f" Must belong to {RabbitRole}",
-            ) from e
-
-        return RoleByRabbitRole[rabbit_role]
 
     @no_type_check
     def send_message(
         self,
         payload: GwBase,
-        message_category: MessageCategory = MessageCategory.RabbitJsonDirect,
-        to_role: Optional[GNodeRole] = None,
+        message_category: MessageCategory = MessageCategory.JsonDirect,
+        to_class: Optional[GNodeClass] = None,
         to_g_node_alias: Optional[str] = None,
         radio_channel: Optional[str] = None,
     ) -> OnSendMessageDiagnostic:
@@ -1019,7 +984,7 @@ class ActorBase(ABC):
             that includes TypeName as a json key, and has to_type()
             as an encoding method.
             routing_key_type: for creating routing key
-            to_role (Optional[GNodeRole]): used if a direct message
+            to_class (Optional[GNodeClass]): used if a direct message
             to_g_node_alias (str): used if a direct message
 
         Returns:
@@ -1044,9 +1009,9 @@ class ActorBase(ABC):
         )
         print(f"type is {message_category}")
         publish_exchange = self._publish_exchange
-        if message_category == MessageCategory.RabbitJsonDirect:
-            if not isinstance(to_role, GNodeRole):
-                raise Exception("Must include to_role for a direct message")
+        if message_category == MessageCategory.JsonDirect:
+            if not isinstance(to_class, GNodeClass):
+                raise Exception("Must include to_class for a direct message")
             try:
                 is_left_right_dot(to_g_node_alias)
             except Exception as e:
@@ -1054,16 +1019,16 @@ class ActorBase(ABC):
                     f"to_g_node_alias must have LrdAliasFormat. Got {to_g_node_alias}",
                 ) from e
             routing_key = self.direct_routing_key(
-                to_role=to_role,
+                to_class=to_class,
                 payload=payload,
                 to_g_node_alias=to_g_node_alias,
             )
-        elif message_category == MessageCategory.RabbitJsonBroadcast:
+        elif message_category == MessageCategory.JsonBroadcast:
             routing_key = self.broadcast_routing_key(
                 payload=payload,
                 radio_channel=radio_channel,
             )
-        elif message_category == MessageCategory.MqttDirect:
+        elif message_category == MessageCategory.Wrapped:
             routing_key = self.scada_routing_key(
                 payload=payload,
             )
@@ -1147,12 +1112,14 @@ class ActorBase(ABC):
         )
         self.acknowledge_message(basic_deliver.delivery_tag)
         try:
-            type_name = self.get_type_name(basic_deliver, body)
+            env = parse_routing_key(basic_deliver.routing_key)
         except GwTypeError as e:
+            self._set_routing_key_diagnostic(e)
             print(
                 f"Did not get type name from routing key {basic_deliver.routing_key}: {e}"
             )
             return
+        type_name = env.type_name
         if type_name not in self.codec.type_list:
             self._latest_on_message_diagnostic = (
                 OnReceiveMessageDiagnostic.UNKNOWN_TYPE_NAME
@@ -1173,17 +1140,7 @@ class ActorBase(ABC):
             LOGGER.warning(e)
             return
         routing_key: str = basic_deliver.routing_key
-        msg_category = self.message_category_from_routing_key(routing_key)
-        try:
-            from_alias = self.from_alias_from_routing_key(routing_key)
-        except GwTypeError as e:
-            self._latest_on_message_diagnostic = (
-                OnReceiveMessageDiagnostic.FROM_GNODE_DECODING_PROBLEM
-            )
-            LOGGER.warning(
-                f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {e}",
-            )
-            return
+        from_alias = env.from_alias
         try:
             payload = self.codec.from_type(body)
         except Exception:
@@ -1193,29 +1150,17 @@ class ActorBase(ABC):
                 f"expected version {this_type.version_value()}.",
             )
             return
-        if msg_category in {
-            MessageCategory.MqttJsonBroadcast,
-            MessageCategory.MqttDirect,
-        }:
+        if env.category == MessageCategory.Wrapped:
             self.route_mqtt_message(from_alias=from_alias, payload=payload)
             return
-        try:
-            from_role = self.from_role_from_routing_key(routing_key)
-        except GwTypeError as e:
-            self._latest_on_message_diagnostic = (
-                OnReceiveMessageDiagnostic.FROM_GNODE_DECODING_PROBLEM
-            )
-            LOGGER.warning(
-                f"IGNORING MESSAGE. {self._latest_on_message_diagnostic}: {e}",
-            )
-            return
+        from_class = env.from_class
 
         self._latest_on_message_diagnostic = (
             OnReceiveMessageDiagnostic.TO_DIRECT_ROUTING
         )
         self.route_message(
             from_alias=from_alias,
-            from_role=from_role,
+            from_class=from_class,
             payload=payload,
         )
 
@@ -1226,125 +1171,25 @@ class ActorBase(ABC):
     def route_message(
         self,
         from_alias: str,
-        from_role: GNodeRole,
+        from_class: GNodeClass,
         payload: GwBase,
     ) -> None:
         """
-        Base class for message routing in GNode Actors, handling interactions
-        with the Supervisor and TimeCoordinator.
+        Base class for message routing in GNode actors.
 
         Derived classes are expected to implement their own `route_message` method.
-        It is recommended to call `super().route_message(from_alias, from_role, payload)`
+        It is recommended to call `super().route_message(from_alias, from_class, payload)`
         at the end of the method if the message has not been routed yet.
         """
-
-        if payload.type_name == HeartbeatA.type_name_value:
-            if from_role != GNodeRole.Supervisor:
-                LOGGER.info(
-                    f"Ignoring HeartbeatA from GNode {from_alias} with GNodeRole {from_role}; expects"
-                    f"Supervisor as the GNodeRole",
-                )
-                return
-            elif from_alias != self.settings.my_super_alias:
-                LOGGER.info(
-                    f"Ignoring HeartbeatA from supervisor {from_alias}; "
-                    f"my supervisor is {self.settings.my_super_alias}",
-                )
-                return
-
-            try:
-                self.heartbeat_from_super(from_alias, payload)
-            except Exception:
-                LOGGER.exception("Error in heartbeat_received")
-        elif payload.type_name == SimTimestep.type_name_value:
-            try:
-                self.timestep_from_timecoordinator(payload)
-            except Exception:
-                LOGGER.exception("Error in timestep_from_timecoordinator")
+        ...
 
     def route_mqtt_message(self, from_alias: str, payload: GwBase) -> None:
         """
         Base class for message routing from SCADA actors, which use
-        MessageCategory.MqttJsonBroadcast
-
-        This is only intended to be used for AtomicTNodes and Ears.
-        """
-        ...
-
-    def heartbeat_from_super(self, from_alias: str, ping: HeartbeatA) -> None:
-        """
-        Subordinate GNode responds to its supervisor's heartbeat with a "pong" message.
-
-        Both the received heartbeat (ping) and the response (pong) have the type HeartbeatA
-        (see: https://gridworks.readthedocs.io/en/latest/apis/types.html#heartbeata).
-
-        The subordinate GNode generates its own unique identifier (hex) and includes it
-        in the pong message along with the heartbeat it received from the supervisor.
-
-        Note that the subordinate GNode does not have the responsibility of verifying
-        the authenticity of the last heartbeat received from the supervisor - although typically,
-        the supervisor does send the last heartbeat from this GNode (except during the initial
-        heartbeat exchange).
-
-        Args:
-            from_alias (str): the alias of the GNode that sent the ping.
-            ping (HeartbeatA): the heartbeat sent.
-
-        Raises:
-        ValueError: If `from_alias` is not this GNode's Supervisor alias.
+        MessageCategory.Wrapped
 
         """
-        if from_alias != self.settings.my_super_alias:
-            raise ValueError(
-                f"from_alias {from_alias} does not match my supervisor"
-                f" {self.settings.my_super_alias}. This message should"
-                f"have been filtered out in the route_message method.",
-            )
-
-        pong = HeartbeatA(
-            my_hex=str(random.choice("0123456789abcdef")),
-            your_last_hex=ping.my_hex,
-        )
-        self.send_message(
-            payload=pong,
-            to_role=GNodeRole.Supervisor,
-            to_g_node_alias=self.settings.my_super_alias,
-        )
-
-        LOGGER.debug(
-            f"[{self.alias}] Sent HB: SuHex {pong.your_last_hex}, AtnHex {pong.my_hex}",
-        )
-
-    ########################
-    ## Time related (simulated time)
-    ########################
-
-    def timestep_from_timecoordinator(self, payload: SimTimestep) -> None:
-        if self._time < payload.time_unix_s:
-            self._time = payload.time_unix_s
-            self.new_timestep(payload)
-            LOGGER.debug(f"Time is now {self.time_str()}")
-        elif self._time == payload.time_unix_s:
-            self.repeat_timestep(payload)
-
-    def new_timestep(self, payload: SimTimestep) -> None:
         ...
-        # LOGGER.info("New timestep")
-
-    def repeat_timestep(self, payload: SimTimestep) -> None:
-        ...
-        # LOGGER.info("Timestep received again in atn_actor_base")
-
-    def time(self) -> float:
-        if self.universe_type == UniverseType.Dev:
-            return self._time
-        else:
-            return time.time()
-
-    def time_str(self) -> str:
-        timestamp = self.time()
-        dt = datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
-        return dt.strftime("%m/%d/%Y, %H:%M")
 
     ###############################
     # Other GNode-related methods

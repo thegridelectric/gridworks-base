@@ -3,8 +3,14 @@ import time
 import uuid
 
 from gw_test import wait_for
+from gwbase.actor_base import (
+    JsonBroadcastEnvelope,
+    JsonDirectEnvelope,
+    ScadaWrappedEnvelope,
+    parse_routing_key,
+)
 from gwbase.config import GNodeSettings
-from gwbase.enums import GNodeRole
+from gwbase.enums import GNodeClass
 from gwbase.named_types import HeartbeatA, SimTimestep
 from gwbase_test import (
     GNodeStubRecorder,
@@ -12,6 +18,33 @@ from gwbase_test import (
     TimeCoordinatorStubRecorder,
     load_rabbit_exchange_bindings,
 )
+
+
+def test_parse_routing_key_json_direct() -> None:
+    env = parse_routing_key("rj.d1-source.unknown.report-event.scada.d1-super")
+    assert isinstance(env, JsonDirectEnvelope)
+    assert env.from_alias == "d1.source"
+    assert env.from_class == GNodeClass.Unknown
+    assert env.type_name == "report.event"
+    assert env.to_class == GNodeClass.Scada
+    assert env.to_alias == "d1.super"
+
+
+def test_parse_routing_key_json_broadcast() -> None:
+    env = parse_routing_key("rjb.d1-source.unknown.report-event.ops.alerts")
+    assert isinstance(env, JsonBroadcastEnvelope)
+    assert env.from_alias == "d1.source"
+    assert env.from_class == GNodeClass.Unknown
+    assert env.type_name == "report.event"
+    assert env.radio_channel == "ops.alerts"
+
+
+def test_parse_routing_key_wrapped() -> None:
+    env = parse_routing_key("gw.d1-source.to.scada.report-event")
+    assert isinstance(env, ScadaWrappedEnvelope)
+    assert env.from_alias == "d1.source"
+    assert env.type_name == "report.event"
+    assert env.to_class == GNodeClass.Scada
 
 
 def test_actor_base():
@@ -34,7 +67,7 @@ def test_actor_base():
     payload = HeartbeatA(my_hex="0", your_last_hex="0")
     gn.send_message(
         payload=payload,
-        to_role=GNodeRole.Supervisor,
+        to_class=GNodeClass.Supervisor,
         to_g_node_alias=su.alias,
     )
 

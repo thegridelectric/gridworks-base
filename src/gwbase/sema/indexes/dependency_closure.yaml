@@ -1,0 +1,45 @@
+# GENERATED FILE - DO NOT EDIT
+# Generated from definitions/registry.yaml
+
+types:
+  g.node.gt:
+    '004':
+      enums:
+      - base.g.node.class:000
+      - g.node.status:000
+      formats:
+      - left.right.dot
+      - uuid4.str
+      types: []
+  g.node.instance.gt:
+    '000':
+      enums:
+      - g.node.instance.status:000
+      - g.node.instance.transport:000
+      formats:
+      - utc.milliseconds
+      - uuid4.str
+      types: []
+  heartbeat.a:
+    '000':
+      enums: []
+      formats:
+      - hex.char
+      types: []
+  sim.ready:
+    '000':
+      enums: []
+      formats:
+      - left.right.dot
+      - utc.seconds
+      - uuid4.str
+      types: []
+  sim.timestep:
+    '000':
+      enums: []
+      formats:
+      - left.right.dot
+      - utc.milliseconds
+      - utc.seconds
+      - uuid4.str
+      types: []

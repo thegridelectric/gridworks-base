@@ -5,7 +5,7 @@ from gw.errors import DcError
 
 from gwbase.data_classes.g_node import GNode
 from gwbase.data_classes.gps_point import GpsPoint
-from gwbase.enums import GniStatus, GNodeRole, GNodeStatus, StrategyName
+from gwbase.enums import GniStatus, GNodeClass, GNodeStatus, StrategyName
 
 LOG_FORMAT = (
     "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "
@@ -72,8 +72,8 @@ class GNodeInstance:
         return self.g_node.alias
 
     @property
-    def role(self) -> GNodeRole:
-        return self.g_node.role
+    def g_node_class(self) -> GNodeClass:
+        return self.g_node.g_node_class
 
     @property
     def g_node_registry_addr(self) -> str:

@@ -1,8 +1,8 @@
-from gw.enums import MessageCategory
 from gwbase.actor_base import ActorBase
 from gwbase.config import GNodeSettings
-from gwbase.enums import GNodeRole
+from gwbase.enums import GNodeClass
 from gwbase.named_types import HeartbeatA
+from gwbase.transport_encoding import MessageCategory
 
 
 class HelloGNode(ActorBase):
@@ -26,12 +26,12 @@ def demo():
     input(
         "Go to http://0.0.0.0:15672/#/queues and wait for the d1.hello-Fxxxx queue to appear.",
     )
-    assert gn.g_node_role == GNodeRole.GNode
+    assert gn.g_node_class == GNodeClass.GNode
     hb = HeartbeatA(my_hex="0", your_last_hex="a")
 
     print("Broadcasting a heartbeat on rabbitmq")
     print(hb.to_type())
-    gn.send_message(payload=hb, message_category=MessageCategory.RabbitJsonBroadcast)
+    gn.send_message(payload=hb, message_category=MessageCategory.JsonBroadcast)
 
     print("Inspect the dummy ear queue to examine the message (click on GetMessage)")
     input("http://0.0.0.0:15672/#/queues/d1__1/dummy_ear_q")

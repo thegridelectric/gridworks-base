@@ -31,22 +31,20 @@ on these ideas:
 """
 
 from gwbase.enums.core_g_node_role import CoreGNodeRole
-from gwbase.enums.g_node_role import GNodeRole
+from gwbase.enums.g_node_class import GNodeClass
 from gwbase.enums.g_node_status import GNodeStatus
 from gwbase.enums.gni_status import GniStatus
-from gwbase.enums.message_category import MessageCategory
-from gwbase.enums.message_category_symbol import MessageCategorySymbol
 from gwbase.enums.strategy_name import StrategyName
 from gwbase.enums.supervisor_container_status import SupervisorContainerStatus
 from gwbase.enums.universe_type import UniverseType
+from gwbase.transport_encoding import MessageCategory
 
 __all__ = [
     "CoreGNodeRole",  # [core.g.node.role.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#coregnoderole)
-    "GNodeRole",  # [g.node.role.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#gnoderole)
+    "GNodeClass",  # [g.node.role.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#gnoderole)
     "GNodeStatus",  # [g.node.status.100](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#gnodestatus)
     "GniStatus",  # [gni.status.000](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#gnistatus)
-    "MessageCategory",  # [message.category.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#messagecategory)
-    "MessageCategorySymbol",  # [message.category.symbol.000](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#messagecategorysymbol)
+    "MessageCategory",
     "StrategyName",  # [strategy.name.001](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#strategyname)
     "SupervisorContainerStatus",  # [supervisor.container.status.000](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#supervisorcontainerstatus)
     "UniverseType",  # [universe.type.000](https://gridworks-type-registry.readthedocs.io/en/latest/enums.html#universetype)

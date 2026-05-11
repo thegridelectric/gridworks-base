@@ -1,8 +1,8 @@
-from gw.enums import MessageCategory
 from gw_test import wait_for
 from gwbase.actor_base import ActorBase
 from gwbase.config import GNodeSettings
 from gwbase.named_types import HeartbeatA
+from gwbase.transport_encoding import MessageCategory
 
 
 class HelloGNode(ActorBase):
@@ -15,12 +15,12 @@ def test_hello():
     settings = GNodeSettings()
 
     settings.g_node_alias = "d1.hello"
-    settings.g_node_role_value = "GNode"
+    settings.g_node_role_value = "Unknown"
 
     gn = HelloGNode(settings=settings)
     gn.start()
     wait_for(lambda: gn._consuming, 4, "gnode is consuming")
     hb = HeartbeatA(my_hex="a", your_last_hex="0")
-    gn.send_message(payload=hb, message_category=MessageCategory.RabbitJsonBroadcast)
+    gn.send_message(payload=hb, message_category=MessageCategory.JsonBroadcast)
 
     gn.stop()

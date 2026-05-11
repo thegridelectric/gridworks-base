@@ -11,7 +11,7 @@ from gwbase.config.utils import (
     check_is_algo_secret_key_format,
     check_is_reasonable_unix_time_s,
 )
-from gwbase.enums import GNodeRole, UniverseType
+from gwbase.enums import GNodeClass, UniverseType
 
 DEFAULT_ENV_FILE = ".env"
 
@@ -26,7 +26,7 @@ class GNodeSettings(BaseSettings):
     g_node_id: str = "00000000-0000-0000-0000-000000000000"
     g_node_instance_id: str = "00000000-0000-0000-0000-000000000000"
     my_super_alias: str = "d1.super1"
-    g_node_role_value: str = "GNode"
+    g_node_role_value: str = "Unknown"
     sk: SecretStr = SecretStr(
         "3g+IYDCVM84Ady7a8fGImRkEZ77+a4e3i14ub0QMjM/JKlzB2GNdv0S+lqMsYgPiGbd7aAp5943X5NzvdQJohw==",
     )
@@ -64,7 +64,7 @@ class GNodeSettings(BaseSettings):
         if self.universe_type_value not in UniverseType.values():
             raise ValueError("universe_type_value must belong to UniverseType.values()")
         universe_type = UniverseType(self.universe_type_value)
-        if self.g_node_role_value not in GNodeRole.values():
+        if self.g_node_role_value not in GNodeClass.values():
             raise ValueError("g_node_role_value must belong to GNodeRole.values()")
         check_g_node_alias(alias=self.g_node_alias, universe_type=universe_type)
         check_g_node_alias(

@@ -6,7 +6,7 @@ from gw.named_types import GwBase
 from gw.utils import snake_to_pascal
 from pydantic import ConfigDict, PositiveInt
 
-from gwbase.enums import GNodeRole, GNodeStatus
+from gwbase.enums import GNodeClass, GNodeStatus
 from gwbase.property_format import (
     AlgoAddress,
     LeftRightDot,
@@ -18,7 +18,7 @@ class GNodeGt(GwBase):
     g_node_id: UUID4Str
     alias: LeftRightDot
     status: GNodeStatus
-    role: GNodeRole
+    role: GNodeClass
     g_node_registry_addr: AlgoAddress
     prev_alias: Optional[LeftRightDot] = None
     gps_point_id: Optional[UUID4Str] = None

@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from gwbase.enums import GNodeRole, StrategyName
+from gwbase.enums import GNodeClass, StrategyName
 
 
 class GNodeStrategy:
@@ -17,7 +17,7 @@ class GNodeStrategy:
     def __init__(
         self,
         name: StrategyName,
-        role: GNodeRole,
+        role: GNodeClass,
         contact_email: str,
         description: Optional[str] = "",
         is_private: bool = False,
@@ -40,7 +40,7 @@ class GNodeStrategy:
 
 NoActor = GNodeStrategy(
     name=StrategyName.NoActor,
-    role=GNodeRole.GNode,
+    role=GNodeClass.GNode,
     contact_email="gridworks.gridworks-consulting.com",
     is_private=False,
     description="The NoActor strategy is a placeholder for a GNode that is passive and has no actor.",
@@ -48,7 +48,7 @@ NoActor = GNodeStrategy(
 
 SupervisorA = GNodeStrategy(
     name=StrategyName.SupervisorA,
-    role=GNodeRole.Supervisor,
+    role=GNodeClass.Supervisor,
     contact_email="gridworks.gridworks-consulting.com",
     repo_url="https://github.com/thegridelectric/gridworks-atn",
     is_private=False,
@@ -58,7 +58,7 @@ SupervisorA = GNodeStrategy(
 
 WorldA = GNodeStrategy(
     name=StrategyName.WorldA,
-    role=GNodeRole.World,
+    role=GNodeClass.World,
     contact_email="gridworks.gridworks-consulting.com",
     repo_url="https://github.com/thegridelectric/gridworks-world",
     is_private=False,
@@ -69,7 +69,7 @@ WorldA = GNodeStrategy(
 
 AtnHeatPumpWithBoostStore = GNodeStrategy(
     name=StrategyName.AtnHeatPumpWithBoostStore,
-    role=GNodeRole.AtomicTNode,
+    role=GNodeClass.AtomicTNode,
     contact_email="gridworks.gridworks-consulting.com",
     repo_url="https://github.com/thegridelectric/gridworks-atn-spaceheat",
     is_private=True,
@@ -80,7 +80,7 @@ AtnHeatPumpWithBoostStore = GNodeStrategy(
 
 TcGlobalA = GNodeStrategy(
     name=StrategyName.TcGlobalA,
-    role=GNodeRole.TimeCoordinator,
+    role=GNodeClass.TimeCoordinator,
     contact_email="gridworks.gridworks-consulting.com",
     repo_url="https://github.com/thegridelectric/gridworks-timecoordinator",
     is_private=False,
@@ -91,7 +91,7 @@ TcGlobalA = GNodeStrategy(
 
 MarketMakerA = GNodeStrategy(
     name=StrategyName.MarketMakerA,
-    role=GNodeRole.MarketMaker,
+    role=GNodeClass.MarketMaker,
     contact_email="gridworks.gridworks-consulting.com",
     repo_url="https://github.com/thegridelectric/gridworks-marketmaker",
     is_private=False,
@@ -102,7 +102,7 @@ MarketMakerA = GNodeStrategy(
 
 AtnBrickStorageHeater = GNodeStrategy(
     name=StrategyName.AtnBrickStorageHeater,
-    role=GNodeRole.AtomicTNode,
+    role=GNodeClass.AtomicTNode,
     contact_email="gridworks.gridworks-consulting.com",
     repo_url="https://github.com/thegridelectric/gridworks-atn",
     is_private=False,

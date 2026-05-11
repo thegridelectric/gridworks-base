@@ -1,0 +1,63 @@
+# GENERATED FILE - DO NOT EDIT
+# Generated from definitions/registry.yaml
+#
+# ------------------------------------------------------------------
+# LOCAL LOOKUP (NON-AUTHORITATIVE)
+#
+# This file provides local resolution from Sema vocabulary words
+# to schema files within this snapshot.
+# ------------------------------------------------------------------
+
+types:
+  g.node.gt:
+    latest_version: '004'
+    versioning_strategy: literal
+    versions:
+      '004': definitions/types/g.node.gt/004.yaml
+  g.node.instance.gt:
+    latest_version: '000'
+    versioning_strategy: literal
+    versions:
+      '000': definitions/types/g.node.instance.gt/000.yaml
+  heartbeat.a:
+    latest_version: '000'
+    versioning_strategy: literal
+    versions:
+      '000': definitions/types/heartbeat.a/000.yaml
+  sim.ready:
+    latest_version: '000'
+    versioning_strategy: literal
+    versions:
+      '000': definitions/types/sim.ready/000.yaml
+  sim.timestep:
+    latest_version: '000'
+    versioning_strategy: literal
+    versions:
+      '000': definitions/types/sim.timestep/000.yaml
+enums:
+  base.g.node.class:
+    enum_type: versioned
+    latest_version: '000'
+    versions:
+      '000': definitions/enums/base.g.node.class/000.yaml
+  g.node.instance.status:
+    enum_type: versioned
+    latest_version: '000'
+    versions:
+      '000': definitions/enums/g.node.instance.status/000.yaml
+  g.node.instance.transport:
+    enum_type: versioned
+    latest_version: '000'
+    versions:
+      '000': definitions/enums/g.node.instance.transport/000.yaml
+  g.node.status:
+    enum_type: versioned
+    latest_version: '000'
+    versions:
+      '000': definitions/enums/g.node.status/000.yaml
+formats:
+  hex.char: definitions/formats/hex.char.yaml
+  left.right.dot: definitions/formats/left.right.dot.yaml
+  utc.milliseconds: definitions/formats/utc.milliseconds.yaml
+  utc.seconds: definitions/formats/utc.seconds.yaml
+  uuid4.str: definitions/formats/uuid4.str.yaml

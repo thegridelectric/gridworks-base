@@ -1,0 +1,11 @@
+enums:
+  base.g.node.class: base.g.node.class
+  g.node.instance.status: g.node.instance.status
+  g.node.instance.transport: g.node.instance.transport
+  g.node.status: g.node.status
+types:
+  g.node.gt: g.node.gt
+  g.node.instance.gt: g.node.instance.gt
+  heartbeat.a: heartbeat.a
+  sim.ready: ready
+  sim.timestep: sim.timestep

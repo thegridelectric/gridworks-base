@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 from gw.errors import DcError
 
 from gwbase.data_classes.gps_point import GpsPoint
-from gwbase.enums import GNodeRole, GNodeStatus
+from gwbase.enums import GNodeClass, GNodeStatus
 
 LOG_FORMAT = (
     "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "
@@ -30,7 +30,7 @@ class GNode:
         g_node_id: str,
         alias: str,
         status: GNodeStatus,
-        role: GNodeRole,
+        g_node_class: GNodeClass,
         g_node_registry_addr: str,
         prev_alias: Optional[str] = None,
         gps_point_id: Optional[str] = None,
@@ -72,9 +72,9 @@ class GNode:
         if not isinstance(status, GNodeStatus):
             raise DcError(f"status {status} must be GNodeStatus, got {type(status)}")
         self.status: GNodeStatus = status
-        if not isinstance(role, GNodeRole):
-            raise DcError(f"role {role} must be  GNodeRole, got {type(role)}")
-        self.role: GNodeRole = role
+        if not isinstance(g_node_class, GNodeClass):
+            raise DcError(f"role {g_node_class} must be  GNodeClass, got {type(g_node_class)}")
+        self.g_node_class: GNodeClass = g_node_class
         self.g_node_registry_addr = g_node_registry_addr
         self.prev_alias = prev_alias
         self.gps_point_id = gps_point_id
@@ -90,8 +90,8 @@ class GNode:
         self.__class__.by_alias[self.alias] = self
 
     def __repr__(self) -> str:
-        rs = f"GNode Alias: {self.alias}, Role: {self.role.value}, Status: {self.status.value}"
-        if self.ownership_deed_id and self.role == GNodeRole.TerminalAsset:
+        rs = f"GNode Alias: {self.alias}, Role: {self.g_node_class.value}, Status: {self.status.value}"
+        if self.ownership_deed_id and self.g_node_class == GNodeClass.TerminalAsset:
             rs += f", TaDeedIdx: {self.ownership_deed_id}"
         return rs
 

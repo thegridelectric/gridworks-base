@@ -4,10 +4,10 @@ from typing import List, Optional
 
 from gwbase.actor_base import (
     ActorBase,  # TODO: from gwatn import ActorBase
-    RabbitRole,
+    GNodeClassRoutingCode,
 )
 from gwbase.config import GNodeSettings
-from gwbase.enums import GNodeRole
+from gwbase.enums import GNodeClass
 from gwbase.named_types import HeartbeatA, Ready
 from pika.channel import Channel as PikaChannel
 from pydantic import BaseModel
@@ -40,15 +40,15 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
         internal=True,
     )
 
-    for role in RabbitRole.values():
+    for class_code in GNodeClassRoutingCode.values():
         ch.exchange_declare(
-            exchange=f"{role}_tx",
+            exchange=f"{class_code}_tx",
             exchange_type="topic",
             durable=True,
             internal=True,
         )
         ch.exchange_declare(
-            exchange=f"{role}mic_tx",
+            exchange=f"{class_code}mic_tx",
             exchange_type="topic",
             durable=True,
             internal=False,
@@ -124,7 +124,7 @@ def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
 class GNodeStubRecorder(ActorBase):
     messages_received: int = 0
     messages_routed_internally: int = 0
-    latest_from_role: Optional[str] = None
+    latest_from_class: Optional[str] = None
     latest_from_alias: Optional[str] = None
     latest_payload: Optional[HeartbeatA] = None
     got_heartbeat_from_super: bool = False
@@ -137,28 +137,28 @@ class GNodeStubRecorder(ActorBase):
         self.messages_received += 1
         super().on_message(_unused_channel, basic_deliver, properties, body)
 
-    def route_message(self, from_alias: str, from_role: GNodeRole, payload: HeartbeatA):
+    def route_message(self, from_alias: str, from_class: GNodeClass, payload: HeartbeatA):
         self.messages_routed_internally += 1
         self.latest_payload = payload
         if isinstance(payload, HeartbeatA):
-            self.heartbeat_a_received(from_alias, from_role, payload)
+            self.heartbeat_a_received(from_alias, from_class, payload)
 
     def heartbeat_a_received(
         self,
         from_alias: str,
-        from_role: GNodeRole,
+        from_class: GNodeClass,
         payload: HeartbeatA,
     ):
         if (
             from_alias == self.settings.my_super_alias
-            and from_role == GNodeRole.Supervisor
+            and from_class == GNodeClass.Supervisor
         ):
             self.got_heartbeat_from_super = True
 
     def summary_str(self):
         """Summarize results in a string"""
         return (
-            f"{self.g_node_role.value} [{self.alias}] messages_received: {self.messages_received}  "
+            f"{self.g_node_class.value} [{self.alias}] messages_received: {self.messages_received}  "
             f"latest_payload: {self.latest_payload}"
         )
 
@@ -176,7 +176,7 @@ class SupervisorStubRecorder(GNodeStubRecorder):
     def heartbeat_a_received(
         self,
         from_alias: str,
-        from_role: GNodeRole,
+        from_class: GNodeClass,
         payload: HeartbeatA,
     ):
         """Used to test that a Supervisor gets a message from GNode"""
@@ -204,7 +204,7 @@ class TimeCoordinatorStubRecorder(GNodeStubRecorder):
         self.my_actors: List[str] = [GNodeSettings().g_node_alias]
         self.ready: List[str] = []
 
-    def route_message(self, from_alias: str, from_role: GNodeRole, payload: Ready):
+    def route_message(self, from_alias: str, from_class: GNodeClass, payload: Ready):
         if payload.type_name == Ready.type_name:
             if from_alias in self.my_actors:
                 if payload.TimeUnixS == self._time:

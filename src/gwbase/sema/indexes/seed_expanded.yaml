@@ -1,11 +1,12 @@
 metadata:
   generated_from: indexes/public_registry.yaml
-  generated_at: '2026-05-08T22:53:12Z'
+  generated_at: '2026-05-18T09:09:43Z'
   note: Transitive closure of initial_targets
 initial_targets:
 - heartbeat.a:000
 - g.node.gt:004
 - g.node.instance.gt:000
+- gw
 - sim.ready:000
 - sim.timestep:000
 worklist:
@@ -40,6 +41,9 @@ worklist:
     g.node.instance.gt:
       '000':
         path: definitions/types/g.node.instance.gt/000.yaml
+    gridworks.header:
+      '001':
+        path: definitions/types/gridworks.header/001.yaml
     heartbeat.a:
       '000':
         path: definitions/types/heartbeat.a/000.yaml
@@ -49,3 +53,6 @@ worklist:
     sim.timestep:
       '000':
         path: definitions/types/sim.timestep/000.yaml
+    gw:
+      versioning_strategy: none
+      path: definitions/types/gw.yaml

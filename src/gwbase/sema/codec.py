@@ -8,7 +8,7 @@ from typing import Literal
 
 from gwbase.sema.base import (
     DegradedSemaType,
-    SemaType,
+    GwBaseSemaType,
     pascal_to_snake,
     recursively_pascal,
     snake_to_pascal,
@@ -17,7 +17,7 @@ from gwbase.sema.base import (
 logger = logging.getLogger(__name__)
 
 
-class SemaCodec:
+class GwBaseSemaCodec:
 
     def __init__(self) -> None:
         self.registry = get_current_types()
@@ -32,7 +32,7 @@ class SemaCodec:
         data: dict,
         mode: Literal["strict", "degraded"] = "strict",
         auto_upgrade: bool = True
-    ) -> SemaType | DegradedSemaType:
+    ) -> GwBaseSemaType | DegradedSemaType:
 
         if not isinstance(data, dict):
             raise ValueError("Input must be dict")
@@ -118,7 +118,7 @@ class SemaCodec:
         self,
         data: bytes,
         mode: Literal["strict", "degraded"] = "strict",
-    ) -> SemaType | DegradedSemaType:
+    ) -> GwBaseSemaType | DegradedSemaType:
 
         try:
             d = json.loads(data.decode("utf-8"))
@@ -127,7 +127,7 @@ class SemaCodec:
 
         return self.from_dict(d, mode=mode)
 
-    def to_bytes(self, msg: SemaType) -> bytes:
+    def to_bytes(self, msg: GwBaseSemaType) -> bytes:
         return msg.to_bytes()
 
 
@@ -135,7 +135,7 @@ class SemaCodec:
 # AUTO-DISCOVERY
 # ============================================================================
 
-def get_current_types() -> dict[str, type[SemaType]]:
+def get_current_types() -> dict[str, type[GwBaseSemaType]]:
     from gwbase.sema import types
     return {
         getattr(types, name).type_name_value(): getattr(types, name)
@@ -143,8 +143,8 @@ def get_current_types() -> dict[str, type[SemaType]]:
     }
 
 
-def get_old_versions() -> dict[str, dict[str | None, type[SemaType]]]:
-    registry: dict[str, dict[str | None, type[SemaType]]] = defaultdict(dict)
+def get_old_versions() -> dict[str, dict[str | None, type[GwBaseSemaType]]]:
+    registry: dict[str, dict[str | None, type[GwBaseSemaType]]] = defaultdict(dict)
     old_versions_dir = Path(__file__).resolve().parent / "types" / "old_versions"
 
     for path in sorted(old_versions_dir.glob("*.py")):
@@ -155,8 +155,8 @@ def get_old_versions() -> dict[str, dict[str | None, type[SemaType]]]:
             obj = getattr(module, name)
             if (
                 isinstance(obj, type)
-                and issubclass(obj, SemaType)
-                and obj is not SemaType
+                and issubclass(obj, GwBaseSemaType)
+                and obj is not GwBaseSemaType
             ):
                 version = obj.version_value()
                 if version is not None:
@@ -165,4 +165,4 @@ def get_old_versions() -> dict[str, dict[str | None, type[SemaType]]]:
     return registry
 
 
-default_codec = SemaCodec()
+default_codec = GwBaseSemaCodec()

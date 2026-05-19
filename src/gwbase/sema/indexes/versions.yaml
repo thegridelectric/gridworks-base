@@ -17,6 +17,13 @@ types:
       "000":
         summary: "Initial Sema version"
 
+  gridworks.header:
+    latest_version: "001"
+    versioning_strategy: "literal"
+    versions:
+      "001":
+        summary: "Initial published version, matching the gwproto Header wire format deployed in the field."
+
   heartbeat.a:
     latest_version: "000"
     versioning_strategy: "literal"
@@ -37,6 +44,10 @@ types:
     versions:
       "000":
         summary: "Initial Sema version."
+
+  gw:
+    versioning_strategy: "none"
+    summary: "Versionless GridWorks message envelope (gwproto Message wire format)."
 
 enums:
   base.g.node.class:

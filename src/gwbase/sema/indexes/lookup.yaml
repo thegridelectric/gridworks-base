@@ -19,6 +19,11 @@ types:
     versioning_strategy: literal
     versions:
       '000': definitions/types/g.node.instance.gt/000.yaml
+  gridworks.header:
+    latest_version: '001'
+    versioning_strategy: literal
+    versions:
+      '001': definitions/types/gridworks.header/001.yaml
   heartbeat.a:
     latest_version: '000'
     versioning_strategy: literal
@@ -34,6 +39,9 @@ types:
     versioning_strategy: literal
     versions:
       '000': definitions/types/sim.timestep/000.yaml
+  gw:
+    versioning_strategy: none
+    schema: definitions/types/gw.yaml
 enums:
   base.g.node.class:
     enum_type: versioned

@@ -42,18 +42,18 @@ def snake_to_pascal(word: str) -> str:
 # BASE EXCEPTIONS
 # ============================================================================
 
-class SemaError(Exception):
+class GwBaseSemaError(Exception):
     """Base exception for Sema-related errors."""
 
 
-T = TypeVar("T", bound="SemaType")
+T = TypeVar("T", bound="GwBaseSemaType")
 
 
 # ============================================================================
 # STRICT SEMA TYPE
 # ============================================================================
 
-class SemaType(BaseModel):
+class GwBaseSemaType(BaseModel):
     """
     Base class for strict Sema types.
     """
@@ -83,17 +83,17 @@ class SemaType(BaseModel):
         try:
             d = json.loads(json_bytes)
         except TypeError as e:
-            raise SemaError("Type must be string or bytes!") from e
+            raise GwBaseSemaError("Type must be string or bytes!") from e
         return cls.from_dict(d)
 
     @classmethod
     def from_dict(cls, d: dict) -> Self:
         if not recursively_pascal(d):
-            raise SemaError("Dictionary must be recursively PascalCase")
+            raise GwBaseSemaError("Dictionary must be recursively PascalCase")
         try:
             return cls.model_validate(d)
         except ValidationError as e:
-            raise SemaError(f"Validation failed: {e}") from e
+            raise GwBaseSemaError(f"Validation failed: {e}") from e
 
     # ------------------------------------------------------------------------
     # Introspection
@@ -111,32 +111,32 @@ class SemaType(BaseModel):
     # Versioning
     # ------------------------------------------------------------------------
 
-    def upgrade(self) -> "SemaType":
+    def upgrade(self) -> "GwBaseSemaType":
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement upgrade()"
         )
 
-    def to_latest(self, registry: dict[str, type["SemaType"]]) -> "SemaType":
+    def to_latest(self, registry: dict[str, type["GwBaseSemaType"]]) -> "GwBaseSemaType":
         current = self
         type_name = self.type_name_value()
 
         if type_name not in registry:
-            raise SemaError(f"No registry entry for {type_name}")
+            raise GwBaseSemaError(f"No registry entry for {type_name}")
 
         latest_cls = registry[type_name]
         latest_version_str = latest_cls.version_value()
 
         if current.version is None or latest_version_str is None:
-            raise SemaError(f"Version missing for {type_name}")
+            raise GwBaseSemaError(f"Version missing for {type_name}")
 
         try:
             current_version_int = int(current.version)
             latest_version_int = int(latest_version_str)
         except ValueError:
-            raise SemaError(f"Invalid version format for {type_name}")
+            raise GwBaseSemaError(f"Invalid version format for {type_name}")
 
         if current_version_int > latest_version_int:
-            raise SemaError(
+            raise GwBaseSemaError(
                 f"Current version {current.version} is greater than latest {latest_version_str}"
             )
 
@@ -145,7 +145,7 @@ class SemaType(BaseModel):
 
         while current.version != latest_version_str:
             if steps >= max_steps:
-                raise SemaError(
+                raise GwBaseSemaError(
                     f"Upgrade loop detected for {type_name}: exceeded {max_steps} steps"
                 )
             current = current.upgrade()

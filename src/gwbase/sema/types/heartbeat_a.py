@@ -1,9 +1,9 @@
 from typing import Literal
-from gwbase.sema.base import SemaType
+from gwbase.sema.base import GwBaseSemaType
 from gwbase.sema.property_format import HexChar
 
 
-class HeartbeatA(SemaType):
+class HeartbeatA(GwBaseSemaType):
     """Sema: https://schemas.electricity.works/types/heartbeat.a/000"""
 
     my_hex: HexChar

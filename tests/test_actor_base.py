@@ -2,318 +2,130 @@ import datetime
 import time
 import uuid
 
-from gw_test import wait_for
-from gwbase.actor_base import (
-    JsonBroadcastEnvelope,
-    JsonDirectEnvelope,
-    ScadaWrappedEnvelope,
+from gwbase.sema import GwBaseSemaCodec
+from gwbase.sema.types import HeartbeatA, SimTimestep
+from gwbase.transport_encoding import (
+    BroadcastRoutingEnvelope,
+    DirectRoutingEnvelope,
+    WrappedRoutingEnvelope,
+    TransportClass,
     parse_routing_key,
 )
-from gwbase.config import GNodeSettings
-from gwbase.enums import GNodeClass
-from gwbase.named_types import HeartbeatA, SimTimestep
-from gwbase_test import (
+
+from tests._stubs import (
     GNodeStubRecorder,
     SupervisorStubRecorder,
     TimeCoordinatorStubRecorder,
     load_rabbit_exchange_bindings,
 )
+from tests._wait import wait_for
 
 
 def test_parse_routing_key_json_direct() -> None:
-    env = parse_routing_key("rj.d1-source.unknown.report-event.scada.d1-super")
-    assert isinstance(env, JsonDirectEnvelope)
+    env = parse_routing_key("rj.d1-source.scada.report-event.scada.d1-super")
+    assert isinstance(env, DirectRoutingEnvelope)
     assert env.from_alias == "d1.source"
-    assert env.from_class == GNodeClass.Unknown
+    assert env.from_class == TransportClass.Scada
     assert env.type_name == "report.event"
-    assert env.to_class == GNodeClass.Scada
+    assert env.to_class == TransportClass.Scada
     assert env.to_alias == "d1.super"
 
 
 def test_parse_routing_key_json_broadcast() -> None:
-    env = parse_routing_key("rjb.d1-source.unknown.report-event.ops.alerts")
-    assert isinstance(env, JsonBroadcastEnvelope)
+    env = parse_routing_key("rjb.d1-source.scada.report-event.ops.alerts")
+    assert isinstance(env, BroadcastRoutingEnvelope)
     assert env.from_alias == "d1.source"
-    assert env.from_class == GNodeClass.Unknown
+    assert env.from_class == TransportClass.Scada
     assert env.type_name == "report.event"
     assert env.radio_channel == "ops.alerts"
 
 
 def test_parse_routing_key_wrapped() -> None:
     env = parse_routing_key("gw.d1-source.to.scada.report-event")
-    assert isinstance(env, ScadaWrappedEnvelope)
+    assert isinstance(env, WrappedRoutingEnvelope)
     assert env.from_alias == "d1.source"
     assert env.type_name == "report.event"
-    assert env.to_class == GNodeClass.Scada
+    assert env.to_class == TransportClass.Scada
 
 
-def test_actor_base():
-    settings = GNodeSettings()
+def test_parse_routing_key_supervisor() -> None:
+    env = parse_routing_key("rj.d1-leaf.scada.heartbeat-a.super.d1-super1")
+    assert isinstance(env, DirectRoutingEnvelope)
+    assert env.from_class == TransportClass.Scada
+    assert env.to_class == TransportClass.Supervisor
 
-    gn = GNodeStubRecorder(settings)
+
+def test_actor_base(make_g_node_json, make_settings) -> None:
+    codec = GwBaseSemaCodec()
+
+    gn_settings = make_settings(
+        make_g_node_json("gn.json", alias="d1.isone.unknown.gnode", g_node_class="Scada"),
+        transport_class=TransportClass.Scada,
+    )
+    su_settings = make_settings(
+        make_g_node_json("su.json", alias="d1.super", g_node_class="Scada"),
+        transport_class=TransportClass.Supervisor,
+    )
+    tc_settings = make_settings(
+        make_g_node_json("tc.json", alias="d1.time", g_node_class="TimeCoordinator"),
+        transport_class=TransportClass.TimeCoordinator,
+    )
+
+    gn = GNodeStubRecorder(
+        settings=gn_settings,
+        my_super_alias="d1.super",
+        my_time_coordinator_alias="d1.time",
+    )
     gn.start()
-    su = SupervisorStubRecorder(settings, subordinate_alias=settings.g_node_alias)
+    su = SupervisorStubRecorder(
+        settings=su_settings,
+        my_super_alias="d1.super.parent",
+        my_time_coordinator_alias="d1.time",
+        subordinate_alias=gn.alias,
+    )
     su.start()
-    tc = TimeCoordinatorStubRecorder(settings)
+    tc = TimeCoordinatorStubRecorder(
+        settings=tc_settings,
+        my_super_alias="d1.super",
+        my_time_coordinator_alias="d1.time",
+        current_time_unix_s=int(
+            datetime.datetime(2020, 1, 1, 5, tzinfo=datetime.timezone.utc).timestamp(),
+        ),
+        my_actor_aliases=[gn.alias],
+    )
     tc.start()
-    wait_for(lambda: su._consuming, 4, "supervisor is consuming")
-    wait_for(lambda: gn._consuming, 4, "gnode is consuming")
-    wait_for(lambda: tc._consuming, 4, "timecoordinator is consuming")
+    try:
+        wait_for(lambda: su._consuming, 4, "supervisor is consuming")
+        wait_for(lambda: gn._consuming, 4, "gnode is consuming")
+        wait_for(lambda: tc._consuming, 4, "timecoordinator is consuming")
 
-    # This is required for tests to pass in CI, as we haven't figured
-    # out how to pre-load the bindings and exchanges in github actions
-    load_rabbit_exchange_bindings(gn._single_channel)
+        load_rabbit_exchange_bindings(gn._single_channel)
 
-    payload = HeartbeatA(my_hex="0", your_last_hex="0")
-    gn.send_message(
-        payload=payload,
-        to_class=GNodeClass.Supervisor,
-        to_g_node_alias=su.alias,
-    )
+        hb = HeartbeatA(my_hex="0", your_last_hex="0")
+        gn.send(
+            envelope=gn.direct_envelope(
+                type_name=hb.type_name,
+                to_class=TransportClass.Supervisor,
+                to_alias=su.alias,
+            ),
+            body=codec.to_bytes(hb),
+        )
 
-    wait_for(lambda: su.messages_received > 0, 2, "supervisor received message")
+        wait_for(lambda: su.messages_received > 0, 2, "supervisor received message")
+        assert su.messages_received == 1
+        assert su.messages_routed_internally == 1
+        assert su.got_heartbeat_from_sub
 
-    assert su.messages_received == 1
-    assert su.messages_routed_internally == 1
-    assert su.got_heartbeat_from_sub
-
-    d = datetime.datetime(year=2020, month=1, day=1, hour=5)
-    t = int(d.timestamp())
-    payload = SimTimestep(
-        from_g_node_alias="d1.time",
-        from_g_node_instance_id=str(uuid.uuid4()),
-        time_unix_s=t,
-        timestep_created_ms=1000 * int(time.time()),
-        message_id=str(uuid.uuid4()),
-    )
-
-    gn.stop()
-    su.stop()
-    tc.stop()
-
-
-#     gnf = GNodeFactoryRabbitStubRecorder(settings=GnfSettings())
-#     gnr = GNodeRegistryStubRecorder(settings=DevGNodeRegistrySettings())
-#     payload = HeartbeatA()
-#     result = gnf.send_direct_message(
-#         payload=payload, to_g_node_type_short_alias="gnr", to_g_node_alias="dwgps.gnr"
-#     )
-#     assert result == OnSendMessageDiagnostic.STOPPED_SO_NOT_SENDING
-
-#     gnf.start()
-#     gnr.start()
-
-#     wait_for(lambda: gnf._consume_connection, 2, "actor._consume_connection exists")
-#     wait_for(lambda: gnf._consuming, 2, "actor is consuming")
-#     wait_for(lambda: gnf._publish_connection.is_open, 2, "actor publish connection is open")
-
-#     assert gnf.messages_received == 0
-#     assert gnf.messages_routed_internally == 0
-
-#     ####################################
-#     # Testing actor_base.on_message
-#     ###################################
-#     gnf._single_channel.queue_bind(
-#         gnf.queue_name,
-#         "gnrmic_tx",
-#         routing_key="garbage.#",
-#     )
-#     gnf._single_channel.queue_bind(
-#         gnf.queue_name,
-#         "gnrmic_tx",
-#         routing_key="pubsub.#",
-#     )
-#     gnf._single_channel.queue_bind(
-#         gnf.queue_name,
-#         "gnrmic_tx",
-#         routing_key="json",
-#     )
-#     gnf._single_channel.queue_bind(
-#         gnf.queue_name,
-#         "gnrmic_tx",
-#         routing_key="json.*.crap.*.*",
-#     )
-#     time.sleep(0.5)
-
-#     payload = HeartbeatA()
-
-#     properties = pika.BasicProperties(
-#         reply_to=gnr.queue_name,
-#         app_id=gnr.alias,
-#         correlation_id=str(uuid.uuid4()),
-#     )
-#     gnr._publish_channel.basic_publish(
-#         exchange=gnr._publish_exchange,
-#         routing_key="garbage.first_word_does_not_encode_recognized_routing_key_type",
-#         body=payload.as_type(),
-#         properties=properties,
-#     )
-
-#     wait_for(
-#         lambda: gnf.messages_received == 1, 2, f"gnf.messages_received is {gnf.messages_received}"
-#     )
-#     assert gnf.messages_received == 1
-#     assert gnf.messages_routed_internally == 0
-#     assert (
-#         gnf._latest_on_message_diagnostic == OnReceiveMessageDiagnostic.TYPE_NAME_DECODING_PROBLEM
-#     )
-
-#     properties = pika.BasicProperties(
-#         reply_to=gnr.queue_name,
-#         app_id=gnr.alias,
-#         type=RoutingKeyType.GW_PUBSUB.value,
-#         correlation_id=str(uuid.uuid4()),
-#     )
-
-#     gnr._publish_channel.basic_publish(
-#         exchange=gnr._publish_exchange,
-#         routing_key="pubsub.dwgps_gnr.the_latest_scoop_everybody_wants",
-#         body=payload.as_type(),
-#         properties=properties,
-#     )
-#     wait_for(
-#         lambda: gnf.messages_received == 2, 2, f"gnf.messages_received is {gnf.messages_received}"
-#     )
-#     assert gnf.messages_received == 2
-#     assert gnf.messages_routed_internally == 0
-#     assert (
-#         gnf._latest_on_message_diagnostic == OnReceiveMessageDiagnostic.UNHANDLED_ROUTING_KEY_TYPE
-#     )
-
-#     properties = pika.BasicProperties(
-#         reply_to=gnr.queue_name,
-#         app_id=gnr.alias,
-#         type=RoutingKeyType.JSON_DIRECT_MESSAGE.value,
-#         correlation_id=str(uuid.uuid4()),
-#     )
-#     gnr._publish_channel.basic_publish(
-#         exchange=gnr._publish_exchange,
-#         routing_key="json.dwgps_gnr.gnr.gnf.dwgps_gnf",
-#         body=json.dumps({"TypeName": "not.lrd.format_bro"}),
-#         properties=properties,
-#     )
-#     wait_for(
-#         lambda: gnf.messages_received == 3, 2, f"gnf.messages_received is {gnf.messages_received}"
-#     )
-#     assert gnf.messages_received == 3
-#     assert gnf.messages_routed_internally == 0
-#     assert (
-#         gnf._latest_on_message_diagnostic == OnReceiveMessageDiagnostic.TYPE_NAME_DECODING_PROBLEM
-#     )
-
-#     properties = pika.BasicProperties(
-#         reply_to=gnr.queue_name,
-#         app_id=gnr.alias,
-#         type=RoutingKeyType.JSON_DIRECT_MESSAGE.value,
-#         correlation_id=str(uuid.uuid4()),
-#     )
-#     gnr._publish_channel.basic_publish(
-#         exchange=gnr._publish_exchange,
-#         routing_key="json.dwgps_gnr.gnr.gnf.dwgps_gnf",
-#         body=json.dumps({"TypeName": "esoteric.type.alias.100"}),
-#         properties=properties,
-#     )
-#     wait_for(
-#         lambda: gnf.messages_received == 4, 2, f"gnf.messages_received is {gnf.messages_received}"
-#     )
-#     assert gnf.messages_received == 4
-#     assert gnf.messages_routed_internally == 0
-#     assert gnf._latest_on_message_diagnostic == OnReceiveMessageDiagnostic.UNKNOWN_type_name
-
-#     gnr._publish_channel.basic_publish(
-#         exchange=gnr._publish_exchange,
-#         routing_key="json",
-#         body=payload.as_type(),
-#         properties=properties,
-#     )
-#     wait_for(
-#         lambda: gnf.messages_received == 5, 2, f"gnf.messages_received is {gnf.messages_received}"
-#     )
-#     assert gnf.messages_received == 5
-#     assert gnf.messages_routed_internally == 0
-#     assert (
-#         gnf._latest_on_message_diagnostic == OnReceiveMessageDiagnostic.FROM_GNODE_DECODING_PROBLEM
-#     )
-
-#     gnr._publish_channel.basic_publish(
-#         exchange=gnr._publish_exchange,
-#         routing_key="json.bad-from_g_node_alias.gnr.gnf.dwgps_gnf",
-#         body=payload.as_type(),
-#         properties=properties,
-#     )
-#     wait_for(
-#         lambda: gnf.messages_received == 6, 2, f"gnf.messages_received is {gnf.messages_received}"
-#     )
-#     assert gnf.messages_received == 6
-#     assert gnf.messages_routed_internally == 0
-#     assert (
-#         gnf._latest_on_message_diagnostic == OnReceiveMessageDiagnostic.FROM_GNODE_DECODING_PROBLEM
-#     )
-
-#     gnr._publish_channel.basic_publish(
-#         exchange=gnr._publish_exchange,
-#         routing_key="json.dwgps_gnr.crap.gnf.dwgps_gnf",
-#         body=payload.as_type(),
-#         properties=properties,
-#     )
-#     wait_for(
-#         lambda: gnf.messages_received == 6, 2, f"gnf.messages_received is {gnf.messages_received}"
-#     )
-#     assert gnf.messages_received == 6
-#     assert gnf.messages_routed_internally == 0
-#     assert (
-#         gnf._latest_on_message_diagnostic == OnReceiveMessageDiagnostic.FROM_GNODE_DECODING_PROBLEM
-#     )
-
-#     gnf._single_channel.queue_unbind(
-#         gnf.queue_name,
-#         "gnrmic_tx",
-#         routing_key="garbage.#",
-#     )
-#     gnf._single_channel.queue_unbind(
-#         gnf.queue_name,
-#         "gnrmic_tx",
-#         routing_key="pubsub.#",
-#     )
-#     gnf._single_channel.queue_unbind(
-#         gnf.queue_name,
-#         "gnrmic_tx",
-#         routing_key="json",
-#     )
-#     gnf._single_channel.queue_unbind(
-#         gnf.queue_name,
-#         "gnrmic_tx",
-#         routing_key="json.*.crap.*.*",
-#     )
-
-#     ####################################
-#     # Testing actor_base.send_direct_message
-#     ###################################
-
-#     gnf._stopping = True
-#     result = gnf.send_direct_message(
-#         payload=payload, to_g_node_type_short_alias="gnr", to_g_node_alias="dwgps.gnr"
-#     )
-#     assert result == OnSendMessageDiagnostic.STOPPING_SO_NOT_SENDING
-#     gnf._stopping = False
-
-#     gnf._publish_channel.close()
-
-#     gnf._publish_channel = None
-#     result = gnf.send_direct_message(
-#         payload=payload,
-#         to_g_node_type_short_alias="gnr",
-#         to_g_node_alias="dwgps.gnr",
-#     )
-#     assert result == OnSendMessageDiagnostic.CHANNEL_NOT_OPEN
-
-#     gnf._publish_channel = None
-#     result = gnf.send_direct_message(
-#         payload=payload,
-#         to_g_node_type_short_alias="gnr",
-#         to_g_node_alias="dwgps.gnr",
-#     )
-#     assert result == OnSendMessageDiagnostic.CHANNEL_NOT_OPEN
-
-#     gnr.stop()
-#     gnf.stop()
+        d = datetime.datetime(year=2020, month=1, day=1, hour=5)
+        ts = SimTimestep(
+            from_g_node_alias="d1.time",
+            from_g_node_instance_id=str(uuid.uuid4()),
+            time_unix_s=int(d.timestamp()),
+            timestep_created_ms=1000 * int(time.time()),
+            message_id=str(uuid.uuid4()),
+        )
+        _ = codec.to_bytes(ts)
+    finally:
+        gn.stop()
+        su.stop()
+        tc.stop()

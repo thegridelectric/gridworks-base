@@ -1,15 +1,15 @@
 from gwbase.sema.base import (
-    SemaError,
-    SemaType,
+    GwBaseSemaError,
+    GwBaseSemaType,
 )
 from gwbase.sema.codec import (
-    SemaCodec,
+    GwBaseSemaCodec,
     get_current_types,
 )
 
 __all__ = [
-    "SemaType",
-    "SemaCodec",
-    "SemaError",
+    "GwBaseSemaType",
+    "GwBaseSemaCodec",
+    "GwBaseSemaError",
     "get_current_types",
 ]

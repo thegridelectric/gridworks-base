@@ -1,26 +1,40 @@
-from gw_test import wait_for
-from gwbase.actor_base import ActorBase
-from gwbase.config import GNodeSettings
-from gwbase.named_types import HeartbeatA
-from gwbase.transport_encoding import MessageCategory
+from gwbase.sema import GwBaseSemaCodec
+from gwbase.sema.types import HeartbeatA
+from gwbase.gridworks_actor import GridworksActor
+from gwbase.transport_encoding import RoutingEnvelope, TransportClass
+
+from tests._wait import wait_for
 
 
-class HelloGNode(ActorBase):
-    def __init__(self, settings: GNodeSettings):
-        super().__init__(settings=settings)
-        self.settings: GNodeSettings = settings
+class HelloGNode(GridworksActor):
+    def __init__(self, *, settings, my_super_alias, my_time_coordinator_alias):
+        super().__init__(
+            settings=settings,
+            my_super_alias=my_super_alias,
+            my_time_coordinator_alias=my_time_coordinator_alias,
+        )
+        self._codec = GwBaseSemaCodec()
+
+    def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
+        return
 
 
-def test_hello():
-    settings = GNodeSettings()
+def test_hello(make_g_node_json, make_settings) -> None:
+    json_path = make_g_node_json(alias="d1.hello", g_node_class="Scada")
+    settings = make_settings(json_path, transport_class=TransportClass.Scada)
 
-    settings.g_node_alias = "d1.hello"
-    settings.g_node_role_value = "Unknown"
-
-    gn = HelloGNode(settings=settings)
+    gn = HelloGNode(
+        settings=settings,
+        my_super_alias="d1.super1",
+        my_time_coordinator_alias="d1.time",
+    )
     gn.start()
-    wait_for(lambda: gn._consuming, 4, "gnode is consuming")
-    hb = HeartbeatA(my_hex="a", your_last_hex="0")
-    gn.send_message(payload=hb, message_category=MessageCategory.JsonBroadcast)
-
-    gn.stop()
+    try:
+        wait_for(lambda: gn._consuming, 4, "gnode is consuming")
+        hb = HeartbeatA(my_hex="a", your_last_hex="0")
+        gn.send(
+            envelope=gn.broadcast_envelope(type_name=hb.type_name),
+            body=gn._codec.to_bytes(hb),
+        )
+    finally:
+        gn.stop()

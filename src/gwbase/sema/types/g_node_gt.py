@@ -1,13 +1,13 @@
 from typing import Literal, Self
 from pydantic import model_validator
-from gwbase.sema.base import SemaType
+from gwbase.sema.base import GwBaseSemaType
 from gwbase.sema.enums import BaseGNodeClass
 from gwbase.sema.enums import GNodeStatus
 from gwbase.sema.property_format import LeftRightDot
 from gwbase.sema.property_format import UUID4Str
 
 
-class GNodeGt(SemaType):
+class GNodeGt(GwBaseSemaType):
     """Sema: https://schemas.electricity.works/types/g.node.gt/004"""
 
     g_node_id: UUID4Str

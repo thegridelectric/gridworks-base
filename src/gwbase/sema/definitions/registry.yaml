@@ -1,10 +1,10 @@
 metadata:
   registry_version: "1.0"
-  last_updated: "2026-05-08T19:57:00Z"
+  last_updated: "2026-05-15T00:00:00Z"
   maintainer: "gridworks-energy"
 
 snapshot:
-  built_at: "2026-05-08T22:53:12Z"
+  built_at: "2026-05-18T09:09:43Z"
 
 formats:
   hex.char:
@@ -16,7 +16,7 @@ formats:
   left.right.dot:
     owner: gridworks-energy
     schema_url: "https://schemas.electricity.works/formats/left.right.dot"
-    created: "2024-09-02T15:00:00Z"
+    created: "2022-01-01T00:00:00Z"
     description: "Dot-separated hierarchical identifier composed of lowercase alphanumeric segments"
 
   utc.milliseconds:
@@ -119,11 +119,26 @@ types:
             - "utc.milliseconds"
             - "uuid4.str"
 
+  gridworks.header:
+    latest_version: "001"
+    owner: smoothstone-computing
+    versioning_strategy: "literal"
+    description: "Delivery-layer metadata carried inside a gw envelope: Src, Dst, MessageType, MessageId, AckRequired."
+
+    versions:
+      "001":
+        schema_url: "https://schemas.electricity.works/types/gridworks.header/001"
+        created: "2022-10-17T16:55:39Z"
+        summary: "Initial published version, matching the gwproto Header wire format deployed in the field."
+        direct_dependencies:
+          structural:
+            - "left.right.dot"
+
   heartbeat.a:
     latest_version: "000"
     owner: gridworks-energy
     versioning_strategy: "literal"
-    description: "Lightweight actor heartbeat message carrying a fresh local hex token and, when available, the peer's previous token."
+    description: "Lightweight actor heartbeat message. Version 000 carries hex tokens; version 001 is a minimal no-payload variant."
 
     versions:
       "000":
@@ -168,3 +183,14 @@ types:
             - "utc.milliseconds"
             - "utc.seconds"
             - "uuid4.str"
+
+  gw:
+    owner: smoothstone-computing
+    versioning_strategy: "none"
+    description: "GridWorks message envelope: a gridworks.header plus a Payload of any registered Sema type."
+    schema_url: "https://schemas.electricity.works/types/gw"
+    created: "2022-10-17T16:55:39Z"
+    summary: "Versionless GridWorks message envelope (gwproto Message wire format)."
+    direct_dependencies:
+      structural:
+        - "gridworks.header:001"

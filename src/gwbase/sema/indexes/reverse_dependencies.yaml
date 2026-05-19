@@ -26,6 +26,7 @@ formats:
   left.right.dot:
     used_by:
     - g.node.gt:004
+    - gridworks.header:001
     - sim.ready:000
     - sim.timestep:000
   utc.milliseconds:

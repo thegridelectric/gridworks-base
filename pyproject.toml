@@ -10,8 +10,6 @@ repository = "https://github.com/thegridelectric/gridworks-base"
 documentation = "https://gridworks-base.readthedocs.io"
 packages = [
     { include = "gwbase", from = "src" },
-    { include = "gwbase_test", from = "src" },
-
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -24,10 +22,8 @@ Changelog = "https://github.com/thegridelectric/gridworks-base/releases"
 python = ">=3.12, <4.0"
 python-dotenv = ">=1.0.0"
 pika = "^1.3.2"
-py-algorand-sdk = ">=2.6.1"
 pydantic = "^2.8.2"
 pydantic-settings = "^2.3.4"
-gridworks = "1.4.2"
 
 [tool.poetry.group.dev.dependencies]
 Pygments = ">=2.10.0"

@@ -1,13 +1,13 @@
 from typing import Literal, Self
 from pydantic import model_validator
-from gwbase.sema.base import SemaType
+from gwbase.sema.base import GwBaseSemaType
 from gwbase.sema.enums import GNodeInstanceStatus
 from gwbase.sema.enums import GNodeInstanceTransport
 from gwbase.sema.property_format import UTCMilliseconds
 from gwbase.sema.property_format import UUID4Str
 
 
-class GNodeInstanceGt(SemaType):
+class GNodeInstanceGt(GwBaseSemaType):
     """Sema: https://schemas.electricity.works/types/g.node.instance.gt/000"""
 
     g_node_id: UUID4Str
@@ -28,10 +28,10 @@ class GNodeInstanceGt(SemaType):
         RevokedAtUnixMs SHALL be present if and only if Status is Revoked or Ended.
         """
 
-        if self.status in (
+        if self.status in {
             GNodeInstanceStatus.Revoked,
             GNodeInstanceStatus.Ended,
-        ):
+        }:
             if self.revoked_at_unix_ms is None:
                 raise ValueError(
                     "Axiom 1 violated! RevokedAtUnixMs must be present "

@@ -6,6 +6,8 @@ enums:
 types:
   g.node.gt: g.node.gt
   g.node.instance.gt: g.node.instance.gt
+  gridworks.header: gridworks.header
+  gw: gw
   heartbeat.a: heartbeat.a
-  sim.ready: ready
+  sim.ready: sim.ready
   sim.timestep: sim.timestep

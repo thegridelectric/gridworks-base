@@ -17,8 +17,9 @@ Wire form::
 
 import json
 import uuid
-from gwbase.sema.types.gridworks_header import GridworksHeader
+
 from gwbase.sema.property_format import LeftRightDot, UUID4Str
+from gwbase.sema.types.gridworks_header import GridworksHeader
 
 
 def wrap_bytes(

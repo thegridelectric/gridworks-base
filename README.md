@@ -71,14 +71,24 @@ And confirm:
 3. tests pass
 
 ```
-poetry install
-poetry shell
-pytest -v
+uv sync --all-groups
+uv run pytest -v
 ```
 
-This, and most other GridWorks repositories, use poetry installed via pipx to handle package management. They are also kicked off via [Cookiecutter](https://cookiecutter-hypermodern-python.readthedocs.io/en/2022.6.3.post1/quickstart.html), which also sets up a template for continuous integration in github actions, package publishing on pypi as well as documentation at pypi.
+This repository uses [uv](https://docs.astral.sh/uv/) for package and
+environment management (`pyproject.toml` + `uv.lock`). Common tasks:
 
-TODO: EXPLAIN MORE ABOUT CI, BLACK, NOX, DEPENDABOT. A MORE LINKS TO WHY THIS STUFF IS IMPORTANT IN A PRODUCTION SYSTEM.
+```
+uv run pytest          # tests
+uv run ruff check .    # lint
+uv run ruff format .   # format
+uv run mypy src        # type-check
+```
+
+`nox` sessions (`nox -s tests|lint|mypy|xdoctest|docs-build`) are an
+optional convenience wrapper over the same `uv run` commands; install nox
+globally (e.g. `uv tool install nox`) to use them. CI runs the `uv run`
+commands directly.
 
 ## Hello Rabbit
 

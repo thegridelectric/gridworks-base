@@ -1,0 +1,289 @@
+{
+  "bindings": [
+    {
+      "arguments": {},
+      "destination": "mm_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.ltn.*.mm.*",
+      "source": "ltnmic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "super_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.ltn.*.super.*",
+      "source": "ltnmic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "time_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.ltn.*.time.*",
+      "source": "ltnmic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "super_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.mm.*.super.*",
+      "source": "mmmic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "time_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.mm.*.time.*",
+      "source": "mmmic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ltn_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.super.*.ltn.*",
+      "source": "supermic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "mm_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.super.*.mm.*",
+      "source": "supermic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "time_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.super.*.time.*",
+      "source": "supermic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "super_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.time.*.super.*",
+      "source": "timemic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "ltnmic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "mmmic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "pricemic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "supermic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "tamic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "timemic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "weathermic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "amq.topic",
+      "vhost": "hw1__1"
+    }
+  ],
+  "exchanges": [
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "ear_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "ltn_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": false,
+      "name": "ltnmic_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "mm_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": false,
+      "name": "mmmic_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "price_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": false,
+      "name": "pricemic_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "super_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": false,
+      "name": "supermic_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "ta_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": false,
+      "name": "tamic_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "time_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": false,
+      "name": "timemic_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "weather_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": false,
+      "name": "weathermic_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    }
+  ],
+  "global_parameters": [],
+  "parameters": [],
+  "permissions": [],
+  "policies": [],
+  "queues": [],
+  "topic_permissions": [],
+  "users": [],
+  "vhosts": [
+    {
+      "name": "hw1__1"
+    }
+  ]
+}

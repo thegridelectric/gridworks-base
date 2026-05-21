@@ -16,7 +16,7 @@ from tests._stubs import (
     GNodeStubRecorder,
     SupervisorStubRecorder,
     TimeCoordinatorStubRecorder,
-    load_rabbit_exchange_bindings,
+    provision_topology,
 )
 from tests._wait import wait_for
 
@@ -59,8 +59,10 @@ def test_actor_base(make_g_node_json, make_settings) -> None:
     codec = GwBaseSemaCodec()
 
     gn_settings = make_settings(
-        make_g_node_json("gn.json", alias="d1.isone.unknown.gnode", g_node_class="Scada"),
-        transport_class=TransportClass.Scada,
+        make_g_node_json(
+            "gn.json", alias="d1.isone.unknown.gnode", g_node_class="LeafTransactiveNode"
+        ),
+        transport_class=TransportClass.LeafTransactiveNode,
     )
     su_settings = make_settings(
         make_g_node_json("su.json", alias="d1.super", g_node_class="Scada"),
@@ -70,6 +72,10 @@ def test_actor_base(make_g_node_json, make_settings) -> None:
         make_g_node_json("tc.json", alias="d1.time", g_node_class="TimeCoordinator"),
         transport_class=TransportClass.TimeCoordinator,
     )
+
+    # Infra owns the fabric: provision exchanges + bindings BEFORE any actor
+    # starts (actors only passively assert their consume exchange exists).
+    provision_topology(gn_settings.rabbit.url.get_secret_value())
 
     gn = GNodeStubRecorder(
         settings=gn_settings,
@@ -98,8 +104,6 @@ def test_actor_base(make_g_node_json, make_settings) -> None:
         wait_for(lambda: su._consuming, 4, "supervisor is consuming")
         wait_for(lambda: gn._consuming, 4, "gnode is consuming")
         wait_for(lambda: tc._consuming, 4, "timecoordinator is consuming")
-
-        load_rabbit_exchange_bindings(gn._single_channel)
 
         hb = HeartbeatA(my_hex="0", your_last_hex="0")
         gn.send(

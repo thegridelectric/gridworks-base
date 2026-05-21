@@ -3,83 +3,48 @@ live rabbit broker."""
 
 from typing import Optional
 
-from pika.channel import Channel as PikaChannel
-from pydantic import BaseModel
+import pika
 
+from gwbase import topology
 from gwbase.config import GNodeSettings
+from gwbase.gridworks_actor import GridworksActor
 from gwbase.sema import GwBaseSemaCodec
 from gwbase.sema.types import HeartbeatA, Ready
-from gwbase.gridworks_actor import GridworksActor
-from gwbase.transport_encoding import RoutingEnvelope, RoutingClass
+from gwbase.transport_encoding import RoutingEnvelope
 
 
-class ExchangeBinding(BaseModel):
-    From: str
-    To: str
-    Key: str
-
-
-def load_rabbit_exchange_bindings(ch: PikaChannel) -> None:
-    """Declare the exchanges and bindings used by stub tests.
-
-    For each RoutingClass we declare ``<rc>_tx`` (internal, where actors
-    consume) and ``<rc>mic_tx`` (where actors publish). Bindings forward
-    messages from each publish exchange into the relevant consume exchange
-    based on the routing key.
+def declare_topology(ch: pika.channel.Channel) -> None:
+    """Declare every exchange + binding from the shared topology source
+    (``gwbase.topology``) — so test / dev / prod provision the same fabric.
     """
-    if ch is None or not ch.is_open:
-        raise RuntimeError("Channel must be open before declaring bindings")
-
-    ch.exchange_declare(
-        exchange="ear_tx",
-        exchange_type="topic",
-        durable=True,
-        internal=True,
-    )
-
-    for rc in RoutingClass:
+    for ex in topology.exchanges():
         ch.exchange_declare(
-            exchange=f"{rc.value}_tx",
-            exchange_type="topic",
-            durable=True,
-            internal=True,
+            exchange=ex.name,
+            exchange_type=ex.exchange_type,
+            durable=ex.durable,
+            internal=ex.internal,
         )
-        ch.exchange_declare(
-            exchange=f"{rc.value}mic_tx",
-            exchange_type="topic",
-            durable=True,
-            internal=False,
-        )
-
-    bindings: list[ExchangeBinding] = [
-        ExchangeBinding(From=rc.value, To="ear", Key="#") for rc in RoutingClass
-    ]
-    bindings.extend(
-        [
-            ExchangeBinding(
-                From=RoutingClass.Scada.value,
-                To=RoutingClass.Supervisor.value,
-                Key=f"*.*.{RoutingClass.Scada.value}.*.{RoutingClass.Supervisor.value}.*",
-            ),
-            ExchangeBinding(
-                From=RoutingClass.Supervisor.value,
-                To=RoutingClass.Scada.value,
-                Key=f"*.*.{RoutingClass.Supervisor.value}.*.{RoutingClass.Scada.value}.*",
-            ),
-            ExchangeBinding(
-                From=RoutingClass.Scada.value,
-                To=RoutingClass.TimeCoordinator.value,
-                Key=f"*.*.{RoutingClass.Scada.value}.*.{RoutingClass.TimeCoordinator.value}.*",
-            ),
-        ]
-    )
-
-    for b in bindings:
+    for b in topology.exchange_bindings():
         ch.exchange_bind(
-            destination=f"{b.To}_tx",
-            source=f"{b.From}mic_tx",
-            routing_key=b.Key,
+            destination=b.destination,
+            source=b.source,
+            routing_key=b.routing_key,
         )
+
+
+def provision_topology(url: str) -> None:
+    """Provision the broker fabric BEFORE any actor starts.
+
+    Actors only *passively* assert their consume exchange exists, so the
+    exchange set + bindings must pre-exist (mirrors how dev/prod load the
+    generated definitions). Opens a short-lived admin connection, declares
+    the topology from ``gwbase.topology``, and closes.
+    """
+    conn = pika.BlockingConnection(pika.URLParameters(url))
+    try:
+        declare_topology(conn.channel())
+    finally:
+        conn.close()
 
 
 class GNodeStubRecorder(GridworksActor):

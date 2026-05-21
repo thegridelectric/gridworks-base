@@ -15,12 +15,12 @@ from pika.spec import Basic, BasicProperties
 
 from gwbase.config import GNodeSettings
 from gwbase.transport_encoding import (
-    RoutingEnvelope,
     BroadcastRoutingEnvelope,
     DirectRoutingEnvelope,
     MessageCategory,
-    WrappedRoutingEnvelope,
+    RoutingEnvelope,
     TransportClass,
+    WrappedRoutingEnvelope,
     parse_routing_key,
     routing_code,
 )
@@ -319,9 +319,19 @@ class ActorBase(ABC):
 
     @no_type_check
     def setup_exchange(self) -> None:
-        """Declare the consume exchange via Exchange.Declare. When the
-        declaration completes pika will invoke ``on_exchange_declareok``."""
-        LOGGER.info("Declaring exchange: %s", self._consume_exchange)
+        """Assert the consume exchange exists via a *passive* Exchange.Declare.
+
+        Infra owns the fabric: the exchange set + routing fabric are
+        provisioned on the broker out-of-band (generated from
+        ``gwbase/topology.py``; see wiki executor spec §3.5–§3.6). The actor
+        does NOT define the exchange's params — ``passive=True`` is a pure
+        existence check. If the broker was not provisioned the channel is
+        closed with a 404, surfacing in ``on_consumer_channel_closed`` as a
+        fail-fast rather than the actor silently creating a divergent
+        exchange or fighting the definitions over ``internal``/``durable``
+        (``PRECONDITION_FAILED``). When the check completes pika invokes
+        ``on_exchange_declareok``."""
+        LOGGER.info("Asserting consume exchange exists: %s", self._consume_exchange)
         cb = functools.partial(
             self.on_exchange_declareok,
             userdata=self._consume_exchange,
@@ -329,16 +339,15 @@ class ActorBase(ABC):
         self._single_channel.exchange_declare(
             exchange=self._consume_exchange,
             exchange_type="topic",
-            durable=True,
-            internal=True,
+            passive=True,
             callback=cb,
         )
 
     @no_type_check
     def on_exchange_declareok(self, _unused_frame, userdata) -> None:
-        """Invoked by pika once Exchange.Declare completes. Kicks off queue
-        declaration."""
-        LOGGER.info("Exchange declared: %s", userdata)
+        """Invoked by pika once the passive Exchange.Declare confirms the
+        exchange exists. Kicks off queue declaration."""
+        LOGGER.info("Consume exchange present: %s", userdata)
         self.setup_queue()
 
     @no_type_check
@@ -579,6 +588,63 @@ class ActorBase(ABC):
         )
 
     # ------------------------------------------------------------------
+    # Subscriptions — bind this actor's queue to a publisher's exchange.
+    # Call these from ``local_rabbit_startup`` (the queue must exist).
+    # ------------------------------------------------------------------
+
+    def subscribe_broadcast(
+        self,
+        *,
+        from_alias: str,
+        from_class: TransportClass,
+        type_name: str,
+        radio_channel: Optional[str] = None,
+    ) -> None:
+        """Subscribe to a publisher's ``JsonBroadcast`` messages.
+
+        Broadcasts are *not* wired by the static cross-class fabric — a
+        subscriber binds its own queue directly to the publisher's
+        ``<from-class>mic_tx`` with the broadcast routing key (see wiki
+        executor spec §3.5). Call from ``local_rabbit_startup`` once the
+        queue exists. ``radio_channel`` selects a specific channel; omit it
+        to bind the un-channeled broadcast key.
+        """
+        binding = BroadcastRoutingEnvelope(
+            type_name=type_name,
+            from_alias=from_alias,
+            from_class=from_class,
+            radio_channel=radio_channel,
+        ).routing_key
+        exchange = routing_code(from_class) + "mic_tx"
+        LOGGER.info(
+            "Binding %s to %s with %s", self.queue_name, exchange, binding
+        )
+        self._single_channel.queue_bind(
+            self.queue_name, exchange, routing_key=binding
+        )
+
+    def subscribe_amq_topic(self, *, binding_key: str) -> None:
+        """Subscribe to messages on the built-in ``amq.topic`` exchange —
+        the seam where AMQP meets MQTT-native peers (scada). This is how a
+        gwbase AMQP actor receives a scada's ``gw`` (wrapped) messages, which
+        RabbitMQ bridges from MQTT onto ``amq.topic`` (wiki executor spec
+        §3.5). Call from ``local_rabbit_startup``.
+
+        ``binding_key`` is supplied by the caller because the exact scada
+        topic ↔ routing-key scheme is owned by gwproactor; the production
+        form matches the ``WrappedRoutingEnvelope`` grammar
+        (``gw.<from>.to.<to-class>.<inner-type>``), so e.g. a TerminalAsset
+        subscribing to wrapped messages addressed to it would bind
+        ``gw.*.to.ta.#``.
+        """
+        LOGGER.info(
+            "Binding %s to amq.topic with %s", self.queue_name, binding_key
+        )
+        self._single_channel.queue_bind(
+            self.queue_name, "amq.topic", routing_key=binding_key
+        )
+
+    # ------------------------------------------------------------------
     # Send
     # ------------------------------------------------------------------
 
@@ -599,10 +665,9 @@ class ActorBase(ABC):
             return OnSendMessageDiagnostic.STOPPED_SO_NOT_SENDING
 
         if isinstance(envelope, WrappedRoutingEnvelope):
-            if self.transport_class != TransportClass.LeafTransactiveNode:
-                raise ValueError(
-                    "Only LeafTransactiveNode may send Wrapped messages",
-                )
+            # Wrapped (gw) messages go to the built-in amq.topic so they reach
+            # MQTT-native peers (e.g. scada). Any actor may send wrapped — the
+            # wire format matches gwproactor's gw scheme (wiki spec §3.5).
             publish_exchange = "amq.topic"
         else:
             publish_exchange = self._publish_exchange

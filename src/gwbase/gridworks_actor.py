@@ -79,7 +79,7 @@ class GridworksActor(ActorBase, ABC):
             LOGGER.warning(f"Failed to decode control-plane {envelope.type_name}: {e}")
             return
         if isinstance(obj, HeartbeatA):
-            self._handle_heartbeat(obj, from_alias=envelope.from_alias)
+            self._handle_heartbeat(obj, envelope=envelope, body=body)
         elif isinstance(obj, SimTimestep):
             self._handle_timestep(obj, from_alias=envelope.from_alias)
 
@@ -87,11 +87,17 @@ class GridworksActor(ActorBase, ABC):
     # Internal handlers — Sema objects do not escape these methods
     # ------------------------------------------------------------------
 
-    def _handle_heartbeat(self, ping: HeartbeatA, *, from_alias: str) -> None:
-        if from_alias != self._my_super_alias:
-            LOGGER.info("Ignoring HeartbeatA from non-supervisor")
+    def _handle_heartbeat(
+        self, ping: HeartbeatA, *, envelope: RoutingEnvelope, body: bytes
+    ) -> None:
+        # Only a ping from THIS actor's supervisor is handled internally
+        # (pong + on_supervisor_heartbeat hook). Any other heartbeat.a — e.g.
+        # a subordinate's heartbeat arriving at its supervisor — is surfaced
+        # to the application via process_message so it can be observed.
+        if envelope.from_alias != self._my_super_alias:
+            self.process_message(envelope=envelope, body=body)
             return
-        self.on_supervisor_heartbeat(from_alias=from_alias)
+        self.on_supervisor_heartbeat(from_alias=envelope.from_alias)
         self._send_heartbeat_response(ping=ping)
 
     def _handle_timestep(self, ts: SimTimestep, *, from_alias: str) -> None:

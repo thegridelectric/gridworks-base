@@ -3,6 +3,7 @@ from gwbase.sema.types import HeartbeatA
 from gwbase.gridworks_actor import GridworksActor
 from gwbase.transport_encoding import RoutingEnvelope, TransportClass
 
+from tests._stubs import provision_topology
 from tests._wait import wait_for
 
 
@@ -20,8 +21,14 @@ class HelloGNode(GridworksActor):
 
 
 def test_hello(make_g_node_json, make_settings) -> None:
-    json_path = make_g_node_json(alias="d1.hello", g_node_class="Scada")
-    settings = make_settings(json_path, transport_class=TransportClass.Scada)
+    # scada is MQTT-only (no AMQP exchanges); the demo actor is a
+    # LeafTransactiveNode, which has a ltn_tx / ltnmic_tx pair.
+    json_path = make_g_node_json(alias="d1.hello", g_node_class="LeafTransactiveNode")
+    settings = make_settings(json_path, transport_class=TransportClass.LeafTransactiveNode)
+
+    # Provision the fabric before the actor starts (passive consume-exchange
+    # assert needs ltn_tx to already exist).
+    provision_topology(settings.rabbit.url.get_secret_value())
 
     gn = HelloGNode(
         settings=settings,

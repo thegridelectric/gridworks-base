@@ -36,6 +36,12 @@ repos:
         types: [text]
         stages: [commit, push, manual]
         exclude: "CodeGenerationTools/.*|rabbit/.*"
+      - id: rabbit-definitions-drift
+        name: Rabbit definitions in sync with topology
+        entry: uv run python for_docker/gen_definitions.py --check
+        language: system
+        pass_filenames: false
+        files: "^(src/gwbase/topology\\.py|src/gwbase/rabbit_definitions\\.py|rabbit/rabbitconfig/.*_definitions\\.json)$"
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
     rev: v0.5.6

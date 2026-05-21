@@ -12,9 +12,22 @@ regenerate-and-diff against the committed artifacts.
 
 import base64
 import hashlib
+import json
 from typing import Any
 
 from gwbase import topology
+
+# The committed broker-definitions artifacts: filename -> build kwargs.
+# Single source for both the generator (writes them) and the CI drift-guard
+# (test_definitions_drift.py regenerates and diffs). Dev carries the
+# non-secret smqPublic credential; prod carries none (injected at deploy).
+DEFINITION_ARTIFACTS: list[tuple[str, dict[str, Any]]] = [
+    (
+        "dev_definitions.json",
+        {"vhost": "d1__1", "user": "smqPublic", "password": "smqPublic"},
+    ),
+    ("prod_definitions.json", {"vhost": "hw1__1"}),
+]
 
 # Fixed 4-byte salt so the dev password hash is deterministic (the dev
 # credential is non-secret; determinism is what lets CI diff the output).
@@ -101,3 +114,18 @@ def build_definitions(
         ]
 
     return definitions
+
+
+def dumps(definitions: dict[str, Any]) -> str:
+    """Canonical serialization for a definitions dict — deterministic
+    (sorted keys) + trailing newline, shared by the generator CLI and the
+    drift-guard so the committed artifacts have one canonical form."""
+    return json.dumps(definitions, indent=2, sort_keys=True) + "\n"
+
+
+def rendered_artifacts() -> dict[str, str]:
+    """Map each committed artifact filename to its canonical JSON text."""
+    return {
+        name: dumps(build_definitions(**kwargs))
+        for name, kwargs in DEFINITION_ARTIFACTS
+    }

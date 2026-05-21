@@ -1,0 +1,58 @@
+name: Broker image
+
+# Build + push the baked dev-broker image to GHCR so every repo's dev-broker
+# compose can pull one multi-arch image with definitions baked in. Triggered
+# only when the baked inputs change (definitions are rare-change), so the
+# round-trip is infrequent.
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - "rabbit/rabbitconfig/dev_definitions.json"
+      - "for_docker/dev_rabbitmq.conf"
+      - "for_docker/enabled_plugins"
+      - "rabbit/Dockerfile"
+      - ".github/workflows/broker-image.yml"
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Guard: the baked definitions must match gwbase.topology before we
+      # ship them in an image.
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --all-groups --locked
+      - run: uv run python for_docker/gen_definitions.py --check --dir rabbit/rabbitconfig
+
+      # Keep the git-hash + date in the image tag (chaos__<short-sha>__<date>)
+      # — traceable back to the exact commit that baked the definitions.
+      - name: Compute image tag
+        id: tag
+        run: echo "tag=chaos__$(git rev-parse --short HEAD)__$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: rabbit/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/thegridelectric/dev-rabbit:latest
+            ghcr.io/thegridelectric/dev-rabbit:${{ steps.tag.outputs.tag }}

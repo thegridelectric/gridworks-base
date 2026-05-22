@@ -32,16 +32,24 @@ jobs:
         python: ["3.12"]
     env:
       FORCE_COLOR: "1"
+    services:
+      # Same baked multi-arch image as the dev broker (arm.sh / x86.sh), so CI
+      # runs against the exact RabbitMQ 4.x + topology developers use. The image
+      # bakes the conf + generated definitions (vhost d1__1, smqPublic, the
+      # exchanges/bindings from gwbase.topology), so no config mount is needed.
+      rabbit:
+        image: ghcr.io/thegridelectric/dev-rabbit:latest
+        ports:
+          - 5672:5672
+          - 15672:15672
+          - 1885:1885
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 5s
+          --health-timeout 10s
+          --health-retries 20
     steps:
       - uses: actions/checkout@v4
-
-      - name: Start World Broker
-        uses: namoshek/rabbitmq-github-action@v1
-        with:
-          version: "3.9.13"
-          ports: "1885:1885 4369:4369 5672:5672 15672:15672 15674:15674 25672:25672"
-          config: ${{ github.workspace }}/.ci/rabbitmq.conf
-          container-name: "rabbit"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6

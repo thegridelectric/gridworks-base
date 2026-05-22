@@ -58,7 +58,7 @@ Note those scripts are just aliases so one doesn't need to remember the docker i
 
 Tests for success:
 
-1. go to http://0.0.0.0:15672/ - it should look like this:
+1. go to http://localhost:15672/ - it should look like this:
 
 ![alt_text](docs/images/dev-broker-login.png) - Username/password for the dev rabbit broker: `smqPublic/smqPublic` - [More info]](https://gridworks.readthedocs.io/en/latest/gridworks-broker.html) on the GridWorks use of rabbit brokers
 
@@ -68,7 +68,7 @@ Tests for success:
 mosquitto_sub -h localhost -p 1885 -u smqPublic -P smqPublic -t "#" -v
 ```
 
-and go to `http://0.0.0.0:15672/queues` to confirm a new queue has showed up
+and go to `http://localhost:15672/queues` to confirm a new queue has showed up
 
 ```
 docker exec -it gw-dev-rabbit rabbitmq-plugins list

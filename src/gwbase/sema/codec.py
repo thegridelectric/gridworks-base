@@ -1,10 +1,9 @@
 import json
 import logging
-from importlib import import_module
 from collections import defaultdict
+from importlib import import_module
 from pathlib import Path
 from typing import Literal
-
 
 from gwbase.sema.base import (
     DegradedSemaType,
@@ -18,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 class GwBaseSemaCodec:
-
     def __init__(self) -> None:
         self.registry = get_current_types()
         self.old_versions = get_old_versions()
@@ -27,11 +25,11 @@ class GwBaseSemaCodec:
     # Decode
     # ------------------------------------------------------------------------
 
-    def from_dict(
+    def from_dict(  # noqa: C901, PLR0912 — single decode dispatch, kept inline on purpose
         self,
         data: dict,
         mode: Literal["strict", "degraded"] = "strict",
-        auto_upgrade: bool = True
+        auto_upgrade: bool = True,
     ) -> GwBaseSemaType | DegradedSemaType:
 
         if not isinstance(data, dict):
@@ -65,19 +63,16 @@ class GwBaseSemaCodec:
             return current_cls.from_dict(data)
 
         # Old version
-        if (
-            type_name in self.old_versions
-            and version in self.old_versions[type_name]
-        ):
+        if type_name in self.old_versions and version in self.old_versions[type_name]:
             old_cls = self.old_versions[type_name][version]
             old_instance = old_cls.from_dict(data)
-            return old_instance.to_latest(self.registry) if auto_upgrade else old_instance
+            return (
+                old_instance.to_latest(self.registry) if auto_upgrade else old_instance
+            )
 
         # Unknown version
         if mode == "strict":
-            raise ValueError(
-                f"Unsupported version {version} for {type_name}"
-            )
+            raise ValueError(f"Unsupported version {version} for {type_name}")
 
         # --------------------------------------------------------------------
         # DEGRADED MODE
@@ -127,7 +122,7 @@ class GwBaseSemaCodec:
 
         return self.from_dict(d, mode=mode)
 
-    def to_bytes(self, msg: GwBaseSemaType) -> bytes:
+    def to_bytes(self, msg: GwBaseSemaType) -> bytes:  # noqa: PLR6301 — codec API symmetry with from_bytes
         return msg.to_bytes()
 
 
@@ -135,8 +130,11 @@ class GwBaseSemaCodec:
 # AUTO-DISCOVERY
 # ============================================================================
 
+
 def get_current_types() -> dict[str, type[GwBaseSemaType]]:
-    from gwbase.sema import types
+    # lazy import breaks a cycle with gwbase.sema.types
+    from gwbase.sema import types  # noqa: PLC0415
+
     return {
         getattr(types, name).type_name_value(): getattr(types, name)
         for name in types.__all__

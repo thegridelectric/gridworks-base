@@ -8,19 +8,20 @@ from pathlib import Path
 
 import pytest
 
-from gwbase.rabbit_definitions import rendered_artifacts
+from gwbase.rabbit_definitions import DEFINITION_ARTIFACTS, rendered_artifacts
 
 RABBITCONFIG = Path(__file__).resolve().parents[1] / "rabbit" / "rabbitconfig"
 
 
-@pytest.mark.parametrize("name, expected", list(rendered_artifacts().items()))
-def test_committed_definitions_match_generator(name: str, expected: str) -> None:
+# Parametrize over the filename only, so the test ID is e.g.
+# "[dev_definitions.json]" rather than the entire rendered JSON.
+@pytest.mark.parametrize("name", [name for name, _ in DEFINITION_ARTIFACTS])
+def test_committed_definitions_match_generator(name: str) -> None:
     path = RABBITCONFIG / name
     assert path.exists(), (
-        f"{path} is missing — run "
-        f"`python for_docker/gen_definitions.py --write-all`"
+        f"{path} is missing — run `python for_docker/gen_definitions.py --write-all`"
     )
-    assert path.read_text() == expected, (
+    assert path.read_text() == rendered_artifacts()[name], (
         f"{name} is stale vs gwbase.topology. Regenerate: "
         f"`python for_docker/gen_definitions.py --write-all`"
     )

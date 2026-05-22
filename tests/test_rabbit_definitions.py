@@ -25,8 +25,13 @@ def test_dev_definitions_include_user_and_permissions() -> None:
     assert d["users"][0]["hashing_algorithm"] == "rabbit_password_hashing_sha256"
     assert "administrator" in d["users"][0]["tags"]
     assert d["permissions"] == [
-        {"user": "smqPublic", "vhost": "d1__1",
-         "configure": ".*", "write": ".*", "read": ".*"}
+        {
+            "user": "smqPublic",
+            "vhost": "d1__1",
+            "configure": ".*",
+            "write": ".*",
+            "read": ".*",
+        }
     ]
 
 
@@ -52,12 +57,14 @@ def test_exchanges_and_bindings_track_topology() -> None:
 
     # a known direct edge and the amq.topic ear tap survive into the JSON
     assert any(
-        b["source"] == "ltnmic_tx" and b["destination"] == "super_tx"
+        b["source"] == "ltnmic_tx"
+        and b["destination"] == "super_tx"
         and b["routing_key"] == "*.*.ltn.*.super.*"
         for b in d["bindings"]
     )
     assert any(
-        b["source"] == "amq.topic" and b["destination"] == "ear_tx"
+        b["source"] == "amq.topic"
+        and b["destination"] == "ear_tx"
         and b["routing_key"] == "#"
         for b in d["bindings"]
     )

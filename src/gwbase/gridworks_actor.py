@@ -72,7 +72,9 @@ class GridworksActor(ActorBase, ABC):
     def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
         """Subclass hook for application-level messages."""
 
-    def _dispatch_control_plane(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
+    def _dispatch_control_plane(
+        self, *, envelope: RoutingEnvelope, body: bytes
+    ) -> None:
         try:
             obj = self._control_plane_codec.from_bytes(body)
         except Exception as e:
@@ -156,7 +158,9 @@ class GridworksActor(ActorBase, ABC):
         msg = Ready(
             from_g_node_alias=self.alias,
             from_g_node_instance_id=self.g_node_instance_id,
-            time_unix_s=time_unix_s if time_unix_s is not None else self._sim_time_unix_s,
+            time_unix_s=time_unix_s
+            if time_unix_s is not None
+            else self._sim_time_unix_s,
         )
         self.send(
             envelope=self.direct_envelope(

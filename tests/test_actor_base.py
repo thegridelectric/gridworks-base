@@ -7,11 +7,10 @@ from gwbase.sema.types import HeartbeatA, SimTimestep
 from gwbase.transport_encoding import (
     BroadcastRoutingEnvelope,
     DirectRoutingEnvelope,
-    WrappedRoutingEnvelope,
     TransportClass,
+    WrappedRoutingEnvelope,
     parse_routing_key,
 )
-
 from tests._stubs import (
     GNodeStubRecorder,
     SupervisorStubRecorder,
@@ -60,7 +59,9 @@ def test_actor_base(make_g_node_json, make_settings) -> None:
 
     gn_settings = make_settings(
         make_g_node_json(
-            "gn.json", alias="d1.isone.unknown.gnode", g_node_class="LeafTransactiveNode"
+            "gn.json",
+            alias="d1.isone.unknown.gnode",
+            g_node_class="LeafTransactiveNode",
         ),
         transport_class=TransportClass.LeafTransactiveNode,
     )

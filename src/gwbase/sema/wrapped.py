@@ -22,7 +22,7 @@ from gwbase.sema.property_format import LeftRightDot, UUID4Str
 from gwbase.sema.types.gridworks_header import GridworksHeader
 
 
-def wrap_bytes(
+def wrap_bytes(  # noqa: PLR0913 — keyword-only envelope builder
     *,
     src: LeftRightDot,
     dst: LeftRightDot,

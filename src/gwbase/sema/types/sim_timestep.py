@@ -1,9 +1,12 @@
 from typing import Literal
+
 from gwbase.sema.base import GwBaseSemaType
-from gwbase.sema.property_format import LeftRightDot
-from gwbase.sema.property_format import UTCMilliseconds
-from gwbase.sema.property_format import UTCSeconds
-from gwbase.sema.property_format import UUID4Str
+from gwbase.sema.property_format import (
+    LeftRightDot,
+    UTCMilliseconds,
+    UTCSeconds,
+    UUID4Str,
+)
 
 
 class SimTimestep(GwBaseSemaType):

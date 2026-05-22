@@ -17,9 +17,7 @@ nox.options.sessions = ("lint", "mypy", "tests", "xdoctest")
 @nox.session(python=PYTHON_VERSIONS)
 def tests(session: nox.Session) -> None:
     """Run the test suite."""
-    session.run(
-        "uv", "run", "--all-groups", "pytest", *session.posargs, external=True
-    )
+    session.run("uv", "run", "--all-groups", "pytest", *session.posargs, external=True)
 
 
 @nox.session(python=PYTHON_VERSIONS)
@@ -41,8 +39,15 @@ def lint(session: nox.Session) -> None:
 def xdoctest(session: nox.Session) -> None:
     """Run examples embedded in docstrings."""
     session.run(
-        "uv", "run", "--all-groups", "python", "-m", "xdoctest", PACKAGE,
-        *session.posargs, external=True,
+        "uv",
+        "run",
+        "--all-groups",
+        "python",
+        "-m",
+        "xdoctest",
+        PACKAGE,
+        *session.posargs,
+        external=True,
     )
 
 
@@ -50,6 +55,11 @@ def xdoctest(session: nox.Session) -> None:
 def docs_build(session: nox.Session) -> None:
     """Build the Sphinx docs."""
     session.run(
-        "uv", "run", "--all-groups", "sphinx-build", "docs", "docs/_build",
+        "uv",
+        "run",
+        "--all-groups",
+        "sphinx-build",
+        "docs",
+        "docs/_build",
         external=True,
     )

@@ -17,17 +17,15 @@ from gwbase.transport_encoding import RoutingClass
 #   - scada is MQTT-only (reached via amq.topic), so it is NOT here.
 #   - cn (ConnectivityNode) is passive / non-runtime, so it is NOT here.
 # A newly-added RoutingClass gets NO exchanges until it is added to this set.
-AMQP_ACTOR_CLASSES: frozenset[RoutingClass] = frozenset(
-    {
-        RoutingClass.TerminalAsset,
-        RoutingClass.LeafTransactiveNode,
-        RoutingClass.MarketMaker,
-        RoutingClass.PriceForecastService,
-        RoutingClass.WeatherForecastService,
-        RoutingClass.TimeCoordinator,
-        RoutingClass.Supervisor,
-    }
-)
+AMQP_ACTOR_CLASSES: frozenset[RoutingClass] = frozenset({
+    RoutingClass.TerminalAsset,
+    RoutingClass.LeafTransactiveNode,
+    RoutingClass.MarketMaker,
+    RoutingClass.PriceForecastService,
+    RoutingClass.WeatherForecastService,
+    RoutingClass.TimeCoordinator,
+    RoutingClass.Supervisor,
+})
 
 # Direct-message routing edges: a sender of class ``src`` may reach a
 # receiver of class ``dst`` via the cross-class mic_tx -> _tx forwarding

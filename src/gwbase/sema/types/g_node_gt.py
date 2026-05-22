@@ -1,10 +1,10 @@
 from typing import Literal, Self
+
 from pydantic import model_validator
+
 from gwbase.sema.base import GwBaseSemaType
-from gwbase.sema.enums import BaseGNodeClass
-from gwbase.sema.enums import GNodeStatus
-from gwbase.sema.property_format import LeftRightDot
-from gwbase.sema.property_format import UUID4Str
+from gwbase.sema.enums import BaseGNodeClass, GNodeStatus
+from gwbase.sema.property_format import LeftRightDot, UUID4Str
 
 
 class GNodeGt(GwBaseSemaType):
@@ -21,8 +21,8 @@ class GNodeGt(GwBaseSemaType):
     type_name: Literal["g.node.gt"] = "g.node.gt"
     version: Literal["004"] = "004"
 
-    @model_validator(mode="after") 
-    def check_axiom_1(self) -> Self: 
+    @model_validator(mode="after")
+    def check_axiom_1(self) -> Self:
         """
         Axiom 1: ClassConsistency
         a. If BaseClass is not Logical, GNodeClass SHALL equal the string value of BaseClass.

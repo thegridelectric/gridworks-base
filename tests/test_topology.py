@@ -8,17 +8,15 @@ def test_mqtt_only_and_passive_classes_excluded() -> None:
     # scada is MQTT-only; cn is passive — neither gets AMQP exchanges.
     assert RoutingClass.Scada not in topo.AMQP_ACTOR_CLASSES
     assert RoutingClass.ConnectivityNode not in topo.AMQP_ACTOR_CLASSES
-    assert topo.AMQP_ACTOR_CLASSES == frozenset(
-        {
-            RoutingClass.TerminalAsset,
-            RoutingClass.LeafTransactiveNode,
-            RoutingClass.MarketMaker,
-            RoutingClass.PriceForecastService,
-            RoutingClass.WeatherForecastService,
-            RoutingClass.TimeCoordinator,
-            RoutingClass.Supervisor,
-        }
-    )
+    assert topo.AMQP_ACTOR_CLASSES == frozenset({
+        RoutingClass.TerminalAsset,
+        RoutingClass.LeafTransactiveNode,
+        RoutingClass.MarketMaker,
+        RoutingClass.PriceForecastService,
+        RoutingClass.WeatherForecastService,
+        RoutingClass.TimeCoordinator,
+        RoutingClass.Supervisor,
+    })
 
 
 def test_every_edge_endpoint_is_an_amqp_actor_class() -> None:
@@ -67,8 +65,6 @@ def test_bindings_cover_edges_and_ear_taps() -> None:
     )
     # amq.topic fans into ear with '#'
     assert any(
-        b.source == "amq.topic"
-        and b.destination == "ear_tx"
-        and b.routing_key == "#"
+        b.source == "amq.topic" and b.destination == "ear_tx" and b.routing_key == "#"
         for b in bindings
     )

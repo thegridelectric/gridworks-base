@@ -2,6 +2,11 @@ import re
 from dataclasses import dataclass
 from enum import StrEnum
 
+# Routing-key token counts per envelope grammar (see executor/transport.md).
+_DIRECT_TOKEN_COUNT = 6
+_BROADCAST_MIN_TOKEN_COUNT = 4
+_WRAPPED_TOKEN_COUNT = 5
+
 
 class TransportClass(StrEnum):
     """Closed taxonomy of routable classes on the rabbit transport. This
@@ -213,7 +218,7 @@ def _parse_transport_class_token(token: str, routing_key: str) -> TransportClass
 def _parse_json_direct_envelope(
     tokens: list[str], routing_key: str
 ) -> DirectRoutingEnvelope:
-    if len(tokens) != 6:
+    if len(tokens) != _DIRECT_TOKEN_COUNT:
         raise ValueError(f"Expect JsonDirect messages to have 6 words! {routing_key}")
     return DirectRoutingEnvelope(
         from_alias=_parse_alias_token(tokens[1], routing_key, "FromAlias"),
@@ -227,13 +232,13 @@ def _parse_json_direct_envelope(
 def _parse_json_broadcast_envelope(
     tokens: list[str], routing_key: str
 ) -> BroadcastRoutingEnvelope:
-    if len(tokens) < 4:
+    if len(tokens) < _BROADCAST_MIN_TOKEN_COUNT:
         raise ValueError(
             f"Expect JsonBroadcast messages to have at least 4 words! {routing_key}"
         )
     radio_channel: str | None = None
-    if len(tokens) > 4:
-        radio_channel = ".".join(tokens[4:])
+    if len(tokens) > _BROADCAST_MIN_TOKEN_COUNT:
+        radio_channel = ".".join(tokens[_BROADCAST_MIN_TOKEN_COUNT:])
     return BroadcastRoutingEnvelope(
         from_alias=_parse_alias_token(tokens[1], routing_key, "FromAlias"),
         from_class=_parse_transport_class_token(tokens[2], routing_key),
@@ -245,7 +250,7 @@ def _parse_json_broadcast_envelope(
 def _parse_scada_wrapped_envelope(
     tokens: list[str], routing_key: str
 ) -> WrappedRoutingEnvelope:
-    if len(tokens) != 5:
+    if len(tokens) != _WRAPPED_TOKEN_COUNT:
         raise ValueError(f"Wrapped messages must have 5 words! {routing_key}")
     if tokens[2] != "to":
         raise ValueError(f"Wrapped messages with 5 words must use 'to'! {routing_key}")
@@ -294,16 +299,14 @@ def json_direct_routing_key(
     to_class: TransportClass,
     to_alias: str,
 ) -> str:
-    return ".".join(
-        [
-            MessageCategory.JsonDirect.value,
-            from_alias.replace(".", "-"),
-            routing_code(from_class),
-            type_name.replace(".", "-"),
-            routing_code(to_class),
-            to_alias.replace(".", "-"),
-        ]
-    )
+    return ".".join([
+        MessageCategory.JsonDirect.value,
+        from_alias.replace(".", "-"),
+        routing_code(from_class),
+        type_name.replace(".", "-"),
+        routing_code(to_class),
+        to_alias.replace(".", "-"),
+    ])
 
 
 def json_broadcast_routing_key(
@@ -330,12 +333,10 @@ def gridworks_wrapped_routing_key(
     to_class: TransportClass,
     type_name: str,
 ) -> str:
-    return ".".join(
-        [
-            MessageCategory.GridworksWrapped.value,
-            from_alias.replace(".", "-"),
-            "to",
-            routing_code(to_class),
-            type_name.replace(".", "-"),
-        ]
-    )
+    return ".".join([
+        MessageCategory.GridworksWrapped.value,
+        from_alias.replace(".", "-"),
+        "to",
+        routing_code(to_class),
+        type_name.replace(".", "-"),
+    ])

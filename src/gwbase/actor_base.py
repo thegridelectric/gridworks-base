@@ -616,12 +616,8 @@ class ActorBase(ABC):
             radio_channel=radio_channel,
         ).routing_key
         exchange = routing_code(from_class) + "mic_tx"
-        LOGGER.info(
-            "Binding %s to %s with %s", self.queue_name, exchange, binding
-        )
-        self._single_channel.queue_bind(
-            self.queue_name, exchange, routing_key=binding
-        )
+        LOGGER.info("Binding %s to %s with %s", self.queue_name, exchange, binding)
+        self._single_channel.queue_bind(self.queue_name, exchange, routing_key=binding)
 
     def subscribe_amq_topic(self, *, binding_key: str) -> None:
         """Subscribe to messages on the built-in ``amq.topic`` exchange —
@@ -637,9 +633,7 @@ class ActorBase(ABC):
         subscribing to wrapped messages addressed to it would bind
         ``gw.*.to.ta.#``.
         """
-        LOGGER.info(
-            "Binding %s to amq.topic with %s", self.queue_name, binding_key
-        )
+        LOGGER.info("Binding %s to amq.topic with %s", self.queue_name, binding_key)
         self._single_channel.queue_bind(
             self.queue_name, "amq.topic", routing_key=binding_key
         )

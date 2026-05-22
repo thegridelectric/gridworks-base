@@ -1,4 +1,5 @@
 from typing import Any, Literal
+
 from gwbase.sema.base import GwBaseSemaType
 from gwbase.sema.property_format import LeftRightDot
 

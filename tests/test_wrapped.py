@@ -55,7 +55,12 @@ def test_wrap_generates_message_id_when_omitted() -> None:
         src="d1.source",
         dst="d1.scada1",
         inner_type_name="heartbeat.a",
-        inner_payload_dict={"TypeName": "heartbeat.a", "MyHex": "0", "YourLastHex": "a", "Version": "101"},
+        inner_payload_dict={
+            "TypeName": "heartbeat.a",
+            "MyHex": "0",
+            "YourLastHex": "a",
+            "Version": "101",
+        },
     )
     header, _ = unwrap_bytes(body)
     uuid.UUID(header.message_id, version=4)  # raises if not a UUID4
@@ -67,7 +72,12 @@ def test_wrap_rejects_payload_typename_mismatch() -> None:
             src="d1.a",
             dst="d1.b",
             inner_type_name="heartbeat.a",
-            inner_payload_dict={"TypeName": "wrong.type", "MyHex": "0", "YourLastHex": "a", "Version": "101"},
+            inner_payload_dict={
+                "TypeName": "wrong.type",
+                "MyHex": "0",
+                "YourLastHex": "a",
+                "Version": "101",
+            },
         )
 
 
@@ -82,30 +92,31 @@ def test_wrap_rejects_missing_payload_typename() -> None:
 
 
 def test_unwrap_rejects_non_gw_outer() -> None:
-    body = json.dumps(
-        {"TypeName": "heartbeat.a", "MyHex": "0", "YourLastHex": "a", "Version": "101"}
-    ).encode()
+    body = json.dumps({
+        "TypeName": "heartbeat.a",
+        "MyHex": "0",
+        "YourLastHex": "a",
+        "Version": "101",
+    }).encode()
     with pytest.raises(ValueError, match="Expected TypeName 'gw'"):
         unwrap_bytes(body)
 
 
 def test_unwrap_rejects_header_payload_type_mismatch() -> None:
     # Hand-craft a body whose Header.MessageType disagrees with Payload.TypeName.
-    body = json.dumps(
-        {
-            "TypeName": "gw",
-            "Header": {
-                "TypeName": "gridworks.header",
-                "Version": "001",
-                "Src": "d1.a",
-                "Dst": "d1.b",
-                "MessageType": "heartbeat.a",
-                "MessageId": str(uuid.uuid4()),
-                "AckRequired": False,
-            },
-            "Payload": {"TypeName": "other.type", "Foo": 1},
-        }
-    ).encode()
+    body = json.dumps({
+        "TypeName": "gw",
+        "Header": {
+            "TypeName": "gridworks.header",
+            "Version": "001",
+            "Src": "d1.a",
+            "Dst": "d1.b",
+            "MessageType": "heartbeat.a",
+            "MessageId": str(uuid.uuid4()),
+            "AckRequired": False,
+        },
+        "Payload": {"TypeName": "other.type", "Foo": 1},
+    }).encode()
     with pytest.raises(ValueError, match="does not match payload TypeName"):
         unwrap_bytes(body)
 

@@ -33,17 +33,15 @@ LOGGER = logging.getLogger(__name__)
 
 def write_g_node_json(path: Path, *, alias: str, g_node_class: str = "Scada") -> None:
     path.write_text(
-        json.dumps(
-            {
-                "GNodeId": str(uuid.uuid4()),
-                "Alias": alias,
-                "BaseClass": "Logical",
-                "GNodeClass": g_node_class,
-                "Status": "Active",
-                "TypeName": "g.node.gt",
-                "Version": "004",
-            }
-        )
+        json.dumps({
+            "GNodeId": str(uuid.uuid4()),
+            "Alias": alias,
+            "BaseClass": "Logical",
+            "GNodeClass": g_node_class,
+            "Status": "Active",
+            "TypeName": "g.node.gt",
+            "Version": "004",
+        })
     )
 
 
@@ -200,7 +198,11 @@ def demo() -> None:
         hb_back = HeartbeatA.from_dict(payload_dict)
         LOGGER.info(
             "Unwrapped: message_type=%s src=%s dst=%s ack_required=%s inner=%r",
-            header.message_type, header.src, header.dst, header.ack_required, hb_back,
+            header.message_type,
+            header.src,
+            header.dst,
+            header.ack_required,
+            hb_back,
         )
         assert hb_back == hb
 

@@ -1,10 +1,10 @@
 from typing import Literal, Self
+
 from pydantic import model_validator
+
 from gwbase.sema.base import GwBaseSemaType
-from gwbase.sema.enums import GNodeInstanceStatus
-from gwbase.sema.enums import GNodeInstanceTransport
-from gwbase.sema.property_format import UTCMilliseconds
-from gwbase.sema.property_format import UUID4Str
+from gwbase.sema.enums import GNodeInstanceStatus, GNodeInstanceTransport
+from gwbase.sema.property_format import UTCMilliseconds, UUID4Str
 
 
 class GNodeInstanceGt(GwBaseSemaType):

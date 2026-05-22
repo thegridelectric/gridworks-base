@@ -7,7 +7,6 @@ from pydantic import TypeAdapter, ValidationError
 
 from gwbase.sema import property_format
 
-
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 DEFINITIONS_DIR = PACKAGE_ROOT / "definitions"
 FORMAT_SCHEMA_PATHS = [

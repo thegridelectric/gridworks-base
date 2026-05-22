@@ -111,6 +111,8 @@ preview = true
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
-    # at least this three should be fine in tests:
-    "S101", # asserts allowed in tests...
+    "S101",     # asserts allowed in tests
+    "PLR6301",  # test methods needn't use self
+    "PLR0913",  # fixtures/helpers may take many args
+    "PLW0717",  # multi-statement try is fine in test setup
 ]

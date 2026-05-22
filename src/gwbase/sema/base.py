@@ -4,7 +4,6 @@ from typing import Any, Self, TypeVar
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
@@ -42,6 +41,7 @@ def snake_to_pascal(word: str) -> str:
 # BASE EXCEPTIONS
 # ============================================================================
 
+
 class GwBaseSemaError(Exception):
     """Base exception for Sema-related errors."""
 
@@ -52,6 +52,7 @@ T = TypeVar("T", bound="GwBaseSemaType")
 # ============================================================================
 # STRICT SEMA TYPE
 # ============================================================================
+
 
 class GwBaseSemaType(BaseModel):
     """
@@ -116,7 +117,9 @@ class GwBaseSemaType(BaseModel):
             f"{self.__class__.__name__} does not implement upgrade()"
         )
 
-    def to_latest(self, registry: dict[str, type["GwBaseSemaType"]]) -> "GwBaseSemaType":
+    def to_latest(
+        self, registry: dict[str, type["GwBaseSemaType"]]
+    ) -> "GwBaseSemaType":
         current = self
         type_name = self.type_name_value()
 
@@ -132,8 +135,8 @@ class GwBaseSemaType(BaseModel):
         try:
             current_version_int = int(current.version)
             latest_version_int = int(latest_version_str)
-        except ValueError:
-            raise GwBaseSemaError(f"Invalid version format for {type_name}")
+        except ValueError as e:
+            raise GwBaseSemaError(f"Invalid version format for {type_name}") from e
 
         if current_version_int > latest_version_int:
             raise GwBaseSemaError(
@@ -157,6 +160,7 @@ class GwBaseSemaType(BaseModel):
 # ============================================================================
 # DEGRADED TYPE
 # ============================================================================
+
 
 class DegradedSemaType:
     """

@@ -28,7 +28,7 @@ repos:
         entry: pyupgrade
         language: system
         types: [python]
-        args: [--py37-plus]
+        args: [--py312-plus]
       - id: trailing-whitespace
         name: Trim Trailing Whitespace
         entry: trailing-whitespace-fixer
@@ -42,6 +42,16 @@ repos:
         language: system
         pass_filenames: false
         files: "^(src/gwbase/topology\\.py|src/gwbase/rabbit_definitions\\.py|rabbit/rabbitconfig/.*_definitions\\.json)$"
+      # Full CI mirror (lint + drift + tests). Pre-push only, and only active
+      # after `pre-commit install --hook-type pre-push`. Needs a dev broker up
+      # (./arm.sh); bypass with `git push --no-verify`.
+      - id: ci
+        name: Full CI (ci.sh)
+        entry: ./ci.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [push]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
     rev: v0.5.6

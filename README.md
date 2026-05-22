@@ -1,11 +1,10 @@
-# Gridworks Base
+# GridWorks Base
 
 [![PyPI](https://img.shields.io/pypi/v/gridworks-base.svg)][pypi_]
 [![Status](https://img.shields.io/pypi/status/gridworks-base.svg)][status]
 [![Python Version](https://img.shields.io/pypi/pyversions/gridworks-base)][python version]
 [![License](https://img.shields.io/pypi/l/gridworks-base)][license]
 
-[![Read the documentation at https://gridworks-base.readthedocs.io/](https://img.shields.io/readthedocs/gridworks-base/latest.svg?label=Read%20the%20Docs)][read the docs]
 [![Tests](https://github.com/thegridelectric/gridworks-base/workflows/Tests/badge.svg)][tests]
 [![Codecov](https://codecov.io/gh/thegridelectric/gridworks-base/branch/main/graph/badge.svg)][codecov]
 
@@ -15,27 +14,38 @@
 [pypi_]: https://pypi.org/project/gridworks-base/
 [status]: https://pypi.org/project/gridworks-base/
 [python version]: https://pypi.org/project/gridworks-base
-[read the docs]: https://gridworks-base.readthedocs.io/
 [tests]: https://github.com/thegridelectric/gridworks-base/actions?workflow=Tests
 [codecov]: https://app.codecov.io/gh/thegridelectric/gridworks-base
 [pre-commit]: https://github.com/pre-commit/pre-commit
 [black]: https://github.com/psf/black
 
-This repository serves two purposes:
+`gridworks-base` (module `gwbase`) is the **shared foundation for the
+GridWorks GNode service fleet** — the RabbitMQ-transport actor framework and
+the single source of truth for the broker topology. Its defining commitment
+is a **strict separation between transport and codec**: the transport routes
+raw bytes; the [Sema](https://github.com/thegridelectric/sema) codec encodes/decodes typed messages; the
+boundary between them is one `RoutingEnvelope` + a `bytes` payload.
 
-1. it provides the base class for the default GridWorks actor using pika, the main python package for interacting with RabbitMQ
+Services import it as a package and subclass `GridworksActor`, one per
+`TransportClass` — imported today by `gridworks-ear` and
+`gridworks-journalkeeper`; intended as the base for `gridworks-ltn` (`ltn`),
+`gridworks-marketmaker` (`mm`), and the weather (`weather`) and price
+(`price`) forecast services. The routing taxonomy for all of them lives here
+in `gwbase.topology`.
 
-   - install the `gwbase` package via
+This repo provides two things:
 
-   ```
-   $ pip install gridworks-base
-   ```
-
-2. It provides scripts for runnig a local dev rabbit broker, which is the recommended way to develop.
+1. **The `gwbase` package** — `ActorBase` (transport), `GridworksActor`
+   (adds GNode identity + the Sema codec), and `gwbase.topology` (the broker
+   fabric). Install with `pip install gridworks-base`.
+2. **Dev-broker scripts** — run a local RabbitMQ broker for development
+   (below).
 
 ## Dev Rabbit Broker
 
-All GridWorks repos require a running rabbitMQ dev broker running to pass tests or run dev simulations. Instructions for setting it up:
+GridWorks services that use the AMQP transport require a running RabbitMQ
+dev broker to pass tests or run dev simulations. (SCADA is the exception —
+it is MQTT-native, with no AMQP exchanges.) Instructions for setting it up:
 
 - Make sure you have [docker](https://www.docker.com/products/docker-desktop/) installed
 - Start the dev broker in a docker container — `./arm.sh` or `./x86.sh`
@@ -103,12 +113,19 @@ commands directly.
 
 ## Building & publishing the dev-broker image (GHCR)
 
-`arm.sh` / `x86.sh` pull a prebuilt multi-arch image,
-`ghcr.io/thegridelectric/dev-rabbit`, that bakes the generated broker
-definitions onto official RabbitMQ (`rabbit/Dockerfile`). The definitions
-are generated from `gwbase.topology` (single source of truth; a drift guard
-keeps the committed `rabbit/rabbitconfig/*_definitions.json` in sync). You
-only rebuild/push the image when the definitions, conf, or plugins change.
+**This repo is the build-and-publish home for the GridWorks dev-broker
+image.** It is published **public** on GHCR
+(`ghcr.io/thegridelectric/dev-rabbit`), so any GridWorks repo — and their
+CI — can `docker pull` it (or use it as a CI service container) with no auth
+and no `gridworks-base` checkout. The broker fabric is baked in, so every
+consumer gets the exact same exchanges/bindings.
+
+`arm.sh` / `x86.sh` pull this prebuilt multi-arch image, which bakes the
+generated broker definitions onto official RabbitMQ (`rabbit/Dockerfile`).
+The definitions are generated from `gwbase.topology` (single source of
+truth; a drift guard keeps the committed
+`rabbit/rabbitconfig/*_definitions.json` in sync). You only rebuild/push the
+image when the definitions, conf, or plugins change.
 
 **Automatic (CI):** `.github/workflows/broker-image.yml` builds and pushes
 the image on a push to `main`/`dev` that touches the baked inputs, gated by
@@ -148,10 +165,18 @@ For a quick local-only test without pushing, build just your host arch:
 
 ## Hello Rabbit
 
-Quick start for seeing how the actor base can send a message on the rabbit broker. Run hello_rabbit.py (after starting up the dev rabbit broker, see [dev broker](dev-rabbit-broker) above) and look at the `src/gwbase/actor_base.py` code.
+`hello_rabbit.py` is a two-actor demo: a tiny Supervisor pings a
+`HelloGNode`, which pongs back over the dev broker. Start the dev broker
+(above), then run it from the repo root:
 
-TODO: explain more about what this code does. Links to the type registroy, code generation.
-TODO: create a second hello script with two actors sending heartbeats back and forth.
+```
+uv run python hello_rabbit.py
+```
+
+Read it alongside `src/gwbase/actor_base.py` (transport) and
+`src/gwbase/gridworks_actor.py` (identity + heartbeat). The message types it
+sends are defined in the [Sema](https://github.com/thegridelectric/sema) codec (`src/gwbase/sema/`), which is
+the registry `GridworksActor` decodes against.
 
 Distributed under the terms of the [MIT license][license],
 _Gridworks Base_ is free and open source software.

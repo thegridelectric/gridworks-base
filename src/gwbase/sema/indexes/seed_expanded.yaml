@@ -1,0 +1,58 @@
+metadata:
+  generated_from: indexes/public_registry.yaml
+  generated_at: '2026-05-18T09:09:43Z'
+  note: Transitive closure of initial_targets
+initial_targets:
+- heartbeat.a:000
+- g.node.gt:004
+- g.node.instance.gt:000
+- gw
+- sim.ready:000
+- sim.timestep:000
+worklist:
+  formats:
+    hex.char:
+      path: definitions/formats/hex.char.yaml
+    left.right.dot:
+      path: definitions/formats/left.right.dot.yaml
+    utc.milliseconds:
+      path: definitions/formats/utc.milliseconds.yaml
+    utc.seconds:
+      path: definitions/formats/utc.seconds.yaml
+    uuid4.str:
+      path: definitions/formats/uuid4.str.yaml
+  enums:
+    base.g.node.class:
+      '000':
+        path: definitions/enums/base.g.node.class/000.yaml
+    g.node.instance.status:
+      '000':
+        path: definitions/enums/g.node.instance.status/000.yaml
+    g.node.instance.transport:
+      '000':
+        path: definitions/enums/g.node.instance.transport/000.yaml
+    g.node.status:
+      '000':
+        path: definitions/enums/g.node.status/000.yaml
+  types:
+    g.node.gt:
+      '004':
+        path: definitions/types/g.node.gt/004.yaml
+    g.node.instance.gt:
+      '000':
+        path: definitions/types/g.node.instance.gt/000.yaml
+    gridworks.header:
+      '001':
+        path: definitions/types/gridworks.header/001.yaml
+    heartbeat.a:
+      '000':
+        path: definitions/types/heartbeat.a/000.yaml
+    sim.ready:
+      '000':
+        path: definitions/types/sim.ready/000.yaml
+    sim.timestep:
+      '000':
+        path: definitions/types/sim.timestep/000.yaml
+    gw:
+      versioning_strategy: none
+      path: definitions/types/gw.yaml

@@ -1,0 +1,45 @@
+# GENERATED FILE - DO NOT EDIT
+# Generated from definitions/registry.yaml
+
+types: {}
+enums:
+  base.g.node.class:
+    '000':
+      used_by:
+      - g.node.gt:004
+  g.node.instance.status:
+    '000':
+      used_by:
+      - g.node.instance.gt:000
+  g.node.instance.transport:
+    '000':
+      used_by:
+      - g.node.instance.gt:000
+  g.node.status:
+    '000':
+      used_by:
+      - g.node.gt:004
+formats:
+  hex.char:
+    used_by:
+    - heartbeat.a:000
+  left.right.dot:
+    used_by:
+    - g.node.gt:004
+    - gridworks.header:001
+    - sim.ready:000
+    - sim.timestep:000
+  utc.milliseconds:
+    used_by:
+    - g.node.instance.gt:000
+    - sim.timestep:000
+  utc.seconds:
+    used_by:
+    - sim.ready:000
+    - sim.timestep:000
+  uuid4.str:
+    used_by:
+    - g.node.gt:004
+    - g.node.instance.gt:000
+    - sim.ready:000
+    - sim.timestep:000

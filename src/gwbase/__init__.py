@@ -1,7 +1,5 @@
 """Gridworks Base for rabbit actors."""
 
-from gw import errors
-
 from gwbase.actor_base import (
     ActorBase,
     OnReceiveMessageDiagnostic,
@@ -10,7 +8,6 @@ from gwbase.actor_base import (
 from gwbase.config import GNodeSettings
 
 __all__ = [
-    "errors",
     "ActorBase",
     "GNodeSettings",
     "OnReceiveMessageDiagnostic",

@@ -1,0 +1,65 @@
+# GENERATED FILE - DO NOT EDIT
+# Generated from definitions/registry.yaml
+
+types:
+  g.node.gt:
+    '004':
+      enums:
+      - base.g.node.class:000
+      - g.node.status:000
+      formats:
+      - left.right.dot
+      - uuid4.str
+      types: []
+      versionless_types: []
+  g.node.instance.gt:
+    '000':
+      enums:
+      - g.node.instance.status:000
+      - g.node.instance.transport:000
+      formats:
+      - utc.milliseconds
+      - uuid4.str
+      types: []
+      versionless_types: []
+  gridworks.header:
+    '001':
+      enums: []
+      formats:
+      - left.right.dot
+      types: []
+      versionless_types: []
+  heartbeat.a:
+    '000':
+      enums: []
+      formats:
+      - hex.char
+      types: []
+      versionless_types: []
+  sim.ready:
+    '000':
+      enums: []
+      formats:
+      - left.right.dot
+      - utc.seconds
+      - uuid4.str
+      types: []
+      versionless_types: []
+  sim.timestep:
+    '000':
+      enums: []
+      formats:
+      - left.right.dot
+      - utc.milliseconds
+      - utc.seconds
+      - uuid4.str
+      types: []
+      versionless_types: []
+versionless_types:
+  gw:
+    enums: []
+    formats:
+    - left.right.dot
+    types:
+    - gridworks.header:001
+    versionless_types: []

@@ -38,10 +38,11 @@ This repository serves two purposes:
 All GridWorks repos require a running rabbitMQ dev broker running to pass tests or run dev simulations. Instructions for setting it up:
 
 - Make sure you have [docker](https://www.docker.com/products/docker-desktop/) installed
-- Know whether your computer architecture is x86 or arm
-- Start the dev broker in a docker container:
-  - **x86 architecture**: `./x86.sh`
-  - **arm architecture**: `./arm.sh`
+- Start the dev broker in a docker container — `./arm.sh` or `./x86.sh`
+  (**identical now**: both pull the same multi-arch image
+  `ghcr.io/thegridelectric/dev-rabbit`, arm64 + amd64; Docker selects your
+  architecture automatically). The image bakes the generated broker
+  definitions, so no extra setup is needed to get the right exchanges.
 
 Note those scripts are just aliases so one doesn't need to remember the docker incantation. Also, if you have an older version of docker, you may need to use `docker-compose` instead of `docker compose`. That should also work.
 
@@ -63,12 +64,22 @@ and go to `http://0.0.0.0:15672/queues` to confirm a new queue has showed up
 docker exec -it gw-dev-rabbit rabbitmq-plugins list
 ```
 
-And confirm:
- [E*] rabbitmq_mqtt                     3.9.13
+And confirm `rabbitmq_mqtt` and `rabbitmq_management` appear as enabled
+(`[E*]`).
 
 
 
-3. tests pass
+3. Confirm the **baked broker definitions** loaded — the exchanges and the
+   `smqPublic` user come from inside the image (generated from
+   `gwbase.topology`):
+
+```
+# exchanges live in the d1__1 vhost (not the default "/"):
+docker exec gw-dev-rabbit rabbitmqctl list_exchanges -p d1__1 | grep -E 'ltn_tx|super_tx|ear_tx'
+docker exec gw-dev-rabbit rabbitmqctl list_users   # expect smqPublic
+```
+
+4. tests pass
 
 ```
 uv sync --all-groups
@@ -90,6 +101,51 @@ optional convenience wrapper over the same `uv run` commands; install nox
 globally (e.g. `uv tool install nox`) to use them. CI runs the `uv run`
 commands directly.
 
+## Building & publishing the dev-broker image (GHCR)
+
+`arm.sh` / `x86.sh` pull a prebuilt multi-arch image,
+`ghcr.io/thegridelectric/dev-rabbit`, that bakes the generated broker
+definitions onto official RabbitMQ (`rabbit/Dockerfile`). The definitions
+are generated from `gwbase.topology` (single source of truth; a drift guard
+keeps the committed `rabbit/rabbitconfig/*_definitions.json` in sync). You
+only rebuild/push the image when the definitions, conf, or plugins change.
+
+**Automatic (CI):** `.github/workflows/broker-image.yml` builds and pushes
+the image on a push to `main`/`dev` that touches the baked inputs, gated by
+the definitions drift check (`gen_definitions.py --check`). Usually you do
+not push by hand.
+
+**Manual (seed / local):**
+
+```bash
+# one-time: a buildx builder that can do multi-arch. The default "docker"
+# driver CANNOT — it errors "Multi-platform build is not supported for the
+# docker driver". Create a docker-container builder instead:
+docker buildx create --name gw --driver docker-container --use
+docker buildx inspect --bootstrap
+
+# one-time: log in to GHCR with a GitHub PAT (classic) that has
+# write:packages (your account needs write access to the thegridelectric org):
+echo "$GHCR_PAT" | docker login ghcr.io -u <github-username> --password-stdin
+
+# build + push (run on a clean tree so the tag is chaos__<short-sha>__<date>,
+# not chaos__dev):
+./rabbit/build-and-push.sh
+```
+
+After the **first** push the package is **private** — set it **Public**
+(GitHub → `thegridelectric` → Packages → `dev-rabbit` → Package settings →
+Change visibility) so any machine can `docker pull` without auth. Then
+verify both arches are published:
+
+```bash
+docker buildx imagetools inspect ghcr.io/thegridelectric/dev-rabbit:latest
+# expect: linux/amd64 and linux/arm64/v8
+```
+
+For a quick local-only test without pushing, build just your host arch:
+`docker build -f rabbit/Dockerfile -t dev-rabbit-local .`
+
 ## Hello Rabbit
 
 Quick start for seeing how the actor base can send a message on the rabbit broker. Run hello_rabbit.py (after starting up the dev rabbit broker, see [dev broker](dev-rabbit-broker) above) and look at the `src/gwbase/actor_base.py` code.
@@ -99,16 +155,6 @@ TODO: create a second hello script with two actors sending heartbeats back and f
 
 Distributed under the terms of the [MIT license][license],
 _Gridworks Base_ is free and open source software.
-
-## Credits
-
-This project was generated from [@cjolowicz]'s [Hypermodern Python Cookiecutter] template.
-
-[@cjolowicz]: https://github.com/cjolowicz
-[pypi]: https://pypi.org/
-[hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python
-[file an issue]: https://github.com/thegridelectric/gridworks-base/issues
-[pip]: https://pip.pypa.io/
 
 <!-- github-only -->
 

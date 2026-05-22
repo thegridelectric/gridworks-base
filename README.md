@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/gridworks-base.svg)][pypi_]
 [![Status](https://img.shields.io/pypi/status/gridworks-base.svg)][status]
-[![Python Version](https://img.shields.io/pypi/pyversions/gridworks-base)][python version]
+[![Python Version](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)][python version]
 [![License](https://img.shields.io/pypi/l/gridworks-base)][license]
 
 [![Tests](https://github.com/thegridelectric/gridworks-base/workflows/Tests/badge.svg)][tests]

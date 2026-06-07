@@ -5,11 +5,16 @@ from gwbase.actor_base import (
     OnReceiveMessageDiagnostic,
     OnSendMessageDiagnostic,
 )
-from gwbase.config import GNodeSettings
+from gwbase.config import GNodeSettings, ServiceSettings
+from gwbase.gridworks_actor import GridworksActor
+from gwbase.orchestrator import Orchestrator
 
 __all__ = [
     "ActorBase",
     "GNodeSettings",
+    "GridworksActor",
     "OnReceiveMessageDiagnostic",
     "OnSendMessageDiagnostic",
+    "Orchestrator",
+    "ServiceSettings",
 ]

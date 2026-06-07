@@ -54,25 +54,21 @@ def test_parse_routing_key_supervisor() -> None:
     assert env.to_class == TransportClass.Supervisor
 
 
-def test_actor_base(make_g_node_json, make_settings) -> None:
+def test_actor_base(
+    make_g_node_json, make_gnode_settings, make_service_settings
+) -> None:
     codec = GwBaseSemaCodec()
 
-    gn_settings = make_settings(
-        make_g_node_json(
-            "gn.json",
-            alias="d1.isone.unknown.gnode",
-            g_node_class="LeafTransactiveNode",
-        ),
-        transport_class=TransportClass.LeafTransactiveNode,
+    # The GNode under test is a real LTN (GridworksActor + g.node.gt.json).
+    gn_alias = "d1.isone.unknown.gnode"
+    gn_settings = make_gnode_settings(
+        make_g_node_json("gn.json", alias=gn_alias, g_node_class="LeafTransactiveNode"),
+        service_alias=gn_alias,
     )
-    su_settings = make_settings(
-        make_g_node_json("su.json", alias="d1.super", g_node_class="Scada"),
-        transport_class=TransportClass.Supervisor,
-    )
-    tc_settings = make_settings(
-        make_g_node_json("tc.json", alias="d1.time", g_node_class="TimeCoordinator"),
-        transport_class=TransportClass.TimeCoordinator,
-    )
+    # Supervisor + TimeCoordinator are NOT GNodes — Orchestrator stubs on
+    # ServiceSettings, no g.node.gt.json.
+    su_settings = make_service_settings(service_alias="d1.super")
+    tc_settings = make_service_settings(service_alias="d1.time")
 
     # Infra owns the fabric: provision exchanges + bindings BEFORE any actor
     # starts (actors only passively assert their consume exchange exists).
@@ -80,12 +76,14 @@ def test_actor_base(make_g_node_json, make_settings) -> None:
 
     gn = GNodeStubRecorder(
         settings=gn_settings,
+        transport_class=TransportClass.LeafTransactiveNode,
         my_super_alias="d1.super",
         my_time_coordinator_alias="d1.time",
     )
     gn.start()
     su = SupervisorStubRecorder(
         settings=su_settings,
+        transport_class=TransportClass.Supervisor,
         my_super_alias="d1.super.parent",
         my_time_coordinator_alias="d1.time",
         subordinate_alias=gn.alias,
@@ -93,6 +91,7 @@ def test_actor_base(make_g_node_json, make_settings) -> None:
     su.start()
     tc = TimeCoordinatorStubRecorder(
         settings=tc_settings,
+        transport_class=TransportClass.TimeCoordinator,
         my_super_alias="d1.super",
         my_time_coordinator_alias="d1.time",
         current_time_unix_s=int(

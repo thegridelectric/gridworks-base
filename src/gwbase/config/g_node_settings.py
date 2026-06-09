@@ -1,27 +1,24 @@
 from pathlib import Path
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
-from gwbase.config.rabbit_settings import RabbitBrokerClient
-from gwbase.transport_encoding import TransportClass
+from gwbase.config.paths import g_node_gt_path
+from gwbase.config.service_settings import ServiceSettings
 
 
-class GNodeSettings(BaseSettings):
-    """Minimal runtime settings for a rabbit-actor process.
+class GNodeSettings(ServiceSettings):
+    """``ServiceSettings`` + GNode-only durable identity.
 
-    The actor's durable identity (alias, GNodeId, free-form GNodeClass) is
-    read from a ``g.node.gt`` JSON file at ``g_node_path``. The
-    ``g_node_instance_id`` is generated fresh on each boot, per the FIS
-    lifecycle. ``transport_class`` is a transport-only concept and is set
-    independently here (so a Supervisor, which is not a GNode, can also
-    use this settings shape).
+    The durable identity (``GNodeId``, free-form ``GNodeClass``, and the
+    binding ``Alias``) is provisioned on disk as a ``g.node.gt.json`` file at
+    ``g_node_path`` and loaded + Sema-validated by ``GridworksActor`` at
+    construction (see ``gridworks_actor.py``). Used by ``GridworksActor``.
+
+    No ``transport_class`` here — it is intrinsic to the actor's role, not
+    deployment config, and is supplied as an ``Orchestrator`` ``__init__``
+    param. Inherits the ``GWBASE_`` env prefix from ``ServiceSettings``.
     """
 
-    rabbit: RabbitBrokerClient = RabbitBrokerClient()
-    g_node_path: Path = Path("/etc/gridworks/g_node.json")
-    transport_class: TransportClass = TransportClass.Scada
-    log_level: str = "INFO"
-
-    model_config = SettingsConfigDict(
-        env_prefix="GNODE_", env_nested_delimiter="__", extra="ignore"
+    g_node_path: Path = Field(
+        default_factory=lambda data: g_node_gt_path(data["service_name"]),
     )

@@ -284,13 +284,14 @@ wheels = [
 
 [[package]]
 name = "gridworks-base"
-version = "0.4.2"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "pika" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
+    { name = "xdg" },
 ]
 
 [package.dev-dependencies]
@@ -319,6 +320,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.8.2" },
     { name = "pydantic-settings", specifier = ">=2.3.4" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "xdg", specifier = ">=6.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1206,6 +1208,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/3c/a1/3d6ccdcd125b0a42a311bcd15a7f705d688f73b2a22d8cf1c0875d35d34a/websockets-16.0-cp313-cp313-win32.whl", hash = "sha256:abf050a199613f64c886ea10f38b47770a65154dc37181bfaff70c160f45315a", size = 178255, upload-time = "2026-01-10T09:23:09.245Z" },
     { url = "https://files.pythonhosted.org/packages/6b/ae/90366304d7c2ce80f9b826096a9e9048b4bb760e44d3b873bb272cba696b/websockets-16.0-cp313-cp313-win_amd64.whl", hash = "sha256:3425ac5cf448801335d6fdc7ae1eb22072055417a96cc6b31b3861f455fbc156", size = 178689, upload-time = "2026-01-10T09:23:10.483Z" },
     { url = "https://files.pythonhosted.org/packages/6f/28/258ebab549c2bf3e64d2b0217b973467394a9cea8c42f70418ca2c5d0d2e/websockets-16.0-py3-none-any.whl", hash = "sha256:1637db62fad1dc833276dded54215f2c7fa46912301a24bd94d45d46a011ceec", size = 171598, upload-time = "2026-01-10T09:23:45.395Z" },
+]
+
+[[package]]
+name = "xdg"
+version = "6.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2a/b9/0e6e6f19fb75cf5e1758f4f33c1256738f718966700cffc0fde2f966218b/xdg-6.0.0.tar.gz", hash = "sha256:24278094f2d45e846d1eb28a2ebb92d7b67fc0cab5249ee3ce88c95f649a1c92", size = 3453, upload-time = "2023-02-27T19:27:44.309Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/54/3516c1cf349060fc3578686d271eba242f10ec00b4530c2985af9faac49b/xdg-6.0.0-py3-none-any.whl", hash = "sha256:df3510755b4395157fc04fc3b02467c777f3b3ca383257397f09ab0d4c16f936", size = 3855, upload-time = "2023-02-27T19:27:42.151Z" },
 ]
 
 [[package]]

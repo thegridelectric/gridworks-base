@@ -1,16 +1,23 @@
-"""Stub actors used to exercise ActorBase / GridworksActor against a
-live rabbit broker."""
+"""Stub actors used to exercise ActorBase / Orchestrator / GridworksActor
+against a live rabbit broker.
+
+Note the tier split: the GNode under test (``GNodeStubRecorder``) is a
+``GridworksActor`` (real GNode identity, g.node.gt.json), while Supervisor and
+TimeCoordinator — which are NOT GNodes — are ``Orchestrator`` stubs that ride
+``ServiceSettings`` with no g.node.gt.json. That mirrors the production tiers.
+"""
 
 from typing import Optional
 
 import pika
 
 from gwbase import topology
-from gwbase.config import GNodeSettings
+from gwbase.config import GNodeSettings, ServiceSettings
 from gwbase.gridworks_actor import GridworksActor
+from gwbase.orchestrator import Orchestrator
 from gwbase.sema import GwBaseSemaCodec
 from gwbase.sema.types import HeartbeatA, Ready
-from gwbase.transport_encoding import RoutingEnvelope
+from gwbase.transport_encoding import RoutingEnvelope, TransportClass
 
 
 def declare_topology(ch: pika.channel.Channel) -> None:
@@ -47,24 +54,15 @@ def provision_topology(url: str) -> None:
         conn.close()
 
 
-class GNodeStubRecorder(GridworksActor):
-    """GridworksActor that records inbound transport metadata and
-    counts supervisable events."""
+class _RecorderMixin:
+    """Recording behavior shared by the GNode and Orchestrator stubs.
 
-    def __init__(
-        self,
-        *,
-        settings: GNodeSettings,
-        my_super_alias: str,
-        my_time_coordinator_alias: str,
-    ):
-        super().__init__(
-            settings=settings,
-            my_super_alias=my_super_alias,
-            my_time_coordinator_alias=my_time_coordinator_alias,
-        )
-        # Stub-only: holds its own codec for decoding any Ready messages
-        # that fall through to process_message.
+    Sits ahead of the actor tier in the MRO so its ``on_message`` /
+    ``process_message`` / ``on_supervisor_heartbeat`` overrides win while
+    still chaining to the framework via ``super()``.
+    """
+
+    def _init_recorder(self) -> None:
         self._codec = GwBaseSemaCodec()
         self.messages_received: int = 0
         self.messages_routed_internally: int = 0
@@ -91,21 +89,63 @@ class GNodeStubRecorder(GridworksActor):
         )
 
 
-class SupervisorStubRecorder(GNodeStubRecorder):
-    """Heartbeats from a known sub fall through to process_message
-    (GridworksActor filters incoming HBs by my_super_alias). We record
-    them here."""
+class GNodeStubRecorder(_RecorderMixin, GridworksActor):
+    """A real GNode (GridworksActor) that records inbound transport metadata."""
 
     def __init__(
         self,
         *,
         settings: GNodeSettings,
+        transport_class: TransportClass,
+        my_super_alias: str,
+        my_time_coordinator_alias: str,
+    ):
+        super().__init__(
+            settings=settings,
+            transport_class=transport_class,
+            my_super_alias=my_super_alias,
+            my_time_coordinator_alias=my_time_coordinator_alias,
+        )
+        self._init_recorder()
+
+
+class OrchestratorStubRecorder(_RecorderMixin, Orchestrator):
+    """A non-GNode orchestration participant (Orchestrator) — ServiceSettings,
+    no g.node.gt.json. Base for the Supervisor / TimeCoordinator stubs."""
+
+    def __init__(
+        self,
+        *,
+        settings: ServiceSettings,
+        transport_class: TransportClass,
+        my_super_alias: str,
+        my_time_coordinator_alias: str,
+    ):
+        super().__init__(
+            settings=settings,
+            transport_class=transport_class,
+            my_super_alias=my_super_alias,
+            my_time_coordinator_alias=my_time_coordinator_alias,
+        )
+        self._init_recorder()
+
+
+class SupervisorStubRecorder(OrchestratorStubRecorder):
+    """Heartbeats from a known sub fall through to process_message
+    (Orchestrator filters incoming HBs by my_super_alias). We record them."""
+
+    def __init__(
+        self,
+        *,
+        settings: ServiceSettings,
+        transport_class: TransportClass = TransportClass.Supervisor,
         my_super_alias: str,
         my_time_coordinator_alias: str,
         subordinate_alias: str,
     ):
         super().__init__(
             settings=settings,
+            transport_class=transport_class,
             my_super_alias=my_super_alias,
             my_time_coordinator_alias=my_time_coordinator_alias,
         )
@@ -121,13 +161,14 @@ class SupervisorStubRecorder(GNodeStubRecorder):
             self.got_heartbeat_from_sub = True
 
 
-class TimeCoordinatorStubRecorder(GNodeStubRecorder):
+class TimeCoordinatorStubRecorder(OrchestratorStubRecorder):
     """Records Ready announcements that match its current simulated time."""
 
     def __init__(
         self,
         *,
-        settings: GNodeSettings,
+        settings: ServiceSettings,
+        transport_class: TransportClass = TransportClass.TimeCoordinator,
         my_super_alias: str,
         my_time_coordinator_alias: str,
         current_time_unix_s: int,
@@ -135,6 +176,7 @@ class TimeCoordinatorStubRecorder(GNodeStubRecorder):
     ):
         super().__init__(
             settings=settings,
+            transport_class=transport_class,
             my_super_alias=my_super_alias,
             my_time_coordinator_alias=my_time_coordinator_alias,
         )

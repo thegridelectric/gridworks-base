@@ -26,18 +26,19 @@ is a **strict separation between transport and codec**: the transport routes
 raw bytes; the [Sema](https://github.com/thegridelectric/sema) codec encodes/decodes typed messages; the
 boundary between them is one `RoutingEnvelope` + a `bytes` payload.
 
-Services import it as a package and subclass `GridworksActor`, one per
-`TransportClass` — imported today by `gridworks-ear` and
-`gridworks-journalkeeper`; intended as the base for `gridworks-ltn` (`ltn`),
-`gridworks-marketmaker` (`mm`), and the weather (`weather`) and price
-(`price`) forecast services. The routing taxonomy for all of them lives here
-in `gwbase.topology`.
+Services import it as a package and subclass the tier that matches what they
+are: GNode services (`gridworks-ltn` `ltn`, `gridworks-marketmaker` `mm`, the
+weather/price forecast services) subclass `GridworksActor`; non-GNode rabbit
+consumers (`gridworks-journalkeeper`, `gridworks-ear`'s actor side) subclass
+`ActorBase` directly with no GNode identity. The routing taxonomy for all of
+them lives here in `gwbase.topology`.
 
 This repo provides two things:
 
-1. **The `gwbase` package** — `ActorBase` (transport), `GridworksActor`
-   (adds GNode identity + the Sema codec), and `gwbase.topology` (the broker
-   fabric). Install with `pip install gridworks-base`.
+1. **The `gwbase` package** — a three-tier actor hierarchy
+   (`ActorBase` → `Orchestrator` → `GridworksActor`) and `gwbase.topology`
+   (the broker fabric). Install with `pip install gridworks-base`. See
+   *Actor tiers, settings & file locations* below.
 2. **Dev-broker scripts** — run a local RabbitMQ broker for development
    (below).
 
@@ -173,10 +174,86 @@ For a quick local-only test without pushing, build just your host arch:
 uv run python hello_rabbit.py
 ```
 
-Read it alongside `src/gwbase/actor_base.py` (transport) and
-`src/gwbase/gridworks_actor.py` (identity + heartbeat). The message types it
+Read it alongside `src/gwbase/actor_base.py` (transport / ear-tap),
+`src/gwbase/orchestrator.py` (class-routing + heartbeat / simulated time),
+and `src/gwbase/gridworks_actor.py` (GNode identity). The message types it
 sends are defined in the [Sema](https://github.com/thegridelectric/sema) codec (`src/gwbase/sema/`), which is
 the registry `GridworksActor` decodes against.
+
+## Actor tiers, settings & file locations
+
+An actor rides the tier that matches what it is:
+
+- **`ActorBase`** — raw rabbit + sema toolkit; a passive *ear-tap*. Rides
+  `ServiceSettings`, carries no GNode identity. For non-GNode consumers
+  (journalkeeper, ear's actor side, audit taps).
+- **`Orchestrator`** — adds class-routing (a `transport_class`) plus the
+  heartbeat / simulated-time rhythm. For Supervisor and TimeCoordinator,
+  which are not GNodes.
+- **`GridworksActor`** — adds GNode identity, loaded and Sema-validated from
+  a `g.node.gt.json` file at boot. For SCADA, LTN, MarketMaker, forecast
+  services.
+
+### Settings
+
+`ServiceSettings` is the minimum to construct any actor; `GNodeSettings`
+extends it with the GNode file path. All fields read from the `GWBASE_` env
+prefix (e.g. `GWBASE_SERVICE_ALIAS`, `GWBASE_RABBIT__URL`):
+
+| Field | Meaning |
+|---|---|
+| `service_alias` | routable address, e.g. `d1.iso.me.scada` (required) |
+| `instance_id` | per-process UUID, auto-generated each boot if unset |
+| `service_name` | directory segment for file locations (e.g. `scada`) |
+| `log_level` | `INFO` by default |
+| `log_rotate_bytes` / `log_rotate_count` | log rotation (10 MB × 5 default) |
+| `g_node_path` *(GNodeSettings)* | path to `g.node.gt.json` |
+
+### File locations (XDG Base Directory)
+
+gwbase follows the [XDG Base Directory](https://specifications.freedesktop.org/basedir-spec/latest/)
+convention, keyed on `service_name` — no root or `/etc` needed. With the
+`XDG_*_HOME` variables unset these default under `~/.config`,
+`~/.local/share`, `~/.local/state`:
+
+| Kind | Path |
+|---|---|
+| config | `$XDG_CONFIG_HOME/gridworks/<service_name>/` |
+| `g.node.gt.json` | `$XDG_CONFIG_HOME/gridworks/<service_name>/g.node.gt.json` |
+| data | `$XDG_DATA_HOME/gridworks/<service_name>/` |
+| state | `$XDG_STATE_HOME/gridworks/<service_name>/` |
+| **logs** | `$XDG_STATE_HOME/gridworks/<service_name>/log/<service_alias>.log` |
+
+So on a Raspberry Pi a scada (`service_name=scada`, alias `d1.iso.me.scada`)
+logs to `~/.local/state/gridworks/scada/log/d1.iso.me.scada.log`. Each actor
+gets a contextualized logger writing a grep-friendly, `tail -f`-friendly line
+format; a `RotatingFileHandler` caps it per `log_rotate_*`.
+
+### Try it
+
+From the repo root — no broker needed (this only builds an actor and writes a
+log line):
+
+```bash
+uv run python - <<'PY'
+from gwbase import ActorBase, ServiceSettings
+from gwbase.config import paths
+
+class Tap(ActorBase):
+    def dispatch_message(self, *, envelope, body): pass
+
+t = Tap(settings=ServiceSettings(
+    service_alias="d1.test", service_name="myservice", log_level="DEBUG"))
+t.logger.info("it works", extra={"answer": 42})
+print(paths.log_dir("myservice") / "d1.test.log")
+PY
+```
+
+Then read the log it points at:
+
+```bash
+cat ~/.local/state/gridworks/myservice/log/d1.test.log
+```
 
 Distributed under the terms of the [MIT license][license],
 _Gridworks Base_ is free and open source software.

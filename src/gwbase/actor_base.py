@@ -1,5 +1,4 @@
 import functools
-import json
 import logging
 import threading
 import time
@@ -13,10 +12,11 @@ import pika
 from pika.channel import Channel as PikaChannel
 from pika.spec import Basic, BasicProperties
 
-from gwbase.config import GNodeSettings
+from gwbase.config import ServiceSettings
+from gwbase.logging_setup import _build_actor_logger
+from gwbase.topology import EAR_EXCHANGE
 from gwbase.transport_encoding import (
     BroadcastRoutingEnvelope,
-    DirectRoutingEnvelope,
     MessageCategory,
     RoutingEnvelope,
     TransportClass,
@@ -31,6 +31,7 @@ class OnSendMessageDiagnostic(Enum):
     STOPPED_SO_NOT_SENDING = "StoppedSoNotSending"
     STOPPING_SO_NOT_SENDING = "StoppingSoNotSending"
     MESSAGE_SENT = "MessageSent"
+    NO_PUBLISH_EXCHANGE = "NoPublishExchange"
     UNKNOWN_ERROR = "UnknownError"
 
 
@@ -55,19 +56,29 @@ class _PublishRequest:
 
 
 class ActorBase(ABC):
-    """Rabbit-transport actor.
+    """Rabbit-transport actor — a passive ear-tap by default.
 
     Parses the transport envelope, hands raw bytes plus envelope to
     ``dispatch_message``, and offers ``send`` which takes already-encoded
     bytes plus the type_name needed for routing. Does not know about
-    payload types or codecs — those are the subclass's concern.
+    payload types or codecs — those are the subclass's concern, and it
+    carries NO GNode identity (journalkeeper, ear actor-side, audit-tap
+    consumers ride this tier directly with ``ServiceSettings``).
+
+    As a tap: its default consume exchange is ``ear_tx`` (the universal
+    audit exchange), it binds NO routing key automatically — the subclass
+    binds its slice in ``local_rabbit_startup`` via ``subscribe_*`` — and it
+    has NO publish exchange (``_publish_exchange is None``). ``send`` of a
+    wrapped (gw) message still reaches ``amq.topic``; ``send`` of a
+    Direct/Broadcast returns ``NO_PUBLISH_EXCHANGE``. Class-routing (a
+    ``transport_class`` with ``<rc>_tx``/``<rc>mic_tx`` and a direct-to-me
+    bind) and the GridWorks orchestration rhythm arrive at the
+    ``Orchestrator`` subclass.
 
     ``dispatch_message`` is the abstract framework hook that the transport
-    invokes for every parsed delivery. Intermediate layers (e.g.
-    ``GridworksActor``) implement it to filter control-plane traffic and
-    forward application messages to the subclass's ``process_message``.
-    Final application classes typically subclass ``GridworksActor`` and
-    implement ``process_message`` rather than implementing
+    invokes for every parsed delivery. ``Orchestrator`` implements it to
+    filter control-plane traffic and forward application messages to the
+    subclass's ``process_message``; a bare tap implements
     ``dispatch_message`` directly.
     """
 
@@ -79,31 +90,32 @@ class ActorBase(ABC):
     def __init__(
         self,
         *,
-        settings: GNodeSettings,
+        settings: ServiceSettings,
     ):
-        self.settings: GNodeSettings = settings
+        self.settings: ServiceSettings = settings
 
-        # Durable GNode identity is provisioned on disk as a g.node.gt JSON.
-        # We read the fields we need verbatim; schema validation is the
-        # responsibility of whatever placed the file.
-        g_node_data = json.loads(settings.g_node_path.read_text())
-        self.alias: str = g_node_data["Alias"]
-        self.g_node_id: str = g_node_data["GNodeId"]
-        # Free-form per sema g.node.gt/004. Sent to FIS in client_properties.
-        self.g_node_class: str = g_node_data["GNodeClass"]
+        # Identity rides ServiceSettings — no GNode file is read here. The
+        # alias is the routable address; the instance id is fresh per boot
+        # (per the FIS lifecycle) unless pinned in settings.
+        self.alias: str = settings.service_alias
+        self.instance_id: str = settings.instance_id or str(uuid.uuid4())
 
-        # Fresh per FIS lifecycle: a new runtime instance every boot.
-        self.g_node_instance_id: str = str(uuid.uuid4())
+        # Per-actor contextualized logger (XDG state-home, bijective format).
+        self.logger: logging.Logger = _build_actor_logger(
+            service_name=settings.service_name,
+            service_alias=self.alias,
+            instance_id=self.instance_id,
+            log_level=settings.log_level,
+            rotate_bytes=settings.log_rotate_bytes,
+            rotate_count=settings.log_rotate_count,
+        )
 
-        # Transport class is independent of GNode class — a Supervisor is
-        # not a GNode but still routes on rabbit.
-        self.transport_class: TransportClass = settings.transport_class
-        self.routing_code: str = routing_code(self.transport_class)
-
+        # Tap defaults: consume the universal audit exchange, publish nothing.
+        # Orchestrator overrides these to its class exchanges.
         adder = "-F" + str(uuid.uuid4()).split("-")[0][0:3]
         self.queue_name: str = self.alias + adder
-        self._consume_exchange: str = self.routing_code + "_tx"
-        self._publish_exchange: str = self.routing_code + "mic_tx"
+        self._consume_exchange: str = EAR_EXCHANGE
+        self._publish_exchange: Optional[str] = None
         self._url: str = settings.rabbit.url.get_secret_value()
 
         self.latest_routing_key: Optional[str] = None
@@ -210,6 +222,16 @@ class ActorBase(ABC):
         self._reconnect_delay = min(self._reconnect_delay, 30)
         return self._reconnect_delay
 
+    def _client_properties(self) -> dict:
+        """AMQP ``client_properties`` advertised at connect time. The tap
+        sends ``ServiceAlias`` + ``ServiceInstanceId`` always; the presence
+        of ``GNodeClass`` (added by ``GridworksActor``) is FIS's discriminator
+        for whether this connection is a GNode."""
+        return {
+            "ServiceAlias": self.alias,
+            "ServiceInstanceId": self.instance_id,
+        }
+
     def connect_consumer(self) -> pika.SelectConnection:
         """Connect to RabbitMQ. When the connection is established, pika
         will invoke ``on_consumer_connection_open``.
@@ -218,13 +240,10 @@ class ActorBase(ABC):
         """
         LOGGER.info("Connecting to %s", self._url)
         params = pika.URLParameters(self._url)
-        # Per FIS lifecycle: identify runtime instance + GNode at connect
-        # time so the broker (via the FIS auth backend) can authorize.
-        params.client_properties = {
-            "g_node_alias": self.alias,
-            "g_node_instance_id": self.g_node_instance_id,
-            "g_node_class": self.g_node_class,
-        }
+        # Per FIS lifecycle: identify the service + runtime instance at
+        # connect time so the broker (via the FIS auth backend) can
+        # authorize. GridworksActor decorates this with GNodeClass.
+        params.client_properties = self._client_properties()
         return pika.SelectConnection(
             parameters=params,
             on_open_callback=self.on_consumer_connection_open,  # type: ignore[arg-type]
@@ -364,29 +383,21 @@ class ActorBase(ABC):
 
     @no_type_check
     def on_queue_declareok(self, _unused_frame) -> None:
-        """Invoked by pika once Queue.Declare completes. Binds the queue to
-        the consume exchange with a routing-key pattern that matches direct
-        messages addressed to this actor. When the bind completes pika will
-        invoke ``on_direct_message_bindok``."""
-        lrh_alias = self.alias.replace(".", "-")
-        rj = MessageCategory.JsonDirect.value
-        direct_message_to_me_binding = f"{rj}.*.*.*.*.{lrh_alias}"
+        """Invoked by pika once Queue.Declare completes. Hands off to
+        ``bind_queue`` for any framework-level binding, then QoS."""
+        self.bind_queue()
+
+    def bind_queue(self) -> None:
+        """Bind the consumer queue at framework startup. The ear-tap default
+        binds NOTHING — a tap subscribes to its slice of ``ear_tx`` (or other
+        exchanges) explicitly in ``local_rabbit_startup`` via ``subscribe_*``.
+        ``Orchestrator`` overrides this to bind direct-to-me on its class
+        ``<rc>_tx``. Implementations must ultimately reach ``set_qos`` (here,
+        immediately; in overrides, via ``on_direct_message_bindok``)."""
         LOGGER.info(
-            "Binding %s to %s with %s",
-            self._consume_exchange,
-            self.queue_name,
-            direct_message_to_me_binding,
+            "Tap %s: no automatic binding; subclass binds its slice", self.alias
         )
-        cb = functools.partial(
-            self.on_direct_message_bindok,
-            binding=direct_message_to_me_binding,
-        )
-        self._single_channel.queue_bind(
-            self.queue_name,
-            self._consume_exchange,
-            routing_key=direct_message_to_me_binding,
-            callback=cb,
-        )
+        self.set_qos()
 
     @no_type_check
     def on_direct_message_bindok(self, _unused_frame, binding) -> None:
@@ -547,33 +558,8 @@ class ActorBase(ABC):
     # so subclasses only specify destination info.
     # ------------------------------------------------------------------
 
-    def direct_envelope(
-        self,
-        *,
-        type_name: str,
-        to_class: TransportClass,
-        to_alias: str,
-    ) -> DirectRoutingEnvelope:
-        return DirectRoutingEnvelope(
-            type_name=type_name,
-            from_alias=self.alias,
-            from_class=self.transport_class,
-            to_class=to_class,
-            to_alias=to_alias,
-        )
-
-    def broadcast_envelope(
-        self,
-        *,
-        type_name: str,
-        radio_channel: Optional[str] = None,
-    ) -> BroadcastRoutingEnvelope:
-        return BroadcastRoutingEnvelope(
-            type_name=type_name,
-            from_alias=self.alias,
-            from_class=self.transport_class,
-            radio_channel=radio_channel,
-        )
+    # NB: direct_envelope / broadcast_envelope live on Orchestrator — they
+    # stamp from_class=self.transport_class, which a bare tap does not have.
 
     def wrapped_envelope(
         self,
@@ -663,6 +649,15 @@ class ActorBase(ABC):
             # MQTT-native peers (e.g. scada). Any actor may send wrapped — the
             # wire format matches gwproactor's gw scheme (wiki spec §3.5).
             publish_exchange = "amq.topic"
+        elif self._publish_exchange is None:
+            # A bare ear-tap (ActorBase) has no class mic_tx — it cannot
+            # class-route. Direct/Broadcast sends are not available to it.
+            LOGGER.error(
+                "%s has no publish exchange (tap); cannot send %s",
+                self.alias,
+                envelope.routing_key,
+            )
+            return OnSendMessageDiagnostic.NO_PUBLISH_EXCHANGE
         else:
             publish_exchange = self._publish_exchange
 

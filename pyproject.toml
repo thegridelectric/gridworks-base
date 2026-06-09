@@ -1,6 +1,6 @@
 [project]
 name = "gridworks-base"
-version = "0.4.2"
+version = "0.5.0"
 description = "Gridworks Base"
 readme = "README.md"
 authors = [
@@ -18,6 +18,7 @@ dependencies = [
     "pika>=1.3.2",
     "pydantic>=2.8.2",
     "pydantic-settings>=2.3.4",
+    "xdg>=6.0.0",
 ]
 
 [project.urls]
@@ -116,5 +117,6 @@ preview = true
     "S101",     # asserts allowed in tests
     "PLR6301",  # test methods needn't use self
     "PLR0913",  # fixtures/helpers may take many args
+    "PLR2004",  # literal values in assertions are clearer than constants
     "PLW0717",  # multi-statement try is fine in test setup
 ]

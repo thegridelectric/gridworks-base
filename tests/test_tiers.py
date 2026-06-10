@@ -92,7 +92,7 @@ def test_tap_can_send_wrapped_but_not_direct() -> None:
     tap = _Tap(settings=ServiceSettings(service_alias="d1.journal"))
     tap._stopped = False  # past the lifecycle guard; channel is still closed
 
-    direct = DirectRoutingEnvelope(
+    direct = DirectRoutingEnvelope.from_classes(
         type_name="hb.a",
         from_alias="d1.journal",
         from_class=TransportClass.Supervisor,
@@ -106,7 +106,7 @@ def test_tap_can_send_wrapped_but_not_direct() -> None:
     # Wrapped is allowed: it targets amq.topic, not a class mic_tx. With no
     # open channel it reports CHANNEL_NOT_OPEN — crucially NOT
     # NO_PUBLISH_EXCHANGE, proving the wrapped path is available to a tap.
-    wrapped = WrappedRoutingEnvelope(
+    wrapped = WrappedRoutingEnvelope.from_classes(
         type_name="hb.a", from_alias="d1.journal", to_class=TransportClass.Scada
     )
     assert tap.send(envelope=wrapped, body=b"{}") == (

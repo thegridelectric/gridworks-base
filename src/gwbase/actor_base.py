@@ -545,13 +545,30 @@ class ActorBase(ABC):
             self._latest_on_message_diagnostic = (
                 OnReceiveMessageDiagnostic.ROUTING_KEY_PARSE_ERROR
             )
-            LOGGER.warning(f"Could not parse routing key: {e}")
+            self.on_routing_key_parse_error(
+                routing_key=basic_deliver.routing_key, body=body, error=e
+            )
             return
 
         self._latest_on_message_diagnostic = (
             OnReceiveMessageDiagnostic.MESSAGE_DELIVERED
         )
         self.dispatch_message(envelope=envelope, body=body)
+
+    def on_routing_key_parse_error(  # noqa: PLR6301 -- override hook; subclasses key off self
+        self, *, routing_key: str, body: bytes, error: ValueError
+    ) -> None:
+        """Hook invoked when a delivered message's routing key cannot be parsed
+        into a ``RoutingEnvelope``. The delivery is already acked, and ``body``
+        is handed in so an override can salvage it rather than lose it.
+
+        Default: log and drop (the historical behavior). The point of routing
+        this through a named hook — instead of an inline ``return`` — is that a
+        subclass MAY override it to recover the body. JournalKeeper overrides it
+        as a permanent ``legacy_hack`` for legacy ``broadcast.*`` keys (see the
+        gridworks-scada design 'ltn-sends-gw-wrapped'). Overrides MUST NOT raise.
+        """
+        LOGGER.warning(f"Could not parse routing key {routing_key!r}: {error}")
 
     # ------------------------------------------------------------------
     # RoutingEnvelope helpers — fill in from_alias / from_class from this actor
@@ -567,7 +584,7 @@ class ActorBase(ABC):
         type_name: str,
         to_class: TransportClass,
     ) -> WrappedRoutingEnvelope:
-        return WrappedRoutingEnvelope(
+        return WrappedRoutingEnvelope.from_classes(
             type_name=type_name,
             from_alias=self.alias,
             to_class=to_class,
@@ -595,7 +612,7 @@ class ActorBase(ABC):
         queue exists. ``radio_channel`` selects a specific channel; omit it
         to bind the un-channeled broadcast key.
         """
-        binding = BroadcastRoutingEnvelope(
+        binding = BroadcastRoutingEnvelope.from_classes(
             type_name=type_name,
             from_alias=from_alias,
             from_class=from_class,
@@ -628,6 +645,24 @@ class ActorBase(ABC):
     # Send
     # ------------------------------------------------------------------
 
+    def _publish_exchange_for(self, envelope: RoutingEnvelope) -> Optional[str]:
+        """The exchange a given envelope publishes to, or ``None`` if this actor
+        cannot route it. Wrapped (gw) messages always go to the built-in
+        ``amq.topic`` so they reach MQTT-native peers (e.g. scada) — any actor
+        may send wrapped (wiki spec §3.5). A bare ear-tap (ActorBase) has no
+        class ``mic_tx``: it cannot class-route, so Direct/Broadcast return
+        ``None`` (→ NO_PUBLISH_EXCHANGE) rather than silently dropping."""
+        if isinstance(envelope, WrappedRoutingEnvelope):
+            return "amq.topic"
+        if self._publish_exchange is None:
+            LOGGER.error(
+                "%s has no publish exchange (tap); cannot send %s",
+                self.alias,
+                envelope.routing_key,
+            )
+            return None
+        return self._publish_exchange
+
     def send(
         self,
         *,
@@ -637,33 +672,37 @@ class ActorBase(ABC):
     ) -> OnSendMessageDiagnostic:
         """Publish pre-encoded ``body`` bytes on rabbit. The envelope
         carries the routing metadata (category, type_name, addressing);
-        ActorBase does not open the body."""
+        ActorBase does not open the body.
+
+        pika is **not thread-safe** and the connection/channel are owned by the
+        consumer thread's ioloop, so the actual ``basic_publish`` is marshaled
+        onto that ioloop via ``add_callback_threadsafe`` instead of running on
+        the caller's thread. ``send`` is therefore **fire-and-forget**: the
+        synchronous return reflects only the cheap pre-checks (STOPPED/STOPPING,
+        NO_PUBLISH_EXCHANGE, an already-closed channel). ``MESSAGE_SENT`` means
+        *scheduled*, not confirmed — delivery is best-effort by contract, so
+        critical paths rely on end-to-end application acks, not publisher
+        confirms. ``send`` never raises."""
 
         if self._stopping:
             return OnSendMessageDiagnostic.STOPPING_SO_NOT_SENDING
         if self._stopped:
             return OnSendMessageDiagnostic.STOPPED_SO_NOT_SENDING
 
-        if isinstance(envelope, WrappedRoutingEnvelope):
-            # Wrapped (gw) messages go to the built-in amq.topic so they reach
-            # MQTT-native peers (e.g. scada). Any actor may send wrapped — the
-            # wire format matches gwproactor's gw scheme (wiki spec §3.5).
-            publish_exchange = "amq.topic"
-        elif self._publish_exchange is None:
-            # A bare ear-tap (ActorBase) has no class mic_tx — it cannot
-            # class-route. Direct/Broadcast sends are not available to it.
-            LOGGER.error(
-                "%s has no publish exchange (tap); cannot send %s",
-                self.alias,
-                envelope.routing_key,
-            )
+        publish_exchange = self._publish_exchange_for(envelope)
+        if publish_exchange is None:
             return OnSendMessageDiagnostic.NO_PUBLISH_EXCHANGE
-        else:
-            publish_exchange = self._publish_exchange
 
         routing_key = envelope.routing_key
 
-        if self._single_channel is None or not self._single_channel.is_open:
+        # Synchronous pre-check: report an obviously-unusable channel/connection
+        # to the caller now — the common case, giving back a CHANNEL_NOT_OPEN the
+        # caller can act on. The authoritative re-check happens on the ioloop in
+        # the scheduled callback, since the connection may drop / be reconnecting
+        # between here and there.
+        channel = self._single_channel
+        connection = self._consume_connection
+        if channel is None or not channel.is_open or connection is None:
             LOGGER.error(f"Channel not open so not sending {routing_key}")
             return OnSendMessageDiagnostic.CHANNEL_NOT_OPEN
 
@@ -674,15 +713,34 @@ class ActorBase(ABC):
             correlation_id=correlation_id or str(uuid.uuid4()),
         )
 
+        def _publish_on_ioloop() -> None:
+            # Runs on the consumer thread's ioloop — the only thread allowed to
+            # touch the pika channel. Re-read + re-check the channel (state may
+            # have changed since scheduling), then publish; never raise into the
+            # ioloop.
+            live = self._single_channel
+            if live is None or not live.is_open:
+                LOGGER.error(f"Channel not open at publish time; dropped {routing_key}")
+                return
+            try:
+                live.basic_publish(
+                    exchange=publish_exchange,
+                    routing_key=routing_key,
+                    body=body,
+                    properties=properties,
+                )
+                LOGGER.debug(f" [x] Sent {envelope.type_name} w key {routing_key}")
+            except BaseException:
+                LOGGER.exception("Problem publishing")
+
+        # Marshal the publish onto the ioloop thread rather than publishing here
+        # on the caller's thread: the AMQP client is not thread-safe, so touching
+        # the channel from a non-ioloop thread races the loop on the shared
+        # connection and corrupts it under load. Guard the schedule call itself —
+        # the connection may be closing/reconnecting — so send() never raises.
         try:
-            self._single_channel.basic_publish(
-                exchange=publish_exchange,
-                routing_key=routing_key,
-                body=body,
-                properties=properties,
-            )
-            LOGGER.debug(f" [x] Sent {envelope.type_name} w routing key {routing_key}")
-            return OnSendMessageDiagnostic.MESSAGE_SENT
+            connection.ioloop.add_callback_threadsafe(_publish_on_ioloop)
         except BaseException:
-            LOGGER.exception("Problem publishing")
+            LOGGER.exception("Problem scheduling publish")
             return OnSendMessageDiagnostic.UNKNOWN_ERROR
+        return OnSendMessageDiagnostic.MESSAGE_SENT

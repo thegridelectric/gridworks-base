@@ -545,13 +545,30 @@ class ActorBase(ABC):
             self._latest_on_message_diagnostic = (
                 OnReceiveMessageDiagnostic.ROUTING_KEY_PARSE_ERROR
             )
-            LOGGER.warning(f"Could not parse routing key: {e}")
+            self.on_routing_key_parse_error(
+                routing_key=basic_deliver.routing_key, body=body, error=e
+            )
             return
 
         self._latest_on_message_diagnostic = (
             OnReceiveMessageDiagnostic.MESSAGE_DELIVERED
         )
         self.dispatch_message(envelope=envelope, body=body)
+
+    def on_routing_key_parse_error(  # noqa: PLR6301 -- override hook; subclasses key off self
+        self, *, routing_key: str, body: bytes, error: ValueError
+    ) -> None:
+        """Hook invoked when a delivered message's routing key cannot be parsed
+        into a ``RoutingEnvelope``. The delivery is already acked, and ``body``
+        is handed in so an override can salvage it rather than lose it.
+
+        Default: log and drop (the historical behavior). The point of routing
+        this through a named hook — instead of an inline ``return`` — is that a
+        subclass MAY override it to recover the body. JournalKeeper overrides it
+        as a permanent ``legacy_hack`` for legacy ``broadcast.*`` keys (see the
+        gridworks-scada design 'ltn-sends-gw-wrapped'). Overrides MUST NOT raise.
+        """
+        LOGGER.warning(f"Could not parse routing key {routing_key!r}: {error}")
 
     # ------------------------------------------------------------------
     # RoutingEnvelope helpers — fill in from_alias / from_class from this actor
@@ -567,7 +584,7 @@ class ActorBase(ABC):
         type_name: str,
         to_class: TransportClass,
     ) -> WrappedRoutingEnvelope:
-        return WrappedRoutingEnvelope(
+        return WrappedRoutingEnvelope.from_classes(
             type_name=type_name,
             from_alias=self.alias,
             to_class=to_class,
@@ -595,7 +612,7 @@ class ActorBase(ABC):
         queue exists. ``radio_channel`` selects a specific channel; omit it
         to bind the un-channeled broadcast key.
         """
-        binding = BroadcastRoutingEnvelope(
+        binding = BroadcastRoutingEnvelope.from_classes(
             type_name=type_name,
             from_alias=from_alias,
             from_class=from_class,

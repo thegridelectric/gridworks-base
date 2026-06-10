@@ -60,8 +60,46 @@ TRANSPORT_CLASS_BY_ROUTING_CLASS: dict[RoutingClass, TransportClass] = {
 }
 
 
+def transport_class_or_none(token: str) -> TransportClass | None:
+    """Best-effort resolve a routing-key class token to its ``TransportClass``.
+
+    Returns ``None`` when the token is not a known long-form ``RoutingClass`` —
+    e.g. a proactor **short_name** (``s``=scada, ``a``=atn, ``ws``=weather) that
+    rides in the class slot of a current production routing key. Resolution is
+    metadata only; delivery and dispatch never depend on it (the message already
+    reached this consumer's queue, so its own class is redundant). gwbase MUST
+    NOT raise or drop on an unresolved token — see the design
+    'must-accept-current-ltn-messages'.
+    """
+    try:
+        return TRANSPORT_CLASS_BY_ROUTING_CLASS[RoutingClass(token)]
+    except ValueError:
+        return None
+
+
 class MessageCategory(StrEnum):
-    """Defines routing + envelope structure."""
+    """Defines routing + envelope structure — and how much each kind leans on
+    the *class* tokens in its routing key.
+
+    A consumer only ever receives a message because it **subscribed** (bound its
+    queue to a matching key); by the time it is dispatched the message is already
+    "for me." So a parsed envelope's own class/alias slots are addressing
+    **metadata**, not a delivery decision — gwbase resolves them best-effort and
+    never drops on an unknown one (design 'must-accept-current-ltn-messages').
+
+    - ``GridworksWrapped`` (``gw``): pub/sub wrapped messages bridged from the
+      proactor's MQTT grammar (``gw/<src>/to/<dst>/<type>``). The ``to``-class is
+      the **least important** token: it is needed neither for *routing* (the
+      topic binding already selected this subscriber) nor for *disambiguating
+      between potential partners* (the consumer knows who it is talking to). It
+      is just the publisher's peer short_name — a soft hint, not a closed class.
+    - ``JsonBroadcast`` (``rjb``): one-to-many; the ``from``-class is likewise a
+      short_name hint. Subscribers bind by from-class + type, so the body still
+      arrives even when the class token is an unrecognized short form.
+    - ``JsonDirect`` (``rj``): point-to-point; class tokens are hints the
+      cross-class fabric binds on, but dispatch keys on type + from-alias.
+    - ``Serial`` (``s``): reserved.
+    """
 
     JsonDirect = "rj"
     JsonBroadcast = "rjb"
@@ -102,9 +140,39 @@ class RoutingEnvelope:
 
 @dataclass(frozen=True)
 class DirectRoutingEnvelope(RoutingEnvelope):
-    from_class: TransportClass
-    to_class: TransportClass
+    # Stored structural wire fields are the raw class *tokens* (exactly as they
+    # appear on the key — short_name or long form); ``from_class`` / ``to_class``
+    # are derived best-effort views (None for an unknown short form).
+    from_class_token: str
+    to_class_token: str
     to_alias: str
+
+    @classmethod
+    def from_classes(
+        cls,
+        *,
+        type_name: str,
+        from_alias: str,
+        from_class: TransportClass,
+        to_class: TransportClass,
+        to_alias: str,
+    ) -> "DirectRoutingEnvelope":
+        """Build-side constructor: emit long-form class tokens from typed classes."""
+        return cls(
+            type_name=type_name,
+            from_alias=from_alias,
+            from_class_token=routing_code(from_class),
+            to_class_token=routing_code(to_class),
+            to_alias=to_alias,
+        )
+
+    @property
+    def from_class(self) -> TransportClass | None:
+        return transport_class_or_none(self.from_class_token)
+
+    @property
+    def to_class(self) -> TransportClass | None:
+        return transport_class_or_none(self.to_class_token)
 
     @property
     def category(self) -> MessageCategory:
@@ -114,17 +182,40 @@ class DirectRoutingEnvelope(RoutingEnvelope):
     def routing_key(self) -> str:
         return json_direct_routing_key(
             from_alias=self.from_alias,
-            from_class=self.from_class,
+            from_class_token=self.from_class_token,
             type_name=self.type_name,
-            to_class=self.to_class,
+            to_class_token=self.to_class_token,
             to_alias=self.to_alias,
         )
 
 
 @dataclass(frozen=True)
 class BroadcastRoutingEnvelope(RoutingEnvelope):
-    from_class: TransportClass
+    # ``from_class_token`` is the raw wire token; ``from_class`` is the derived
+    # best-effort view (None for an unknown short form such as ``ws``).
+    from_class_token: str
     radio_channel: str | None = None
+
+    @classmethod
+    def from_classes(
+        cls,
+        *,
+        type_name: str,
+        from_alias: str,
+        from_class: TransportClass,
+        radio_channel: str | None = None,
+    ) -> "BroadcastRoutingEnvelope":
+        """Build-side constructor: emit a long-form class token from a typed class."""
+        return cls(
+            type_name=type_name,
+            from_alias=from_alias,
+            from_class_token=routing_code(from_class),
+            radio_channel=radio_channel,
+        )
+
+    @property
+    def from_class(self) -> TransportClass | None:
+        return transport_class_or_none(self.from_class_token)
 
     @property
     def category(self) -> MessageCategory:
@@ -134,7 +225,7 @@ class BroadcastRoutingEnvelope(RoutingEnvelope):
     def routing_key(self) -> str:
         return json_broadcast_routing_key(
             from_alias=self.from_alias,
-            from_class=self.from_class,
+            from_class_token=self.from_class_token,
             type_name=self.type_name,
             radio_channel=self.radio_channel,
         )
@@ -152,7 +243,11 @@ class WrappedRoutingEnvelope(RoutingEnvelope):
     payload's ``TypeName``; this envelope's ``type_name`` must match both.
     """
 
-    to_class: TransportClass
+    # ``to_class_token`` is the raw wire token; ``to_class`` is the derived
+    # best-effort view. In ``gw`` pub/sub the to-class is the least-important
+    # token (see MessageCategory) — an unknown short_name (e.g. ``s``) resolves
+    # to None and is never a delivery decision.
+    to_class_token: str
 
     def __post_init__(self) -> None:
         if self.type_name == "gw":
@@ -160,6 +255,25 @@ class WrappedRoutingEnvelope(RoutingEnvelope):
                 "WrappedRoutingEnvelope.type_name must be the inner type, "
                 "not the outer 'gw' wrapper type"
             )
+
+    @classmethod
+    def from_classes(
+        cls,
+        *,
+        type_name: str,
+        from_alias: str,
+        to_class: TransportClass,
+    ) -> "WrappedRoutingEnvelope":
+        """Build-side constructor: emit a long-form to-class token from a typed class."""
+        return cls(
+            type_name=type_name,
+            from_alias=from_alias,
+            to_class_token=routing_code(to_class),
+        )
+
+    @property
+    def to_class(self) -> TransportClass | None:
+        return transport_class_or_none(self.to_class_token)
 
     @property
     def category(self) -> MessageCategory:
@@ -169,7 +283,7 @@ class WrappedRoutingEnvelope(RoutingEnvelope):
     def routing_key(self) -> str:
         return gridworks_wrapped_routing_key(
             from_alias=self.from_alias,
-            to_class=self.to_class,
+            to_class_token=self.to_class_token,
             type_name=self.type_name,
         )
 
@@ -200,31 +314,18 @@ def _parse_alias_token(token: str, routing_key: str, field_name: str) -> str:
     return token.replace("-", ".")
 
 
-def _parse_routing_class_token(token: str, routing_key: str) -> RoutingClass:
-    try:
-        return RoutingClass(token)
-    except ValueError as e:
-        raise ValueError(
-            f"Unknown routing class {token} in {routing_key}. "
-            f"Must belong to {[x.value for x in RoutingClass]}"
-        ) from e
-
-
-def _parse_transport_class_token(token: str, routing_key: str) -> TransportClass:
-    routing_class = _parse_routing_class_token(token, routing_key)
-    return TRANSPORT_CLASS_BY_ROUTING_CLASS[routing_class]
-
-
 def _parse_json_direct_envelope(
     tokens: list[str], routing_key: str
 ) -> DirectRoutingEnvelope:
     if len(tokens) != _DIRECT_TOKEN_COUNT:
         raise ValueError(f"Expect JsonDirect messages to have 6 words! {routing_key}")
+    # Class tokens are stored raw (best-effort resolved later); only the
+    # structural arity and the alias/type tokens are validated.
     return DirectRoutingEnvelope(
         from_alias=_parse_alias_token(tokens[1], routing_key, "FromAlias"),
-        from_class=_parse_transport_class_token(tokens[2], routing_key),
+        from_class_token=tokens[2],
         type_name=_parse_alias_token(tokens[3], routing_key, "TypeName"),
-        to_class=_parse_transport_class_token(tokens[4], routing_key),
+        to_class_token=tokens[4],
         to_alias=_parse_alias_token(tokens[5], routing_key, "ToAlias"),
     )
 
@@ -241,7 +342,7 @@ def _parse_json_broadcast_envelope(
         radio_channel = ".".join(tokens[_BROADCAST_MIN_TOKEN_COUNT:])
     return BroadcastRoutingEnvelope(
         from_alias=_parse_alias_token(tokens[1], routing_key, "FromAlias"),
-        from_class=_parse_transport_class_token(tokens[2], routing_key),
+        from_class_token=tokens[2],
         type_name=_parse_alias_token(tokens[3], routing_key, "TypeName"),
         radio_channel=radio_channel,
     )
@@ -257,7 +358,7 @@ def _parse_scada_wrapped_envelope(
     return WrappedRoutingEnvelope(
         from_alias=_parse_alias_token(tokens[1], routing_key, "FromAlias"),
         type_name=_parse_alias_token(tokens[4], routing_key, "TypeName"),
-        to_class=_parse_transport_class_token(tokens[3], routing_key),
+        to_class_token=tokens[3],
     )
 
 
@@ -294,17 +395,17 @@ def routing_code(transport_class: TransportClass) -> str:
 def json_direct_routing_key(
     *,
     from_alias: str,
-    from_class: TransportClass,
+    from_class_token: str,
     type_name: str,
-    to_class: TransportClass,
+    to_class_token: str,
     to_alias: str,
 ) -> str:
     return ".".join([
         MessageCategory.JsonDirect.value,
         from_alias.replace(".", "-"),
-        routing_code(from_class),
+        from_class_token,
         type_name.replace(".", "-"),
-        routing_code(to_class),
+        to_class_token,
         to_alias.replace(".", "-"),
     ])
 
@@ -312,14 +413,14 @@ def json_direct_routing_key(
 def json_broadcast_routing_key(
     *,
     from_alias: str,
-    from_class: TransportClass,
+    from_class_token: str,
     type_name: str,
     radio_channel: str | None = None,
 ) -> str:
     parts = [
         MessageCategory.JsonBroadcast.value,
         from_alias.replace(".", "-"),
-        routing_code(from_class),
+        from_class_token,
         type_name.replace(".", "-"),
     ]
     if radio_channel:
@@ -330,13 +431,13 @@ def json_broadcast_routing_key(
 def gridworks_wrapped_routing_key(
     *,
     from_alias: str,
-    to_class: TransportClass,
+    to_class_token: str,
     type_name: str,
 ) -> str:
     return ".".join([
         MessageCategory.GridworksWrapped.value,
         from_alias.replace(".", "-"),
         "to",
-        routing_code(to_class),
+        to_class_token,
         type_name.replace(".", "-"),
     ])

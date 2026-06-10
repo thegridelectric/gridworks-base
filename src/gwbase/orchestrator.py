@@ -114,7 +114,7 @@ class Orchestrator(ActorBase, ABC):
         to_class: TransportClass,
         to_alias: str,
     ) -> DirectRoutingEnvelope:
-        return DirectRoutingEnvelope(
+        return DirectRoutingEnvelope.from_classes(
             type_name=type_name,
             from_alias=self.alias,
             from_class=self.transport_class,
@@ -128,7 +128,7 @@ class Orchestrator(ActorBase, ABC):
         type_name: str,
         radio_channel: Optional[str] = None,
     ) -> BroadcastRoutingEnvelope:
-        return BroadcastRoutingEnvelope(
+        return BroadcastRoutingEnvelope.from_classes(
             type_name=type_name,
             from_alias=self.alias,
             from_class=self.transport_class,

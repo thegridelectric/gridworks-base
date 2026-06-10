@@ -95,10 +95,15 @@ def test_from_classes_emits_long_form_tokens() -> None:
     # Build-side constructors keep emitting long-form class tokens from typed
     # TransportClass values, and round-trip through parse to a resolved class.
     wrapped = WrappedRoutingEnvelope.from_classes(
-        type_name="layout.lite", from_alias="d1.scada", to_class=TransportClass.LeafTransactiveNode
+        type_name="layout.lite",
+        from_alias="d1.scada",
+        to_class=TransportClass.LeafTransactiveNode,
     )
     assert wrapped.to_class_token == "ltn"
-    assert parse_routing_key(wrapped.routing_key).to_class is TransportClass.LeafTransactiveNode
+    assert (
+        parse_routing_key(wrapped.routing_key).to_class
+        is TransportClass.LeafTransactiveNode
+    )
 
     direct = DirectRoutingEnvelope.from_classes(
         type_name="bid",
@@ -110,7 +115,9 @@ def test_from_classes_emits_long_form_tokens() -> None:
     assert (direct.from_class_token, direct.to_class_token) == ("ltn", "mm")
 
     bcast = BroadcastRoutingEnvelope.from_classes(
-        type_name="latest.price", from_alias="d1.mm", from_class=TransportClass.MarketMaker
+        type_name="latest.price",
+        from_alias="d1.mm",
+        from_class=TransportClass.MarketMaker,
     )
     assert bcast.from_class_token == "mm"
 

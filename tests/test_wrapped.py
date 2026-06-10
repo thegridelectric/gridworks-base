@@ -123,7 +123,7 @@ def test_unwrap_rejects_header_payload_type_mismatch() -> None:
 
 def test_wrapped_routing_envelope_rejects_gw_as_type_name() -> None:
     with pytest.raises(ValueError, match="must be the inner type"):
-        WrappedRoutingEnvelope(
+        WrappedRoutingEnvelope.from_classes(
             type_name="gw",
             from_alias="d1.source",
             to_class=TransportClass.Scada,
@@ -131,7 +131,7 @@ def test_wrapped_routing_envelope_rejects_gw_as_type_name() -> None:
 
 
 def test_wrapped_routing_envelope_carries_inner_type_name() -> None:
-    env = WrappedRoutingEnvelope(
+    env = WrappedRoutingEnvelope.from_classes(
         type_name="heartbeat.a",
         from_alias="d1.source",
         to_class=TransportClass.Scada,

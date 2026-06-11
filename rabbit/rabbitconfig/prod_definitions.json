@@ -135,6 +135,14 @@
       "routing_key": "#",
       "source": "amq.topic",
       "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "amq.topic",
+      "destination_type": "exchange",
+      "routing_key": "rjb.#",
+      "source": "timemic_tx",
+      "vhost": "hw1__1"
     }
   ],
   "exchanges": [

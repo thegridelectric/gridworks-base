@@ -53,8 +53,9 @@ def test_exchanges_cover_ear_plus_a_pair_per_class() -> None:
 
 def test_bindings_cover_edges_and_ear_taps() -> None:
     bindings = topo.exchange_bindings()
-    # one per routing edge, plus one ear tap per AMQP class, plus amq.topic
-    assert len(bindings) == len(topo.ROUTING_EDGES) + len(topo.AMQP_ACTOR_CLASSES) + 1
+    # one per routing edge, plus one ear tap per AMQP class, plus the
+    # amq.topic ear tap, plus the timemic -> amq.topic MQTT bridge tap
+    assert len(bindings) == len(topo.ROUTING_EDGES) + len(topo.AMQP_ACTOR_CLASSES) + 2
 
     # a known direct edge: ltnmic_tx -> super_tx on *.*.ltn.*.super.*
     assert any(
@@ -66,5 +67,13 @@ def test_bindings_cover_edges_and_ear_taps() -> None:
     # amq.topic fans into ear with '#'
     assert any(
         b.source == "amq.topic" and b.destination == "ear_tx" and b.routing_key == "#"
+        for b in bindings
+    )
+    # time coordinator broadcasts cross to the MQTT plugin's exchange
+    # (rjb.# only — direct traffic stays on the AMQP fabric)
+    assert any(
+        b.source == "timemic_tx"
+        and b.destination == "amq.topic"
+        and b.routing_key == "rjb.#"
         for b in bindings
     )

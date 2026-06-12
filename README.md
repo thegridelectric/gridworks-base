@@ -46,7 +46,12 @@ This repo provides two things:
 
 GridWorks services that use the AMQP transport require a running RabbitMQ
 dev broker to pass tests or run dev simulations. (SCADA is the exception —
-it is MQTT-native, with no AMQP exchanges.) Instructions for setting it up:
+it is MQTT-native, with no AMQP exchanges of its own. It can still receive
+the TimeCoordinator's broadcasts: `gwbase.topology` bridges the
+TimeCoordinator publish exchange to the MQTT plugin's `amq.topic` (the
+`rjb.#` broadcast tap), so an MQTT-native service subscribed to
+`rjb/<tc-alias>/time/sim-timestep` receives `sim.timestep`.) Instructions
+for setting it up:
 
 - Make sure you have [docker](https://www.docker.com/products/docker-desktop/) installed
 - Start the dev broker in a docker container — `./arm.sh` or `./x86.sh`

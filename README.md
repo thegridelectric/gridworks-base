@@ -117,6 +117,24 @@ optional convenience wrapper over the same `uv run` commands; install nox
 globally (e.g. `uv tool install nox`) to use them. CI runs the `uv run`
 commands directly.
 
+### Environment gotchas (read this if a tool "can't be found" or CI formatting disagrees)
+
+- **Always use `uv run …`.** uv resolves this project's `.venv` from `uv.lock`
+  automatically — you do **not** create or activate a venv by hand.
+- **Don't activate a stale venv.** If you see
+  `VIRTUAL_ENV=… does not match the project environment path .venv and will be
+  ignored`, an old activation is lingering (often from a previous repo
+  location). Run `deactivate` or `unset VIRTUAL_ENV`, then use `uv run`.
+- **pre-commit** runs on `git commit`, or manually with `pre-commit run`
+  (staged) / `pre-commit run --all-files`. The hooks are **repo-based**, so
+  pre-commit installs their tools in its own envs — no venv on PATH is needed
+  (plain `pre-commit`, not `uv run pre-commit`).
+- **ruff is pinned to ONE version in three coupled places** — the `ruff==…` dev
+  dependency in `pyproject.toml`, `uv.lock`, and the `ruff-pre-commit` `rev` in
+  `.pre-commit-config.yaml`. Keep all three equal, or local / pre-commit / CI
+  will disagree on formatting. CI runs `uv sync --locked` then
+  `uv run ruff format --check .`, so a local pass with the same lock = a CI pass.
+
 ## Building & publishing the dev-broker image (GHCR)
 
 **This repo is the build-and-publish home for the GridWorks dev-broker

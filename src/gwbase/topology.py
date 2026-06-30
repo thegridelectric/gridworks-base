@@ -25,6 +25,7 @@ AMQP_ACTOR_CLASSES: frozenset[RoutingClass] = frozenset({
     RoutingClass.WeatherForecastService,
     RoutingClass.TimeCoordinator,
     RoutingClass.Supervisor,
+    RoutingClass.GridNodeRegistry,
 })
 
 # Direct-message routing edges: a sender of class ``src`` may reach a
@@ -40,6 +41,9 @@ ROUTING_EDGES: list[tuple[RoutingClass, RoutingClass]] = [
     (RoutingClass.Supervisor, RoutingClass.MarketMaker),
     (RoutingClass.Supervisor, RoutingClass.TimeCoordinator),
     (RoutingClass.TimeCoordinator, RoutingClass.Supervisor),
+    # A MarketMaker sends the re-parent command to the registry and gets the reply.
+    (RoutingClass.MarketMaker, RoutingClass.GridNodeRegistry),
+    (RoutingClass.GridNodeRegistry, RoutingClass.MarketMaker),
 ]
 
 # The universal audit tap (ear) and the built-in MQTT/wrapped exchange.

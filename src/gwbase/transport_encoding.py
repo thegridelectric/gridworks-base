@@ -22,6 +22,7 @@ class TransportClass(StrEnum):
     WeatherForecastService = "WeatherForecastService"
     TimeCoordinator = "TimeCoordinator"
     Supervisor = "Supervisor"
+    GridNodeRegistry = "GridNodeRegistry"
 
     @classmethod
     def values(cls) -> list[str]:
@@ -40,6 +41,8 @@ class RoutingClass(StrEnum):
     TimeCoordinator = "time"
     # control plane
     Supervisor = "super"
+    # infra services
+    GridNodeRegistry = "gnr"
 
 
 ROUTING_CLASS_BY_TRANSPORT_CLASS: dict[TransportClass, RoutingClass] = {
@@ -52,6 +55,7 @@ ROUTING_CLASS_BY_TRANSPORT_CLASS: dict[TransportClass, RoutingClass] = {
     TransportClass.WeatherForecastService: RoutingClass.WeatherForecastService,
     TransportClass.TimeCoordinator: RoutingClass.TimeCoordinator,
     TransportClass.Supervisor: RoutingClass.Supervisor,
+    TransportClass.GridNodeRegistry: RoutingClass.GridNodeRegistry,
 }
 
 

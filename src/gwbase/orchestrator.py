@@ -126,7 +126,7 @@ class Orchestrator(ActorBase, ABC):
         self,
         *,
         type_name: str,
-        radio_channel: Optional[str] = None,
+        radio_channel: str | None = None,
     ) -> BroadcastRoutingEnvelope:
         return BroadcastRoutingEnvelope.from_classes(
             type_name=type_name,

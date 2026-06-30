@@ -26,9 +26,9 @@ x-gridworks:
   version: "000"
   value_descriptions:
     "TerminalAsset": >
-      A physical transactive asset such as a heat pump, hot water heater, residential battery, 
+      A physical transactive asset such as a heat pump, hot water heater, residential battery,
       electric vehicle, or any other end-use device located behind an atomic metered point.
-    
+
     "LeafTransactiveNode": >
       The atomic metered unit of the grid. Represents the smallest indivisible metering
       boundary capable of participating in markets or entering Dispatch Contracts on

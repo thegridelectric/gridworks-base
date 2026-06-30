@@ -67,8 +67,8 @@ class _RecorderMixin:
         self.messages_received: int = 0
         self.messages_routed_internally: int = 0
         self.got_heartbeat_from_super: bool = False
-        self.latest_envelope: Optional[RoutingEnvelope] = None
-        self.latest_body: Optional[bytes] = None
+        self.latest_envelope: RoutingEnvelope | None = None
+        self.latest_body: bytes | None = None
 
     def on_message(self, _unused_channel, basic_deliver, properties, body):
         self.messages_received += 1

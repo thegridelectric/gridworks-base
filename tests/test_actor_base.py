@@ -95,7 +95,7 @@ def test_actor_base(
         my_super_alias="d1.super",
         my_time_coordinator_alias="d1.time",
         current_time_unix_s=int(
-            datetime.datetime(2020, 1, 1, 5, tzinfo=datetime.timezone.utc).timestamp(),
+            datetime.datetime(2020, 1, 1, 5, tzinfo=datetime.UTC).timestamp(),
         ),
         my_actor_aliases=[gn.alias],
     )

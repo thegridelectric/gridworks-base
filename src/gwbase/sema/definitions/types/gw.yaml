@@ -5,7 +5,7 @@ title: "gw"
 type: object
 description: >
   GridWorks message envelope. Carries a gridworks.header (delivery
-  metadata) and a Payload (any registered Sema type). 
+  metadata) and a Payload (any registered Sema type).
 properties:
   Header:
     $ref: "https://schemas.electricity.works/types/gridworks.header/001"

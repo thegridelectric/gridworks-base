@@ -6,7 +6,7 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, no_type_check
+from typing import no_type_check
 
 import pika
 from pika.channel import Channel as PikaChannel
@@ -115,19 +115,19 @@ class ActorBase(ABC):
         adder = "-F" + str(uuid.uuid4()).split("-")[0][0:3]
         self.queue_name: str = self.alias + adder
         self._consume_exchange: str = EAR_EXCHANGE
-        self._publish_exchange: Optional[str] = None
+        self._publish_exchange: str | None = None
         self._url: str = settings.rabbit.url.get_secret_value()
 
-        self.latest_routing_key: Optional[str] = None
+        self.latest_routing_key: str | None = None
         self.shutting_down: bool = False
         self._main_loop_running: bool = False
 
-        self._consume_connection: Optional[
+        self._consume_connection: None | (
             pika.adapters.select_connection.SelectConnection
-        ] = None
-        self._single_channel: Optional[pika.channel.Channel] = None
+        ) = None
+        self._single_channel: pika.channel.Channel | None = None
         self._closing_consumer: bool = False
-        self._consumer_tag: Optional[str] = None
+        self._consumer_tag: str | None = None
         self.should_reconnect_consumer: bool = False
         self.was_consuming: bool = False
         self._consuming: bool = False
@@ -140,7 +140,7 @@ class ActorBase(ABC):
         )
         self._stopping: bool = False
         self._stopped: bool = True
-        self._latest_on_message_diagnostic: Optional[OnReceiveMessageDiagnostic] = None
+        self._latest_on_message_diagnostic: OnReceiveMessageDiagnostic | None = None
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -601,7 +601,7 @@ class ActorBase(ABC):
         from_alias: str,
         from_class: TransportClass,
         type_name: str,
-        radio_channel: Optional[str] = None,
+        radio_channel: str | None = None,
     ) -> None:
         """Subscribe to a publisher's ``JsonBroadcast`` messages.
 
@@ -645,13 +645,14 @@ class ActorBase(ABC):
     # Send
     # ------------------------------------------------------------------
 
-    def _publish_exchange_for(self, envelope: RoutingEnvelope) -> Optional[str]:
+    def _publish_exchange_for(self, envelope: RoutingEnvelope) -> str | None:
         """The exchange a given envelope publishes to, or ``None`` if this actor
         cannot route it. Wrapped (gw) messages always go to the built-in
         ``amq.topic`` so they reach MQTT-native peers (e.g. scada) — any actor
         may send wrapped (wiki spec §3.5). A bare ear-tap (ActorBase) has no
         class ``mic_tx``: it cannot class-route, so Direct/Broadcast return
         ``None`` (→ NO_PUBLISH_EXCHANGE) rather than silently dropping."""
+
         if isinstance(envelope, WrappedRoutingEnvelope):
             return "amq.topic"
         if self._publish_exchange is None:
@@ -668,7 +669,7 @@ class ActorBase(ABC):
         *,
         envelope: RoutingEnvelope,
         body: bytes,
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
     ) -> OnSendMessageDiagnostic:
         """Publish pre-encoded ``body`` bytes on rabbit. The envelope
         carries the routing metadata (category, type_name, addressing);

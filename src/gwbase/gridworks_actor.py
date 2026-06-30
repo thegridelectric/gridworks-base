@@ -84,6 +84,7 @@ class GridworksActor(Orchestrator, ABC):
     def _client_properties(self) -> dict:
         """Add ``GNodeClass`` — FIS's discriminator that this connection is a
         GNode — on top of the service-level ServiceAlias/ServiceInstanceId."""
+
         return {**super()._client_properties(), "GNodeClass": self.g_node_class}
 
     # ------------------------------------------------------------------

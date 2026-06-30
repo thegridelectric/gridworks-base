@@ -74,6 +74,30 @@
     },
     {
       "arguments": {},
+      "destination": "gnr_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.mm.*.gnr.*",
+      "source": "mmmic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "mm_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.gnr.*.mm.*",
+      "source": "gnrmic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "gnrmic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
       "destination": "ear_tx",
       "destination_type": "exchange",
       "routing_key": "#",
@@ -152,6 +176,24 @@
       "durable": true,
       "internal": true,
       "name": "ear_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "gnr_tx",
+      "type": "topic",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": false,
+      "name": "gnrmic_tx",
       "type": "topic",
       "vhost": "hw1__1"
     },

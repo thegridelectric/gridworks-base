@@ -10,7 +10,7 @@ step() { printf '\n=== %s ===\n' "$1"; shift; "$@"; }
 step "uv sync (locked)" uv sync --all-groups --locked
 
 # lint job
-step "ruff check" uv run ruff check .
+step "ruff check" uv run ruff check --no-fix .   # fail on lint errors; don't auto-fix in CI (config has fix=true)
 step "ruff format --check" uv run ruff format --check .
 
 # broker-image gate: committed definitions JSON must match gwbase.topology.

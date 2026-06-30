@@ -7,8 +7,6 @@ TimeCoordinator — which are NOT GNodes — are ``Orchestrator`` stubs that rid
 ``ServiceSettings`` with no g.node.gt.json. That mirrors the production tiers.
 """
 
-from typing import Optional
-
 import pika
 
 from gwbase import topology

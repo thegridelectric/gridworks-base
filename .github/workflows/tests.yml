@@ -19,7 +19,10 @@ jobs:
           enable-cache: true
       - run: uv sync --all-groups --locked
       - name: Ruff lint
-        run: uv run ruff check .
+        # --no-fix: CI must FAIL on lint errors, not silently auto-fix (the
+        # repo config sets fix=true, which would otherwise mutate files in CI
+        # and make the format step fail on the mutation).
+        run: uv run ruff check --no-fix .
       - name: Ruff format check
         run: uv run ruff format --check .
 

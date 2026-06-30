@@ -134,6 +134,13 @@ commands directly.
   `.pre-commit-config.yaml`. Keep all three equal, or local / pre-commit / CI
   will disagree on formatting. CI runs `uv sync --locked` then
   `uv run ruff format --check .`, so a local pass with the same lock = a CI pass.
+- **Before pushing, run the CI mirror `./ci.sh`** (or at minimum *both*
+  `uv run ruff check .` **and** `uv run ruff format .` — running only one misses
+  the other). The ruff config sets `fix = true`, so a plain `uv run ruff check .`
+  **auto-fixes and mutates files** locally — commit those fixes. CI runs
+  `ruff check --no-fix` so it fails loudly instead. The pre-commit `ruff` hook
+  only checks import order (`--select I`), so it does NOT catch F401/etc.; `ci.sh`
+  is the real gate.
 
 ## Building & publishing the dev-broker image (GHCR)
 

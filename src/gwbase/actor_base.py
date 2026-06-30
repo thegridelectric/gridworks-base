@@ -6,7 +6,7 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, no_type_check
+from typing import no_type_check
 
 import pika
 from pika.channel import Channel as PikaChannel

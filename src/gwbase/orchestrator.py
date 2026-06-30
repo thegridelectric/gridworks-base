@@ -2,7 +2,7 @@ import functools
 import logging
 import random
 from abc import ABC, abstractmethod
-from typing import Optional, no_type_check
+from typing import no_type_check
 
 from gwbase.actor_base import ActorBase
 from gwbase.config import ServiceSettings
@@ -126,7 +126,7 @@ class Orchestrator(ActorBase, ABC):
         self,
         *,
         type_name: str,
-        radio_channel: Optional[str] = None,
+        radio_channel: str | None = None,
     ) -> BroadcastRoutingEnvelope:
         return BroadcastRoutingEnvelope.from_classes(
             type_name=type_name,

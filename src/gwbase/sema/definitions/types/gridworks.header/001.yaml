@@ -15,7 +15,7 @@ properties:
       GNode alias of the sender.
 
   Dst:
-    
+
     description: >
       Recipient identifier (e.g. GNode alias or short address) when the
       message is addressed to a single recipient. Empty string indicates

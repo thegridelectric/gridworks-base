@@ -10,7 +10,7 @@ Spec: ``wiki/gridworks-base/executor/transport.md`` §3.5 and
 
 from dataclasses import dataclass
 
-from gwbase.transport_encoding import RoutingClass
+from gwbase.transport_encoding import MessageCategory, RoutingClass
 
 # Classes that run as rabbit AMQP actors and therefore get a <rc>_tx
 # (internal, consume) + <rc>mic_tx (non-internal, publish) pair. Opt-in:
@@ -25,6 +25,7 @@ AMQP_ACTOR_CLASSES: frozenset[RoutingClass] = frozenset({
     RoutingClass.WeatherForecastService,
     RoutingClass.TimeCoordinator,
     RoutingClass.Supervisor,
+    RoutingClass.GridNodeRegistry,
 })
 
 # Direct-message routing edges: a sender of class ``src`` may reach a
@@ -40,6 +41,9 @@ ROUTING_EDGES: list[tuple[RoutingClass, RoutingClass]] = [
     (RoutingClass.Supervisor, RoutingClass.MarketMaker),
     (RoutingClass.Supervisor, RoutingClass.TimeCoordinator),
     (RoutingClass.TimeCoordinator, RoutingClass.Supervisor),
+    # A MarketMaker sends the re-parent command to the registry and gets the reply.
+    (RoutingClass.MarketMaker, RoutingClass.GridNodeRegistry),
+    (RoutingClass.GridNodeRegistry, RoutingClass.MarketMaker),
 ]
 
 # The universal audit tap (ear) and the built-in MQTT/wrapped exchange.
@@ -115,6 +119,17 @@ def exchange_bindings() -> list[BindingSpec]:
             BindingSpec(publish_exchange(rc), EAR_EXCHANGE, EAR_BINDING_KEY)
         )
     bindings.append(BindingSpec(AMQP_TOPIC, EAR_EXCHANGE, EAR_BINDING_KEY))
+    # MQTT bridge tap: the time coordinator's BROADCASTS cross to the MQTT
+    # plugin's exchange, so MQTT-native actors (scadas — reached via
+    # amq.topic, see AMQP_ACTOR_CLASSES note) can subscribe to sim
+    # timesteps. Broadcasts only; direct traffic stays on the AMQP fabric.
+    bindings.append(
+        BindingSpec(
+            publish_exchange(RoutingClass.TimeCoordinator),
+            AMQP_TOPIC,
+            f"{MessageCategory.JsonBroadcast.value}.#",
+        )
+    )
     return bindings
 
 

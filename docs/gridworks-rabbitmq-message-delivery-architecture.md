@@ -49,7 +49,7 @@ One-to-many messages sent to multiple subscribers.
 
 Use cases:
  - market price updates
- - weather forecasts 
+ - weather forecasts
 
 Properties:
  - one sender to many receivers
@@ -81,7 +81,7 @@ Structure:
 Properties:
  - includes Header + Payload
  - supports delivery metadata such as:
-  - message identity 
+  - message identity
   - optional acknowledgment requirement
   - correlation and replay tracking
 
@@ -172,4 +172,3 @@ Example:
 ```
 gw.hw1-isone-me-versant-keene-spruce-scada.to.ltn.layout-lite
 ```
-

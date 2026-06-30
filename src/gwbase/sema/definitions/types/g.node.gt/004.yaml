@@ -4,8 +4,8 @@ $id: "https://schemas.electricity.works/types/g.node.gt/004"
 title: "g.node.gt"
 type: object
 description: >
-  A GNode (“Grid Node”) is the fundamental identity object in the GridWorks 
-  ecosystem. Every physical location, metered unit, device, service, or actor 
+  A GNode (“Grid Node”) is the fundamental identity object in the GridWorks
+  ecosystem. Every physical location, metered unit, device, service, or actor
   interacting with the transactive system is represented as a GNode.
 
 properties:
@@ -36,7 +36,7 @@ properties:
     description: >
       Functional or role-based classification for the GNode. Interpreted
       according to the namespace of the registering organization. This field is a
-      free-form string, not a universal enum. 
+      free-form string, not a universal enum.
 
   Status:
     $ref: "https://schemas.electricity.works/enums/g.node.status/000"

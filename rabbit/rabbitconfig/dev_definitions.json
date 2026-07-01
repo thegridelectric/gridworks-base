@@ -90,6 +90,30 @@
     },
     {
       "arguments": {},
+      "destination": "gnr_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.fis.*.gnr.*",
+      "source": "fismic_tx",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "fis_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.gnr.*.fis.*",
+      "source": "gnrmic_tx",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "fismic_tx",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
       "destination": "ear_tx",
       "destination_type": "exchange",
       "routing_key": "#",
@@ -176,6 +200,24 @@
       "durable": true,
       "internal": true,
       "name": "ear_tx",
+      "type": "topic",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "fis_tx",
+      "type": "topic",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": false,
+      "name": "fismic_tx",
       "type": "topic",
       "vhost": "d1__1"
     },

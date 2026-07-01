@@ -26,6 +26,7 @@ AMQP_ACTOR_CLASSES: frozenset[RoutingClass] = frozenset({
     RoutingClass.TimeCoordinator,
     RoutingClass.Supervisor,
     RoutingClass.GridNodeRegistry,
+    RoutingClass.FleetIndexService,
 })
 
 # Direct-message routing edges: a sender of class ``src`` may reach a
@@ -44,6 +45,10 @@ ROUTING_EDGES: list[tuple[RoutingClass, RoutingClass]] = [
     # A MarketMaker sends the re-parent command to the registry and gets the reply.
     (RoutingClass.MarketMaker, RoutingClass.GridNodeRegistry),
     (RoutingClass.GridNodeRegistry, RoutingClass.MarketMaker),
+    # FIS reads the registry over request-reply (a gwbase citizen): its read
+    # request reaches the registry, and the registry's reply reaches FIS.
+    (RoutingClass.FleetIndexService, RoutingClass.GridNodeRegistry),
+    (RoutingClass.GridNodeRegistry, RoutingClass.FleetIndexService),
 ]
 
 # The universal audit tap (ear) and the built-in MQTT/wrapped exchange.

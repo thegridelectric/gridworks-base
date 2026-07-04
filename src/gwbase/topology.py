@@ -130,6 +130,18 @@ def exchange_bindings() -> list[BindingSpec]:
             f"{MessageCategory.JsonBroadcast.value}.#",
         )
     )
+    # Same bridge for the grid-node-registry's BROADCASTS (`g.node.forest`
+    # topology changes, radio_channel = the audience-known alias), so
+    # MQTT-native actors can passively hear ancestor renames too. The forest
+    # carries aliases + immutable ids only — never coordinates — so it is
+    # safe to cross to the MQTT side.
+    bindings.append(
+        BindingSpec(
+            publish_exchange(RoutingClass.GridNodeRegistry),
+            AMQP_TOPIC,
+            f"{MessageCategory.JsonBroadcast.value}.#",
+        )
+    )
     return bindings
 
 

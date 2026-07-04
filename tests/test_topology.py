@@ -55,8 +55,9 @@ def test_exchanges_cover_ear_plus_a_pair_per_class() -> None:
 def test_bindings_cover_edges_and_ear_taps() -> None:
     bindings = topo.exchange_bindings()
     # one per routing edge, plus one ear tap per AMQP class, plus the
-    # amq.topic ear tap, plus the timemic -> amq.topic MQTT bridge tap
-    assert len(bindings) == len(topo.ROUTING_EDGES) + len(topo.AMQP_ACTOR_CLASSES) + 2
+    # amq.topic ear tap, plus the timemic and gnrmic -> amq.topic MQTT
+    # bridge taps
+    assert len(bindings) == len(topo.ROUTING_EDGES) + len(topo.AMQP_ACTOR_CLASSES) + 3
 
     # a known direct edge: ltnmic_tx -> super_tx on *.*.ltn.*.super.*
     assert any(
@@ -74,6 +75,14 @@ def test_bindings_cover_edges_and_ear_taps() -> None:
     # (rjb.# only — direct traffic stays on the AMQP fabric)
     assert any(
         b.source == "timemic_tx"
+        and b.destination == "amq.topic"
+        and b.routing_key == "rjb.#"
+        for b in bindings
+    )
+    # registry broadcasts (g.node.forest) cross too, so MQTT-native actors
+    # can passively hear ancestor renames
+    assert any(
+        b.source == "gnrmic_tx"
         and b.destination == "amq.topic"
         and b.routing_key == "rjb.#"
         for b in bindings

@@ -11,7 +11,20 @@ _WRAPPED_TOKEN_COUNT = 5
 class TransportClass(StrEnum):
     """Closed taxonomy of routable classes on the rabbit transport. This
     is NOT Sema vocabulary; in particular ``Supervisor`` is not a member of
-    ``gw.g.node.class`` because a Supervisor is not a GNode."""
+    ``gw.g.node.class`` because a Supervisor is not a GNode.
+
+    Actor-tier map (which runtime tier a class rides):
+
+    - **Orchestrator (non-GNode, ServiceSettings):** ``Supervisor``,
+      ``TimeCoordinator``, ``GridNodeRegistry`` — orchestration/infra
+      participants with no ``g.node.gt`` identity file at boot.
+    - **GridworksActor (GNode identity):** ``TerminalAsset``,
+      ``LeafTransactiveNode``, ``MarketMaker``, ``PriceForecastService``,
+      ``WeatherForecastService``.
+    - **No gwbase runtime:** ``Scada`` (MQTT-native, reached via
+      ``amq.topic``) and ``ConnectivityNode`` (passive — a map vertex,
+      not an actor).
+    """
 
     TerminalAsset = "TerminalAsset"
     LeafTransactiveNode = "LeafTransactiveNode"

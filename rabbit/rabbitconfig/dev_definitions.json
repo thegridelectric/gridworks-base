@@ -167,6 +167,14 @@
       "routing_key": "rjb.#",
       "source": "timemic_tx",
       "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "amq.topic",
+      "destination_type": "exchange",
+      "routing_key": "rjb.#",
+      "source": "gnrmic_tx",
+      "vhost": "d1__1"
     }
   ],
   "exchanges": [

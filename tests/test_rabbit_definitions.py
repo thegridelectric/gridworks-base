@@ -35,7 +35,7 @@ def test_dev_definitions_include_user_and_permissions() -> None:
     ]
 
 
-def test_prod_definitions_have_no_baked_credential() -> None:
+def test_hybrid_definitions_have_no_baked_credential() -> None:
     d = build_definitions(vhost="hw1__1")
     assert d["vhosts"] == [{"name": "hw1__1"}]
     assert d["users"] == []

@@ -20,13 +20,15 @@ from gwbase import topology
 # The committed broker-definitions artifacts: filename -> build kwargs.
 # Single source for both the generator (writes them) and the CI drift-guard
 # (test_definitions_drift.py regenerates and diffs). Dev carries the
-# non-secret smqPublic credential; prod carries none (injected at deploy).
+# non-secret smqPublic credential; hybrid carries none (injected at deploy).
+# A vhost is `<universe>__<run>` — run 1 of each universe here; provisioning
+# a further run of a universe (hw1__2, …) regenerates with that vhost.
 DEFINITION_ARTIFACTS: list[tuple[str, dict[str, Any]]] = [
     (
         "dev_definitions.json",
         {"vhost": "d1__1", "user": "smqPublic", "password": "smqPublic"},
     ),
-    ("prod_definitions.json", {"vhost": "hw1__1"}),
+    ("hybrid_definitions.json", {"vhost": "hw1__1"}),
 ]
 
 # Fixed 4-byte salt so the dev password hash is deterministic (the dev

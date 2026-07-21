@@ -42,6 +42,32 @@ This repo provides two things:
 2. **Dev-broker scripts** — run a local RabbitMQ broker for development
    (below).
 
+## How to commit changes
+
+Commits run pre-commit hooks (lint, format, and a drift-guard verifying the
+committed broker-definitions artifacts match `gwbase.topology`). To avoid
+surprises at commit time:
+
+```
+uv run pre-commit run --all-files   # every hook, before you commit
+./ci.sh                             # the full local gate: hooks + the test
+                                    # suite (needs the dev broker running —
+                                    # ./arm.sh or ./x86.sh)
+```
+
+If you changed `gwbase.topology`, regenerate the committed definitions
+artifacts first (the drift-guard will otherwise refuse the commit):
+
+```
+uv run python for_docker/gen_definitions.py --write-all --dir rabbit/rabbitconfig
+```
+
+Two gotchas the hooks have caught in the wild: run one hook alone with
+`uv run pre-commit run <hook-id> --all-files`; and if hooks fail with TLS
+errors reaching PyPI (`invalid peer certificate`), check for a stray
+`SSL_CERT_FILE` export in your shell — it replaces Python's trust bundle
+process-wide.
+
 ## Dev Rabbit Broker
 
 GridWorks services that use the AMQP transport require a running RabbitMQ

@@ -51,6 +51,15 @@ EAR_EXCHANGE = "ear_tx"
 AMQP_TOPIC = "amq.topic"  # built-in; MQTT-bridged + wrapped (gw) traffic
 EAR_BINDING_KEY = "#"
 
+# The registry's SCOPED audit tap: a second, tiny ear fed only the
+# meaning-bearing registry slice — everything addressed to the registry (its
+# consume exchange) and everything the registry says (its publish exchange:
+# forest broadcasts AND the write verdicts, since every actor publishes via
+# its own mic — so refusals are witnessed too). The seed-store capture
+# consumes this with a plain `#`; the slice is defined HERE, in the fabric,
+# in git — never in a tap's runtime binding.
+GNR_EAR_EXCHANGE = "gnr_ear_tx"
+
 
 def consume_exchange(rc: RoutingClass) -> str:
     """Internal exchange an actor of class ``rc`` consumes from."""
@@ -98,7 +107,10 @@ def _amqp_classes_sorted() -> list[RoutingClass]:
 def exchanges() -> list[ExchangeSpec]:
     """Every exchange the broker must pre-provision, in a stable order:
     the ear tap, then a consume/publish pair per AMQP-actor class."""
-    specs: list[ExchangeSpec] = [ExchangeSpec(EAR_EXCHANGE, internal=True)]
+    specs: list[ExchangeSpec] = [
+        ExchangeSpec(EAR_EXCHANGE, internal=True),
+        ExchangeSpec(GNR_EAR_EXCHANGE, internal=True),
+    ]
     for rc in _amqp_classes_sorted():
         specs.append(ExchangeSpec(consume_exchange(rc), internal=True))
         specs.append(ExchangeSpec(publish_exchange(rc), internal=False))
@@ -119,6 +131,22 @@ def exchange_bindings() -> list[BindingSpec]:
             BindingSpec(publish_exchange(rc), EAR_EXCHANGE, EAR_BINDING_KEY)
         )
     bindings.append(BindingSpec(AMQP_TOPIC, EAR_EXCHANGE, EAR_BINDING_KEY))
+    # The registry's scoped audit slice (see GNR_EAR_EXCHANGE): to-gnr and
+    # from-gnr both fan in.
+    bindings.append(
+        BindingSpec(
+            consume_exchange(RoutingClass.GridNodeRegistry),
+            GNR_EAR_EXCHANGE,
+            EAR_BINDING_KEY,
+        )
+    )
+    bindings.append(
+        BindingSpec(
+            publish_exchange(RoutingClass.GridNodeRegistry),
+            GNR_EAR_EXCHANGE,
+            EAR_BINDING_KEY,
+        )
+    )
     # MQTT bridge tap: the time coordinator's BROADCASTS cross to the MQTT
     # plugin's exchange, so MQTT-native actors (scadas — reached via
     # amq.topic, see AMQP_ACTOR_CLASSES note) can subscribe to sim

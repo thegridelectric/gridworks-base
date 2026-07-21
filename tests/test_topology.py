@@ -42,11 +42,13 @@ def test_exchanges_cover_ear_plus_a_pair_per_class() -> None:
     specs = topo.exchanges()
     names = {s.name for s in specs}
     assert topo.EAR_EXCHANGE in names
-    # ear + 2 per AMQP class
-    assert len(specs) == 1 + 2 * len(topo.AMQP_ACTOR_CLASSES)
+    assert topo.GNR_EAR_EXCHANGE in names
+    # ear + the registry's scoped ear + 2 per AMQP class
+    assert len(specs) == 2 + 2 * len(topo.AMQP_ACTOR_CLASSES)
     by_name = {s.name: s for s in specs}
-    # ear_tx and every <rc>_tx are internal; every <rc>mic_tx is not
+    # ear_tx, gnr_ear_tx and every <rc>_tx are internal; every <rc>mic_tx is not
     assert by_name["ear_tx"].internal is True
+    assert by_name["gnr_ear_tx"].internal is True
     assert by_name["ltn_tx"].internal is True
     assert by_name["ltnmic_tx"].internal is False
     assert all(s.exchange_type == "topic" and s.durable for s in specs)
@@ -56,8 +58,20 @@ def test_bindings_cover_edges_and_ear_taps() -> None:
     bindings = topo.exchange_bindings()
     # one per routing edge, plus one ear tap per AMQP class, plus the
     # amq.topic ear tap, plus the timemic and gnrmic -> amq.topic MQTT
-    # bridge taps
-    assert len(bindings) == len(topo.ROUTING_EDGES) + len(topo.AMQP_ACTOR_CLASSES) + 3
+    # bridge taps, plus the registry's scoped ear pair (gnr_tx + gnrmic_tx
+    # -> gnr_ear_tx)
+    assert len(bindings) == len(topo.ROUTING_EDGES) + len(topo.AMQP_ACTOR_CLASSES) + 5
+    # the scoped ear hears everything said TO the registry and BY it
+    assert any(
+        b.source == "gnr_tx" and b.destination == "gnr_ear_tx" and b.routing_key == "#"
+        for b in bindings
+    )
+    assert any(
+        b.source == "gnrmic_tx"
+        and b.destination == "gnr_ear_tx"
+        and b.routing_key == "#"
+        for b in bindings
+    )
 
     # a known direct edge: ltnmic_tx -> super_tx on *.*.ltn.*.super.*
     assert any(

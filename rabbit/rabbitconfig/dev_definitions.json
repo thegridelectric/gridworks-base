@@ -162,6 +162,22 @@
     },
     {
       "arguments": {},
+      "destination": "gnr_ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "gnr_tx",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "gnr_ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
+      "source": "gnrmic_tx",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
       "destination": "amq.topic",
       "destination_type": "exchange",
       "routing_key": "rjb.#",
@@ -184,6 +200,15 @@
       "durable": true,
       "internal": true,
       "name": "ear_tx",
+      "type": "topic",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "gnr_ear_tx",
       "type": "topic",
       "vhost": "d1__1"
     },

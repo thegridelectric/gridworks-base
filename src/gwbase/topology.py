@@ -100,6 +100,25 @@ class BindingSpec:
     routing_key: str
 
 
+@dataclass(frozen=True)
+class QueueSpec:
+    """A durable queue the broker must pre-provision."""
+
+    name: str
+    durable: bool = True
+
+
+@dataclass(frozen=True)
+class PolicySpec:
+    """A policy the broker must pre-provision."""
+
+    name: str
+    pattern: str
+    definition: dict
+    apply_to: str = "queues"
+    priority: int = 0
+
+
 def _amqp_classes_sorted() -> list[RoutingClass]:
     return sorted(AMQP_ACTOR_CLASSES, key=lambda rc: rc.value)
 
@@ -171,6 +190,30 @@ def exchange_bindings() -> list[BindingSpec]:
         )
     )
     return bindings
+
+
+def queues() -> list[QueueSpec]:
+    """Every durable queue the broker pre-provisions.
+
+    Just the standing `debug` tap today: a consumer-less queue for
+    inspecting raw traffic in the management UI without standing up a
+    consumer. Its BINDING is deliberately NOT here — which slice it taps is
+    investigation state, hand-(re)bound per debugging session; the queue and
+    its cap policy are topology. Contents are always duplicates of what the
+    ear archives, so it is always safe to purge."""
+    return [QueueSpec("debug")]
+
+
+def policies() -> list[PolicySpec]:
+    """Every policy the broker pre-provisions. `debug-cap` keeps a forgotten
+    debug tap from growing unboundedly: last 1000 messages, drop-oldest."""
+    return [
+        PolicySpec(
+            name="debug-cap",
+            pattern="^debug$",
+            definition={"max-length": 1000, "overflow": "drop-head"},
+        )
+    ]
 
 
 def _validate() -> None:

@@ -69,8 +69,27 @@ def build_definitions(
         "topic_permissions": [],
         "parameters": [],
         "global_parameters": [],
-        "policies": [],
-        "queues": [],
+        "policies": [
+            {
+                "name": p.name,
+                "vhost": vhost,
+                "pattern": p.pattern,
+                "apply-to": p.apply_to,
+                "definition": p.definition,
+                "priority": p.priority,
+            }
+            for p in topology.policies()
+        ],
+        "queues": [
+            {
+                "name": q.name,
+                "vhost": vhost,
+                "durable": q.durable,
+                "auto_delete": False,
+                "arguments": {},
+            }
+            for q in topology.queues()
+        ],
         "exchanges": [
             {
                 "name": ex.name,

@@ -360,8 +360,28 @@
   "global_parameters": [],
   "parameters": [],
   "permissions": [],
-  "policies": [],
-  "queues": [],
+  "policies": [
+    {
+      "apply-to": "queues",
+      "definition": {
+        "max-length": 1000,
+        "overflow": "drop-head"
+      },
+      "name": "debug-cap",
+      "pattern": "^debug$",
+      "priority": 0,
+      "vhost": "hw1__1"
+    }
+  ],
+  "queues": [
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "name": "debug",
+      "vhost": "hw1__1"
+    }
+  ],
   "topic_permissions": [],
   "users": [],
   "vhosts": [

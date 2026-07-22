@@ -284,7 +284,7 @@ wheels = [
 
 [[package]]
 name = "gridworks-base"
-version = "0.5.7"
+version = "0.5.8"
 source = { editable = "." }
 dependencies = [
     { name = "pika" },

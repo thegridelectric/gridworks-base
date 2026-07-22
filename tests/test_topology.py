@@ -101,3 +101,17 @@ def test_bindings_cover_edges_and_ear_taps() -> None:
         and b.routing_key == "rjb.#"
         for b in bindings
     )
+
+
+def test_debug_queue_and_cap_policy() -> None:
+    # the standing debug tap: durable, unbound (its binding is investigation
+    # state, never topology), and capped so a forgotten tap stays bounded
+    queues = topo.queues()
+    assert [q.name for q in queues] == ["debug"]
+    assert queues[0].durable is True
+    policies = topo.policies()
+    assert [p.name for p in policies] == ["debug-cap"]
+    cap = policies[0]
+    assert cap.pattern == "^debug$"
+    assert cap.apply_to == "queues"
+    assert cap.definition == {"max-length": 1000, "overflow": "drop-head"}

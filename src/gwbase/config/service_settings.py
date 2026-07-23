@@ -7,8 +7,7 @@ from gwbase.transport_format import LeftRightDot, UUID4Str
 class ServiceSettings(BaseSettings):
     """Minimum to ride gwbase's rabbit + sema toolkit WITHOUT being a GNode.
 
-    Used by ``ActorBase`` directly (journalkeeper, ear actor-side, future
-    audit-tap consumers). No GNode identity, no ``transport_class`` — a tap
+    Used by ``ActorBase`` directly (non-GNode consumers). No GNode identity, no ``transport_class`` — a tap
     has no routing identity to name; ``transport_class`` is an
     ``Orchestrator`` ``__init__`` param for the tiers that class-route.
 
@@ -17,7 +16,7 @@ class ServiceSettings(BaseSettings):
     """
 
     rabbit: RabbitBrokerClient = RabbitBrokerClient()
-    service_alias: LeftRightDot  # routable address, e.g. "d1.journal"
+    service_alias: LeftRightDot  # routable address, e.g. "d1.tap1"
     instance_id: UUID4Str | None = None  # auto-uuid per boot if None
     service_name: str = "gridworks"  # XDG path segment (NOT the alias)
     log_level: str = "INFO"

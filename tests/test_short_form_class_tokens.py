@@ -84,9 +84,10 @@ def test_direct_short_form_class_tokens_parse_and_round_trip() -> None:
 
 
 def test_unknown_category_still_raises() -> None:
-    # gwbase's main parser deliberately does NOT learn the LTN's legacy
-    # `broadcast.*` hack as a category — that is the JournalKeeper `legacy_hack`'s
-    # job (design 'ltn-sends-gw-wrapped'). token[0] is not a MessageCategory.
+    # gwbase's main parser deliberately does NOT learn the legacy
+    # `broadcast.*` hack as a category — recovering those bodies is a
+    # subclass's job (on_routing_key_parse_error). token[0] is not a
+    # MessageCategory.
     with pytest.raises(ValueError, match="not a known MessageCategory"):
         parse_routing_key("broadcast.glitch")
 

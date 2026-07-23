@@ -68,20 +68,16 @@ def test_inheritance_chain_is_linear() -> None:
 
 def test_tap_rides_service_settings_with_no_gnode_file() -> None:
     """The core win: a non-GNode service constructs with ServiceSettings and
-    NO g.node.gt.json on disk. (Journalkeeper no longer fakes one.)"""
-    tap = _Tap(
-        settings=ServiceSettings(
-            service_alias="d1.journal", service_name="journalkeeper"
-        )
-    )
-    assert tap.alias == "d1.journal"
+    NO g.node.gt.json on disk."""
+    tap = _Tap(settings=ServiceSettings(service_alias="d1.tap1", service_name="tap1"))
+    assert tap.alias == "d1.tap1"
     # identity comes from settings; there is no GNode identity at all
     assert not hasattr(tap, "g_node_id")
     assert not hasattr(tap, "transport_class")
 
 
 def test_tap_consumes_ear_tx_and_has_no_publish_exchange() -> None:
-    tap = _Tap(settings=ServiceSettings(service_alias="d1.journal"))
+    tap = _Tap(settings=ServiceSettings(service_alias="d1.tap1"))
     assert tap._consume_exchange == "ear_tx"
     assert tap._publish_exchange is None
 
@@ -89,12 +85,12 @@ def test_tap_consumes_ear_tx_and_has_no_publish_exchange() -> None:
 def test_tap_can_send_wrapped_but_not_direct() -> None:
     """A tap may emit wrapped (gw -> amq.topic) but cannot class-route: a
     Direct send returns NO_PUBLISH_EXCHANGE rather than silently dropping."""
-    tap = _Tap(settings=ServiceSettings(service_alias="d1.journal"))
+    tap = _Tap(settings=ServiceSettings(service_alias="d1.tap1"))
     tap._stopped = False  # past the lifecycle guard; channel is still closed
 
     direct = DirectRoutingEnvelope.from_classes(
         type_name="hb.a",
-        from_alias="d1.journal",
+        from_alias="d1.tap1",
         from_class=TransportClass.Supervisor,
         to_class=TransportClass.Supervisor,
         to_alias="d1.super",
@@ -107,7 +103,7 @@ def test_tap_can_send_wrapped_but_not_direct() -> None:
     # open channel it reports CHANNEL_NOT_OPEN — crucially NOT
     # NO_PUBLISH_EXCHANGE, proving the wrapped path is available to a tap.
     wrapped = WrappedRoutingEnvelope.from_classes(
-        type_name="hb.a", from_alias="d1.journal", to_class=TransportClass.Scada
+        type_name="hb.a", from_alias="d1.tap1", to_class=TransportClass.Scada
     )
     assert tap.send(envelope=wrapped, body=b"{}") == (
         OnSendMessageDiagnostic.CHANNEL_NOT_OPEN
@@ -117,10 +113,10 @@ def test_tap_can_send_wrapped_but_not_direct() -> None:
 def test_tap_handshake_is_service_only() -> None:
     """FIS handshake for a non-GNode: ServiceAlias + ServiceInstanceId, and
     crucially NO GNodeClass (the discriminator that says 'I am a GNode')."""
-    tap = _Tap(settings=ServiceSettings(service_alias="d1.journal"))
+    tap = _Tap(settings=ServiceSettings(service_alias="d1.tap1"))
     props = tap._client_properties()
     assert set(props) == {"ServiceAlias", "ServiceInstanceId"}
-    assert props["ServiceAlias"] == "d1.journal"
+    assert props["ServiceAlias"] == "d1.tap1"
 
 
 # --- Tier 2: Orchestrator class-routes without GNode identity -------------

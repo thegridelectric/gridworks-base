@@ -7,8 +7,6 @@ directories instead of system-level ``/etc/gridworks/...``:
   - config: ``~/.config/gridworks/<service_name>/``
   - data:   ``~/.local/share/gridworks/<service_name>/``
   - state:  ``~/.local/state/gridworks/<service_name>/`` (incl. logs)
-
-Spec: ``wiki/gridworks-base/designs/support-non-gnode-actors/xdg-paths.md``.
 """
 
 from pathlib import Path

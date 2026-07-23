@@ -6,8 +6,8 @@ from gwbase.config.rabbit_settings import RabbitBrokerClient
 
 
 def test_service_settings_defaults() -> None:
-    s = ServiceSettings(service_alias="d1.journal")
-    assert s.service_alias == "d1.journal"
+    s = ServiceSettings(service_alias="d1.tap1")
+    assert s.service_alias == "d1.tap1"
     assert s.instance_id is None  # auto-uuid happens in the actor, per boot
     assert s.service_name == "gridworks"
     assert s.log_level == "INFO"
@@ -27,12 +27,12 @@ def test_service_alias_required_and_typed() -> None:
 
 def test_service_settings_env_overrides(monkeypatch) -> None:
     monkeypatch.setenv("GWBASE_SERVICE_ALIAS", "d1.env.svc")
-    monkeypatch.setenv("GWBASE_SERVICE_NAME", "journalkeeper")
+    monkeypatch.setenv("GWBASE_SERVICE_NAME", "tap1")
     monkeypatch.setenv("GWBASE_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("GWBASE_LOG_ROTATE_COUNT", "3")
     s = ServiceSettings()
     assert s.service_alias == "d1.env.svc"
-    assert s.service_name == "journalkeeper"
+    assert s.service_name == "tap1"
     assert s.log_level == "DEBUG"
     assert s.log_rotate_count == 3
 

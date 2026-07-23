@@ -2,8 +2,7 @@
 
 These are the sema-*shaped* string types the transport and settings layers
 need (``LeftRightDot`` aliases, ``UUID4Str`` instance ids) WITHOUT importing
-the sema codec. The architectural commitment (see
-``wiki/gridworks-base/executor/primary.md`` "The central commitment") is a
+the sema codec. The architectural commitment is a
 strict separation between transport and codec: the transport layer is
 sema-shape-aware but does not depend on ``gwbase.sema``.
 

@@ -9,10 +9,8 @@ any actor-side code change.
 Per-record line:  ``<iso-ts> <LEVEL> <alias> > <message>[ key=val ...]``
 Exception info follows as ``  | ...`` continuation lines.
 
-Spec: ``wiki/gridworks-base/designs/support-non-gnode-actors/logging.md``.
 The downstream observability work (BrokerLoggingHandler, verbosity-request)
-lives in ``wiki/gridworks-base/research/concerns/logging-for-observability.md``
-and is intentionally NOT built here — this is substrate only.
+is intentionally NOT built here — this is substrate only.
 """
 
 import logging

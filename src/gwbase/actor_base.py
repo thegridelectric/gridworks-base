@@ -62,8 +62,8 @@ class ActorBase(ABC):
     ``dispatch_message``, and offers ``send`` which takes already-encoded
     bytes plus the type_name needed for routing. Does not know about
     payload types or codecs — those are the subclass's concern, and it
-    carries NO GNode identity (journalkeeper, ear actor-side, audit-tap
-    consumers ride this tier directly with ``ServiceSettings``).
+    carries NO GNode identity (non-GNode consumers ride this tier directly
+    with ``ServiceSettings``).
 
     As a tap: its default consume exchange is ``ear_tx`` (the universal
     audit exchange), it binds NO routing key automatically — the subclass
@@ -342,7 +342,7 @@ class ActorBase(ABC):
 
         Infra owns the fabric: the exchange set + routing fabric are
         provisioned on the broker out-of-band (generated from
-        ``gwbase/topology.py``; see wiki executor spec §3.5–§3.6). The actor
+        ``gwbase/topology.py``). The actor
         does NOT define the exchange's params — ``passive=True`` is a pure
         existence check. If the broker was not provisioned the channel is
         closed with a 404, surfacing in ``on_consumer_channel_closed`` as a
@@ -564,9 +564,7 @@ class ActorBase(ABC):
 
         Default: log and drop (the historical behavior). The point of routing
         this through a named hook — instead of an inline ``return`` — is that a
-        subclass MAY override it to recover the body. JournalKeeper overrides it
-        as a permanent ``legacy_hack`` for legacy ``broadcast.*`` keys (see the
-        gridworks-scada design 'ltn-sends-gw-wrapped'). Overrides MUST NOT raise.
+        subclass MAY override it to recover the body. Overrides MUST NOT raise.
         """
         LOGGER.warning(f"Could not parse routing key {routing_key!r}: {error}")
 
@@ -607,9 +605,8 @@ class ActorBase(ABC):
 
         Broadcasts are *not* wired by the static cross-class fabric — a
         subscriber binds its own queue directly to the publisher's
-        ``<from-class>mic_tx`` with the broadcast routing key (see wiki
-        executor spec §3.5). Call from ``local_rabbit_startup`` once the
-        queue exists. ``radio_channel`` selects a specific channel; omit it
+        ``<from-class>mic_tx`` with the broadcast routing key. Call from
+        ``local_rabbit_startup`` once the queue exists. ``radio_channel`` selects a specific channel; omit it
         to bind the un-channeled broadcast key.
         """
         binding = BroadcastRoutingEnvelope.from_classes(
@@ -626,8 +623,8 @@ class ActorBase(ABC):
         """Subscribe to messages on the built-in ``amq.topic`` exchange —
         the seam where AMQP meets MQTT-native peers (scada). This is how a
         gwbase AMQP actor receives a scada's ``gw`` (wrapped) messages, which
-        RabbitMQ bridges from MQTT onto ``amq.topic`` (wiki executor spec
-        §3.5). Call from ``local_rabbit_startup``.
+        RabbitMQ bridges from MQTT onto ``amq.topic``. Call from
+        ``local_rabbit_startup``.
 
         ``binding_key`` is supplied by the caller because the exact scada
         topic ↔ routing-key scheme is owned by gwproactor; the production
@@ -649,7 +646,7 @@ class ActorBase(ABC):
         """The exchange a given envelope publishes to, or ``None`` if this actor
         cannot route it. Wrapped (gw) messages always go to the built-in
         ``amq.topic`` so they reach MQTT-native peers (e.g. scada) — any actor
-        may send wrapped (wiki spec §3.5). A bare ear-tap (ActorBase) has no
+        may send wrapped. A bare ear-tap (ActorBase) has no
         class ``mic_tx``: it cannot class-route, so Direct/Broadcast return
         ``None`` (→ NO_PUBLISH_EXCHANGE) rather than silently dropping."""
 

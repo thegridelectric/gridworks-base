@@ -25,11 +25,9 @@ bindings carry a message from one actor to another — is
 [Message transport](#message-transport) below.
 
 Services import it as a package and subclass the tier that matches what they
-are: GNode services (`gridworks-ltn` `ltn`, `gridworks-marketmaker` `mm`, the
-weather/price forecast services) subclass `GridworksActor`; non-GNode rabbit
-consumers (`gridworks-journalkeeper`, `gridworks-ear`'s actor side) subclass
-`ActorBase` directly with no GNode identity. The routing taxonomy for all of
-them lives here in `gwbase.topology`.
+are: GNode services subclass `GridworksActor`; non-GNode rabbit consumers
+subclass `ActorBase` directly with no GNode identity. The routing taxonomy
+for all of them lives here in `gwbase.topology`.
 
 This repo provides two things:
 
@@ -353,7 +351,7 @@ An actor rides the tier that matches what it is:
 
 - **`ActorBase`** — raw rabbit + sema toolkit; a passive *ear-tap*. Rides
   `ServiceSettings`, carries no GNode identity. For non-GNode consumers
-  (journalkeeper, ear's actor side, audit taps).
+  (audit taps and the like).
 - **`Orchestrator`** — adds class-routing (a `transport_class`) plus the
   heartbeat / simulated-time rhythm. For Supervisor and TimeCoordinator,
   which are not GNodes.

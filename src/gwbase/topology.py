@@ -3,9 +3,6 @@
 Both the broker-definitions generator (``for_docker/gen_definitions.py``)
 and the test harness (``tests/_stubs.py``) derive their exchanges and
 bindings from here, so test / dev / prod topologies cannot diverge.
-
-Spec: ``wiki/gridworks-base/executor/transport.md`` §3.5 and
-``provisioning.md`` §3.6.
 """
 
 from dataclasses import dataclass
@@ -30,7 +27,7 @@ AMQP_ACTOR_CLASSES: frozenset[RoutingClass] = frozenset({
 
 # Direct-message routing edges: a sender of class ``src`` may reach a
 # receiver of class ``dst`` via the cross-class mic_tx -> _tx forwarding
-# fabric. Direct-only — broadcasts are subscriber-bound, not here (§3.5).
+# fabric. Direct-only — broadcasts are subscriber-bound, not here.
 ROUTING_EDGES: list[tuple[RoutingClass, RoutingClass]] = [
     (RoutingClass.LeafTransactiveNode, RoutingClass.MarketMaker),
     (RoutingClass.LeafTransactiveNode, RoutingClass.Supervisor),
@@ -199,8 +196,8 @@ def queues() -> list[QueueSpec]:
     inspecting raw traffic in the management UI without standing up a
     consumer. Its BINDING is deliberately NOT here — which slice it taps is
     investigation state, hand-(re)bound per debugging session; the queue and
-    its cap policy are topology. Contents are always duplicates of what the
-    ear archives, so it is always safe to purge."""
+    its cap policy are topology. Contents are always duplicates of what crosses
+    the audit tap (``ear_tx``), so it is always safe to purge."""
     return [QueueSpec("debug")]
 
 

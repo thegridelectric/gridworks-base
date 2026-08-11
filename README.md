@@ -362,8 +362,10 @@ An actor rides the tier that matches what it is:
 ### Settings
 
 `ServiceSettings` is the minimum to construct any actor; `GNodeSettings`
-extends it with the GNode file path. All fields read from the `GWBASE_` env
-prefix (e.g. `GWBASE_SERVICE_ALIAS`, `GWBASE_RABBIT__URL`):
+extends it with the GNode file path. On the base classes the fields read
+from the `GWBASE_` env prefix (e.g. `GWBASE_SERVICE_ALIAS`,
+`GWBASE_RABBIT__URL`) — but a real service subclasses with its own prefix;
+see below the table.
 
 | Field | Meaning |
 |---|---|
@@ -373,6 +375,27 @@ prefix (e.g. `GWBASE_SERVICE_ALIAS`, `GWBASE_RABBIT__URL`):
 | `log_level` | `INFO` by default |
 | `log_rotate_bytes` / `log_rotate_count` | log rotation (10 MB × 5 default) |
 | `g_node_path` *(GNodeSettings)* | path to `g.node.gt.json` |
+
+**A deployed service subclasses these with its own env prefix** — one
+`.env`, one prefix per service, never `GWBASE_*` vars. The subclass sets a
+dev-default `service_alias` and its own `service_name` (so logs and state
+land under the service's XDG segment, not the generic `gridworks` one):
+
+```python
+class MySettings(GNodeSettings):  # or ServiceSettings for a tap
+    service_alias: LeftRightDot = "d1.myservice"
+    service_name: str = "myservice"
+    model_config = SettingsConfigDict(
+        env_prefix="MYSERVICE_",
+        env_nested_delimiter="__",
+        extra="ignore",
+    )
+```
+
+**Logging is provided, not configured.** Every actor gets `self.logger` at
+construction — the per-actor rotating file logger described under File
+locations. A service does not call `logging.basicConfig` or build its own
+handlers.
 
 ### File locations (XDG Base Directory)
 

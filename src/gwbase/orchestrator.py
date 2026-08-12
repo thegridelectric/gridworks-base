@@ -55,7 +55,7 @@ class Orchestrator(ActorBase, ABC):
         super().__init__(settings=settings)
 
         # Class routing: override the ear-tap defaults with this actor's
-        # class consume/publish exchanges (infra owns the fabric, §3.5–§3.6).
+        # class consume/publish exchanges (infra owns the fabric).
         self.transport_class: TransportClass = transport_class
         self.routing_code: str = routing_code(transport_class)
         self._consume_exchange = self.routing_code + "_tx"

@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from enum import StrEnum
 
-# Routing-key token counts per envelope grammar (see executor/transport.md).
+# Routing-key token counts per envelope grammar.
 _DIRECT_TOKEN_COUNT = 6
 _BROADCAST_MIN_TOKEN_COUNT = 4
 _WRAPPED_TOKEN_COUNT = 5
@@ -102,7 +102,7 @@ class MessageCategory(StrEnum):
     queue to a matching key); by the time it is dispatched the message is already
     "for me." So a parsed envelope's own class/alias slots are addressing
     **metadata**, not a delivery decision — gwbase resolves them best-effort and
-    never drops on an unknown one (design 'must-accept-current-ltn-messages').
+    never drops on an unknown one.
 
     - ``GridworksWrapped`` (``gw``): pub/sub wrapped messages bridged from the
       proactor's MQTT grammar (``gw/<src>/to/<dst>/<type>``). The ``to``-class is

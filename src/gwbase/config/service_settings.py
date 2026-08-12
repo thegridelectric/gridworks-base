@@ -7,17 +7,28 @@ from gwbase.transport_format import LeftRightDot, UUID4Str
 class ServiceSettings(BaseSettings):
     """Minimum to ride gwbase's rabbit + sema toolkit WITHOUT being a GNode.
 
-    Used by ``ActorBase`` directly (journalkeeper, ear actor-side, future
-    audit-tap consumers). No GNode identity, no ``transport_class`` — a tap
+    Used by ``ActorBase`` directly (non-GNode consumers). No GNode identity, no ``transport_class`` — a tap
     has no routing identity to name; ``transport_class`` is an
     ``Orchestrator`` ``__init__`` param for the tiers that class-route.
 
-    One ``GWBASE_`` env prefix for every gwbase service (tap or GNode):
-    ``GNodeSettings`` inherits it.
+    ``GWBASE_`` is the base-class default prefix only. A deployed service
+    subclasses this (or ``GNodeSettings``) with its OWN env prefix, a
+    dev-default ``service_alias``, and its own ``service_name`` — one
+    ``.env``, one prefix per service (e.g. a journalkeeper reads ``GJK_*``,
+    never ``GWBASE_*``)::
+
+        class MySettings(ServiceSettings):
+            service_alias: LeftRightDot = "d1.myservice"
+            service_name: str = "myservice"
+            model_config = SettingsConfigDict(
+                env_prefix="MYSERVICE_",
+                env_nested_delimiter="__",
+                extra="ignore",
+            )
     """
 
     rabbit: RabbitBrokerClient = RabbitBrokerClient()
-    service_alias: LeftRightDot  # routable address, e.g. "d1.journal"
+    service_alias: LeftRightDot  # routable address, e.g. "d1.tap1"
     instance_id: UUID4Str | None = None  # auto-uuid per boot if None
     service_name: str = "gridworks"  # XDG path segment (NOT the alias)
     log_level: str = "INFO"

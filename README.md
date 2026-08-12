@@ -8,30 +8,26 @@
 [![Tests](https://github.com/thegridelectric/gridworks-base/workflows/Tests/badge.svg)][tests]
 [![Codecov](https://codecov.io/gh/thegridelectric/gridworks-base/branch/main/graph/badge.svg)][codecov]
 
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
-[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
-
 [pypi_]: https://pypi.org/project/gridworks-base/
 [status]: https://pypi.org/project/gridworks-base/
 [python version]: https://pypi.org/project/gridworks-base
 [tests]: https://github.com/thegridelectric/gridworks-base/actions?workflow=Tests
 [codecov]: https://app.codecov.io/gh/thegridelectric/gridworks-base
-[pre-commit]: https://github.com/pre-commit/pre-commit
-[black]: https://github.com/psf/black
 
 `gridworks-base` (module `gwbase`) is the **shared foundation for the
 GridWorks GNode service fleet** — the RabbitMQ-transport actor framework and
 the single source of truth for the broker topology. Its defining commitment
 is a **strict separation between transport and codec**: the transport routes
 raw bytes; the [Sema](https://github.com/thegridelectric/sema) codec encodes/decodes typed messages; the
-boundary between them is one `RoutingEnvelope` + a `bytes` payload.
+boundary between them is one `RoutingEnvelope` + a `bytes` payload. How
+sender, type, and addressing ride the routing key — and how exchanges and
+bindings carry a message from one actor to another — is
+[Message transport](#message-transport) below.
 
 Services import it as a package and subclass the tier that matches what they
-are: GNode services (`gridworks-ltn` `ltn`, `gridworks-marketmaker` `mm`, the
-weather/price forecast services) subclass `GridworksActor`; non-GNode rabbit
-consumers (`gridworks-journalkeeper`, `gridworks-ear`'s actor side) subclass
-`ActorBase` directly with no GNode identity. The routing taxonomy for all of
-them lives here in `gwbase.topology`.
+are: GNode services subclass `GridworksActor`; non-GNode rabbit consumers
+subclass `ActorBase` directly with no GNode identity. The routing taxonomy
+for all of them lives here in `gwbase.topology`.
 
 This repo provides two things:
 
@@ -236,13 +232,126 @@ and `src/gwbase/gridworks_actor.py` (GNode identity). The message types it
 sends are defined in the [Sema](https://github.com/thegridelectric/sema) codec (`src/gwbase/sema/`), which is
 the registry `GridworksActor` decodes against.
 
+## Message transport
+
+Every message published on a GridWorks broker names its sender and its
+[Sema](https://github.com/thegridelectric/sema) TypeName in the routing
+key itself, so any consumer (or audit tap) can know *who spoke* and *what
+type they claimed* without decoding the body. The transport routes raw
+bytes on that key alone; decoding is the Sema codec's job. This section
+covers the key grammar, the routing classes, and how exchanges and
+bindings actually move a message from one actor to another.
+
+### Routing keys
+
+Aliases and TypeNames are dotted words, and RabbitMQ reserves the dot as
+its topic separator — so within a routing-key word, dots render as dashes
+(`hw1.isone.me.scada` → `hw1-isone-me-scada`); `parse_routing_key`
+(`src/gwbase/transport_encoding.py`) restores them.
+
+The first word is the message category, and it fixes the shape. `<from-rc>`
+and `<to-rc>` are **routing classes** (next section):
+
+| category | shape |
+|---|---|
+| `rj` (JsonDirect) | `rj.<from-alias>.<from-rc>.<type-name>.<to-rc>.<to-alias>` |
+| `rjb` (JsonBroadcast) | `rjb.<from-alias>.<from-rc>.<type-name>[.<radio-channel>]` |
+| `gw` (GridworksWrapped) | `gw.<from-alias>.to.<peer-name>.<type-name>` |
+| `s` (Serial) | reserved |
+
+Examples:
+
+```
+rj.hw1-isone-me-versant-keene-beech.ltn.bid.mm.hw1-isone-me-versant-keene
+rjb.hw1-isone-me-versant-keene.mm.latest-price
+gw.hw1-isone-me-versant-keene-beech-scada.to.ltn.power-watts
+```
+
+- The first is the beech LeafTransactiveNode sending a `bid` directly to
+  its MarketMaker.
+- The second is that MarketMaker broadcasting a `latest.price`; any
+  subscriber may bind it.
+- The third is the beech scada sending `power.watts` up to its LTN. The
+  `gw` shape differs: the scada is MQTT-native and publishes the topic
+  `gw/hw1-isone-me-versant-keene-beech-scada/to/ltn/power-watts`; the
+  broker's [MQTT plugin](https://www.rabbitmq.com/docs/mqtt) maps topic
+  slashes to routing-key dots. Its third word is the literal `to`, and the
+  fourth is the publisher's *peer name* (the spaceheat short name of who
+  it's talking to — a soft hint, not a closed class). A `gw` body is an
+  outer envelope type (TypeName `gw` — hence the category word) carrying a
+  header and a payload; the TypeName in the routing key is the **inner**
+  payload's.
+
+### Routing classes
+
+The `<from-rc>` / `<to-rc>` tokens are the **routing class** — the closed
+`RoutingClass` taxonomy in `src/gwbase/transport_encoding.py`, paired 1:1
+with `TransportClass`. It is transport addressing, NOT Sema vocabulary
+(`super` is not a GNode class):
+
+| token | routing class |
+|---|---|
+| `ta` | TerminalAsset |
+| `cn` | ConnectivityNode |
+| `ltn` | LeafTransactiveNode |
+| `mm` | MarketMaker |
+| `scada` | Scada |
+| `price` | PriceForecastService |
+| `weather` | WeatherForecastService |
+| `time` | TimeCoordinator |
+| `super` | Supervisor |
+| `gnr` | GridNodeRegistry |
+
+This table is enforced against the enum by
+`tests/test_readme_transport.py` — if they drift, the suite fails.
+
+### How messages move — exchanges and bindings
+
+All GridWorks exchanges are RabbitMQ
+[topic exchanges](https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-topic),
+wired to each other with
+[exchange-to-exchange bindings](https://www.rabbitmq.com/docs/e2e), all
+declared in `gwbase.topology` (definitions-are-law: the broker boots them
+from files; nothing is hand-declared). Each AMQP-actor routing class gets
+a pair:
+
+- **`<rc>mic_tx`** — the class *microphone*: what every actor of that
+  class publishes into.
+- **`<rc>_tx`** — the class consume exchange (internal): what actors of
+  that class bind their queues to.
+
+The fabric between them:
+
+- **Direct (`rj`)**: each allowed sender→receiver edge is one binding
+  `<src>mic_tx → <dst>_tx` with pattern `*.*.<src>.*.<dst>.*` — filtering
+  on the two routing-class positions of the 6-word `rj` key.
+- **Broadcast (`rjb`)**: not in the static fabric — a subscriber binds its
+  own queue straight to the publisher's `<rc>mic_tx` with the broadcast
+  key it wants.
+- **MQTT seam**: scadas are MQTT-native; the MQTT plugin bridges their
+  topics onto the built-in `amq.topic` exchange, and selected broadcasts
+  (`time`, `gnr` — `rjb.#`) cross back so MQTT-side actors can hear them.
+- **Audit taps**: every microphone (and `amq.topic`) also fans into
+  `ear_tx` with `#` — the universal witness hears everything; the
+  registry's pair additionally fans into `gnr_ear_tx` (the scoped seed
+  slice).
+
+A `bid`'s journey, end to end: the beech LTN publishes to `ltnmic_tx`
+with the `rj.…ltn.bid.mm.…` key above. The fabric binding
+`ltnmic_tx → mm_tx` (`*.*.ltn.*.mm.*`) forwards it, while
+`ltnmic_tx → ear_tx` (`#`) tees the audit copy. The MarketMaker's queue,
+bound to `mm_tx`, receives it, and the Sema codec decodes the `bid`. The
+consumer got the message because it *subscribed*; the class tokens in the
+parsed envelope are addressing metadata, not a delivery decision — see
+the `MessageCategory` docstring for how much each category leans on them.
+
 ## Actor tiers, settings & file locations
 
 An actor rides the tier that matches what it is:
 
 - **`ActorBase`** — raw rabbit + sema toolkit; a passive *ear-tap*. Rides
   `ServiceSettings`, carries no GNode identity. For non-GNode consumers
-  (journalkeeper, ear's actor side, audit taps).
+  (audit taps and the like).
 - **`Orchestrator`** — adds class-routing (a `transport_class`) plus the
   heartbeat / simulated-time rhythm. For Supervisor and TimeCoordinator,
   which are not GNodes.
@@ -253,8 +362,10 @@ An actor rides the tier that matches what it is:
 ### Settings
 
 `ServiceSettings` is the minimum to construct any actor; `GNodeSettings`
-extends it with the GNode file path. All fields read from the `GWBASE_` env
-prefix (e.g. `GWBASE_SERVICE_ALIAS`, `GWBASE_RABBIT__URL`):
+extends it with the GNode file path. On the base classes the fields read
+from the `GWBASE_` env prefix (e.g. `GWBASE_SERVICE_ALIAS`,
+`GWBASE_RABBIT__URL`) — but a real service subclasses with its own prefix;
+see below the table.
 
 | Field | Meaning |
 |---|---|
@@ -264,6 +375,27 @@ prefix (e.g. `GWBASE_SERVICE_ALIAS`, `GWBASE_RABBIT__URL`):
 | `log_level` | `INFO` by default |
 | `log_rotate_bytes` / `log_rotate_count` | log rotation (10 MB × 5 default) |
 | `g_node_path` *(GNodeSettings)* | path to `g.node.gt.json` |
+
+**A deployed service subclasses these with its own env prefix** — one
+`.env`, one prefix per service, never `GWBASE_*` vars. The subclass sets a
+dev-default `service_alias` and its own `service_name` (so logs and state
+land under the service's XDG segment, not the generic `gridworks` one):
+
+```python
+class MySettings(GNodeSettings):  # or ServiceSettings for a tap
+    service_alias: LeftRightDot = "d1.myservice"
+    service_name: str = "myservice"
+    model_config = SettingsConfigDict(
+        env_prefix="MYSERVICE_",
+        env_nested_delimiter="__",
+        extra="ignore",
+    )
+```
+
+**Logging is provided, not configured.** Every actor gets `self.logger` at
+construction — the per-actor rotating file logger described under File
+locations. A service does not call `logging.basicConfig` or build its own
+handlers.
 
 ### File locations (XDG Base Directory)
 

@@ -3,8 +3,7 @@ topology source (`gwbase.topology`).
 
 The broker loads this via ``management.load_definitions`` (dev/prod), and
 ``tests/_stubs.py`` provisions the *same* topology at runtime — both derive
-from `gwbase.topology`, so they cannot diverge. See
-``wiki/gridworks-base/executor/provisioning.md`` §3.6.
+from `gwbase.topology`, so they cannot diverge.
 
 Output is deterministic (fixed salt, sorted keys) so a CI guard can
 regenerate-and-diff against the committed artifacts.

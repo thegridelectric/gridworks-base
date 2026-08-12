@@ -90,6 +90,14 @@
     },
     {
       "arguments": {},
+      "destination": "weather_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.weather.*.weather.*",
+      "source": "weathermic_tx",
+      "vhost": "hw1__1"
+    },
+    {
+      "arguments": {},
       "destination": "ear_tx",
       "destination_type": "exchange",
       "routing_key": "#",

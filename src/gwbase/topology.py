@@ -41,6 +41,10 @@ ROUTING_EDGES: list[tuple[RoutingClass, RoutingClass]] = [
     # A MarketMaker sends the re-parent command to the registry and gets the reply.
     (RoutingClass.MarketMaker, RoutingClass.GridNodeRegistry),
     (RoutingClass.GridNodeRegistry, RoutingClass.MarketMaker),
+    # Weather-class actors direct-message each other: the weather minter
+    # (an operator identity of the weather class) sends the create
+    # command and gets the verdict over the one self-edge.
+    (RoutingClass.WeatherForecastService, RoutingClass.WeatherForecastService),
 ]
 
 # The universal audit tap (ear) and the built-in MQTT/wrapped exchange.

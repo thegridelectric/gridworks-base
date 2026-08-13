@@ -84,16 +84,17 @@ enums:
 
 types:
   g.node.gt:
-    latest_version: "004"
+    latest_version: "006"
     owner: gridworks-energy
     versioning_strategy: "literal"
     description: "Fundamental identity object representing physical and logical grid nodes"
 
     versions:
-      "004":
-        schema_url: "https://schemas.electricity.works/types/g.node.gt/004"
-        created: "2026-02-24T14:00:00Z"
-        summary: "Baseline runtime version (no prior version tracked)."
+      "006":
+        schema_url: "https://schemas.electricity.works/types/g.node.gt/006"
+        created: "2026-08-06T13:25:00Z"
+        status: "published"
+        summary: "- Axiom 2 (PhysicalGNodeLocations) becomes activation-conditioned: PositionPointId is mandatory only when Status is Active — a Pending physical GNode may be locationless"
         direct_dependencies:
           structural:
             - "base.g.node.class:000"

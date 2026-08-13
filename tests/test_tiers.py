@@ -151,7 +151,7 @@ def _write_scada(tmp: Path, alias: str = "d1.iso.me.scada") -> Path:
             "Status": "Active",
             "PositionPointId": str(uuid.uuid4()),
             "TypeName": "g.node.gt",
-            "Version": "004",
+            "Version": "006",
         })
     )
     return p
@@ -201,7 +201,7 @@ def test_malformed_gnode_file_fails_sema_validation(tmp_path) -> None:
             "Status": "Active",
             "PositionPointId": str(uuid.uuid4()),
             "TypeName": "g.node.gt",
-            "Version": "004",
+            "Version": "006",
         })
     )
     with pytest.raises(ValueError, match="Sema validation"):

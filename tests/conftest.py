@@ -58,7 +58,7 @@ def make_g_node_json(tmp_path: Path) -> Callable[..., Path]:
             "GNodeClass": g_node_class,
             "Status": status,
             "TypeName": "g.node.gt",
-            "Version": "004",
+            "Version": "006",
         }
         if g_node_class in _PHYSICAL_CLASSES:
             data["BaseClass"] = g_node_class

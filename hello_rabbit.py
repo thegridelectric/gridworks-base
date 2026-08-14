@@ -25,8 +25,8 @@ from gwbase.config import GNodeSettings
 from gwbase.config.rabbit_settings import RabbitBrokerClient
 from gwbase.gridworks_actor import GridworksActor
 from gwbase.sema.types import HeartbeatA
-from gwbase.sema.wrapped import unwrap_bytes, wrap_bytes
 from gwbase.transport_encoding import RoutingEnvelope, TransportClass
+from gwbase.wrapped import unwrap_bytes, wrap_bytes
 
 LOGGER = logging.getLogger(__name__)
 

@@ -9,9 +9,12 @@ step() { printf '\n=== %s ===\n' "$1"; shift; "$@"; }
 # Resolve the env exactly as CI does.
 step "uv sync (locked)" uv sync --all-groups --locked
 
-# lint job
-step "ruff check" uv run ruff check --no-fix .   # fail on lint errors; don't auto-fix in CI (config has fix=true)
-step "ruff format --check" uv run ruff format --check .
+# lint job. --no-fix: fail on lint errors, don't auto-fix (config has
+# fix=true). --no-cache: a stale .ruff_cache verdict can replay "clean" for
+# bytes GitHub's cache-less run rejects — this script exists to predict CI,
+# so it must not answer from cache.
+step "ruff check" uv run ruff check --no-fix --no-cache .
+step "ruff format --check" uv run ruff format --check --no-cache .
 
 # broker-image gate: committed definitions JSON must match gwbase.topology.
 step "rabbit definitions drift" uv run python for_docker/gen_definitions.py --check

@@ -7,7 +7,10 @@ TimeCoordinator — which are NOT GNodes — are ``Orchestrator`` stubs that rid
 ``ServiceSettings`` with no g.node.gt.json. That mirrors the production tiers.
 """
 
+from typing import TYPE_CHECKING
+
 import pika
+from pika.adapters.blocking_connection import BlockingChannel
 
 from gwbase import topology
 from gwbase.config import GNodeSettings, ServiceSettings
@@ -18,7 +21,7 @@ from gwbase.sema.types import HeartbeatA, SimReady
 from gwbase.transport_encoding import RoutingEnvelope, TransportClass
 
 
-def declare_topology(ch: pika.channel.Channel) -> None:
+def declare_topology(ch: BlockingChannel) -> None:
     """Declare every exchange + binding from the shared topology source
     (``gwbase.topology``) — so test / dev / prod provision the same fabric.
     """
@@ -52,7 +55,16 @@ def provision_topology(url: str) -> None:
         conn.close()
 
 
-class _RecorderMixin:
+# The mixin's supers are the actor tiers; telling the type checker that
+# (while staying `object` at runtime so the MRO composes freely) lets it
+# resolve the attributes and super() calls the mixin borrows from them.
+if TYPE_CHECKING:
+    _RecorderBase = Orchestrator
+else:
+    _RecorderBase = object
+
+
+class _RecorderMixin(_RecorderBase):
     """Recording behavior shared by the GNode and Orchestrator stubs.
 
     Sits ahead of the actor tier in the MRO so its ``on_message`` /

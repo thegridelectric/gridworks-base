@@ -129,7 +129,7 @@ class ActorBase(ABC):
         self._consume_connection: None | (
             pika.adapters.select_connection.SelectConnection
         ) = None
-        self._single_channel: pika.channel.Channel | None = None
+        self._single_channel: PikaChannel | None = None
         self._closing_consumer: bool = False
         self._consumer_tag: str | None = None
         self.should_reconnect_consumer: bool = False
@@ -252,6 +252,16 @@ class ActorBase(ABC):
         """
         return FisConnectClaims(alias=self.alias, instance_id=self.instance_id, run=run)
 
+    def _live_channel(self) -> PikaChannel:
+        """The open consume channel; subscribe helpers may only run once it
+        exists (their contract: call from ``local_rabbit_startup``)."""
+        if self._single_channel is None:
+            raise RuntimeError(
+                f"{self.alias}: no open channel — subscribe helpers must be "
+                f"called from local_rabbit_startup, after the channel opens"
+            )
+        return self._single_channel
+
     def _connection_parameters(self) -> pika.URLParameters:
         """Connection parameters from settings.
 
@@ -268,7 +278,10 @@ class ActorBase(ABC):
             ctx.load_verify_locations(rabbit.tls.ca_cert_path)
             ctx.load_cert_chain(rabbit.tls.cert_path, rabbit.tls.private_key_path)
             params.ssl_options = pika.SSLOptions(ctx, server_hostname=params.host)
-            params.credentials = GridworksClaimsCredentials(
+            # pika-stubs types the credentials slot as the two stock classes,
+            # but pika's runtime accepts anything registered in VALID_TYPES —
+            # which gwbase.credentials does at import (stub gap, not a doubt).
+            params.credentials = GridworksClaimsCredentials(  # pyright: ignore[reportAttributeAccessIssue]
                 self._connect_claims(rabbit.run)
             )
         return params
@@ -653,7 +666,7 @@ class ActorBase(ABC):
         ).routing_key
         exchange = routing_code(from_class) + "mic_tx"
         LOGGER.info("Binding %s to %s with %s", self.queue_name, exchange, binding)
-        self._single_channel.queue_bind(self.queue_name, exchange, routing_key=binding)
+        self._live_channel().queue_bind(self.queue_name, exchange, routing_key=binding)
 
     def subscribe_amq_topic(self, *, binding_key: str) -> None:
         """Subscribe to messages on the built-in ``amq.topic`` exchange —
@@ -670,7 +683,7 @@ class ActorBase(ABC):
         ``gw.*.to.ta.#``.
         """
         LOGGER.info("Binding %s to amq.topic with %s", self.queue_name, binding_key)
-        self._single_channel.queue_bind(
+        self._live_channel().queue_bind(
             self.queue_name, "amq.topic", routing_key=binding_key
         )
 

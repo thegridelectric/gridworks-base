@@ -16,7 +16,12 @@ principal claims is a word version on both sides, not a broker change.
 """
 
 import pika
-from pika.compat import as_bytes
+
+# pika-stubs is incomplete around the credential extension mechanism: it
+# omits compat.as_bytes, and it declares VALID_TYPES as a Union type alias
+# where the runtime object is a mutable list — pika's documented way to add
+# a mechanism. The ignores below are those stub gaps, not runtime doubts.
+from pika.compat import as_bytes  # pyright: ignore[reportAttributeAccessIssue]
 from pika.spec import Connection
 
 from gwbase.sema import GwBaseSemaCodec
@@ -60,5 +65,6 @@ class GridworksClaimsCredentials:
 # Pika validates a connection's credentials object against this list, so
 # registering here is the supported way to add a mechanism. Guarded because
 # importing a module twice under different names must not double-register.
-if GridworksClaimsCredentials not in pika.credentials.VALID_TYPES:
-    pika.credentials.VALID_TYPES.append(GridworksClaimsCredentials)
+# (Stub gap, see the import block: VALID_TYPES is a list at runtime.)
+if GridworksClaimsCredentials not in pika.credentials.VALID_TYPES:  # pyright: ignore[reportOperatorIssue]
+    pika.credentials.VALID_TYPES.append(GridworksClaimsCredentials)  # pyright: ignore[reportAttributeAccessIssue]

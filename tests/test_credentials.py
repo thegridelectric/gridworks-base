@@ -59,7 +59,12 @@ def test_registered_with_pika_so_connection_parameters_accept_it() -> None:
     this asserts the module registered itself. (Pika copies the object, so
     equality rather than identity is the check.)"""
     creds = GridworksClaimsCredentials(CLAIMS)
-    assert pika.ConnectionParameters(credentials=creds).credentials.claims == CLAIMS
+    # pika-stubs types the slot as the two stock classes; runtime accepts
+    # anything in VALID_TYPES (stub gap, not a doubt)
+    params = pika.ConnectionParameters(credentials=creds)  # pyright: ignore[reportArgumentType]
+    round_tripped = params.credentials
+    assert isinstance(round_tripped, GridworksClaimsCredentials)
+    assert round_tripped.claims == CLAIMS
 
 
 def test_holds_no_secret_to_erase() -> None:

@@ -17,9 +17,10 @@ def test_service_settings_defaults() -> None:
 
 
 def test_service_alias_required_and_typed() -> None:
-    # service_alias is required (no default)
+    # service_alias is required (no default) — a deliberate static
+    # error, asserted at runtime
     with pytest.raises(ValidationError):
-        ServiceSettings()
+        ServiceSettings()  # pyright: ignore[reportCallIssue]
     # and must be LeftRightDot (lowercase dotted)
     with pytest.raises(ValidationError):
         ServiceSettings(service_alias="Bad.Alias")
@@ -30,7 +31,8 @@ def test_service_settings_env_overrides(monkeypatch) -> None:
     monkeypatch.setenv("GWBASE_SERVICE_NAME", "tap1")
     monkeypatch.setenv("GWBASE_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("GWBASE_LOG_ROTATE_COUNT", "3")
-    s = ServiceSettings()
+    # service_alias arrives from env — invisible to the type checker
+    s = ServiceSettings()  # pyright: ignore[reportCallIssue]
     assert s.service_alias == "d1.env.svc"
     assert s.service_name == "tap1"
     assert s.log_level == "DEBUG"
@@ -49,6 +51,7 @@ def test_gnode_settings_env_override(monkeypatch, tmp_path) -> None:
     path = tmp_path / "g.node.gt.json"
     monkeypatch.setenv("GWBASE_SERVICE_ALIAS", "d1.iso.me.scada")
     monkeypatch.setenv("GWBASE_G_NODE_PATH", str(path))
-    g = GNodeSettings()
+    # service_alias arrives from env — invisible to the type checker
+    g = GNodeSettings()  # pyright: ignore[reportCallIssue]
     assert g.service_alias == "d1.iso.me.scada"
     assert g.g_node_path == path

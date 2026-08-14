@@ -15,6 +15,7 @@ step "uv sync (locked)" uv sync --all-groups --locked
 # so it must not answer from cache.
 step "ruff check" uv run ruff check --no-fix --no-cache .
 step "ruff format --check" uv run ruff format --check --no-cache .
+step "pyright" uv run pyright
 
 # broker-image gate: committed definitions JSON must match gwbase.topology.
 step "rabbit definitions drift" uv run python for_docker/gen_definitions.py --check

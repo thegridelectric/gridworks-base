@@ -10,7 +10,7 @@ that ``GridworksActor`` emits when it answers its supervisor.
 Requires a rabbit broker reachable via the URL in GNodeSettings.rabbit (the
 default points at amqp://smqPublic:smqPublic@localhost:5672/d1__1) with the
 standard exchange topology (``<rc>_tx`` consume, ``<rc>mic_tx`` publish,
-and bindings from ``supermic_tx`` to ``scada_tx`` for direct messages).
+and bindings from ``supermic_tx`` to ``ltn_tx`` for direct messages).
 """
 
 import json
@@ -24,6 +24,7 @@ from pathlib import Path
 from gwbase.config import GNodeSettings
 from gwbase.config.rabbit_settings import RabbitBrokerClient
 from gwbase.gridworks_actor import GridworksActor
+from gwbase.sema.enums import BaseGNodeClass
 from gwbase.sema.types import HeartbeatA
 from gwbase.transport_encoding import RoutingEnvelope, TransportClass
 from gwbase.wrapped import unwrap_bytes, wrap_bytes
@@ -31,18 +32,27 @@ from gwbase.wrapped import unwrap_bytes, wrap_bytes
 LOGGER = logging.getLogger(__name__)
 
 
-def write_g_node_json(path: Path, *, alias: str, g_node_class: str = "Scada") -> None:
-    path.write_text(
-        json.dumps({
-            "GNodeId": str(uuid.uuid4()),
-            "Alias": alias,
-            "BaseClass": "Logical",
-            "GNodeClass": g_node_class,
-            "Status": "Active",
-            "TypeName": "g.node.gt",
-            "Version": "004",
-        })
-    )
+def write_g_node_json(
+    path: Path, *, alias: str, g_node_class: str = "LeafTransactiveNode"
+) -> None:
+    """Write a VALID ``g.node.gt/006`` identity file (mirrors the test
+    fixture): a physical GNodeClass gets a matching BaseClass and a
+    PositionPointId (an Active physical GNode may not be locationless);
+    anything else is Logical."""
+    data: dict[str, str] = {
+        "GNodeId": str(uuid.uuid4()),
+        "Alias": alias,
+        "GNodeClass": g_node_class,
+        "Status": "Active",
+        "TypeName": "g.node.gt",
+        "Version": "006",
+    }
+    if g_node_class in BaseGNodeClass.values() and g_node_class != "Logical":
+        data["BaseClass"] = g_node_class
+        data["PositionPointId"] = str(uuid.uuid4())
+    else:
+        data["BaseClass"] = "Logical"
+    path.write_text(json.dumps(data))
 
 
 class HelloGNode(GridworksActor):
@@ -58,6 +68,7 @@ class HelloGNode(GridworksActor):
     def __init__(self, *, settings: GNodeSettings, my_super_alias: str):
         super().__init__(
             settings=settings,
+            transport_class=TransportClass.LeafTransactiveNode,
             my_super_alias=my_super_alias,
             my_time_coordinator_alias="d1.time",
         )
@@ -81,6 +92,7 @@ class TinySupervisor(GridworksActor):
     def __init__(self, *, settings: GNodeSettings, sub_alias: str):
         super().__init__(
             settings=settings,
+            transport_class=TransportClass.Supervisor,
             # A real supervisor would itself have an upstream supervisor and
             # time coordinator; for the demo they are inert placeholders.
             my_super_alias="d1.super.parent",
@@ -108,7 +120,7 @@ class TinySupervisor(GridworksActor):
         self.send(
             envelope=self.direct_envelope(
                 type_name=hb.type_name,
-                to_class=TransportClass.Scada,
+                to_class=TransportClass.LeafTransactiveNode,
                 to_alias=self._sub_alias,
             ),
             body=hb.to_bytes(),
@@ -143,17 +155,19 @@ def demo() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         sub_json = Path(tmp) / "sub.json"
         sup_json = Path(tmp) / "sup.json"
-        write_g_node_json(sub_json, alias=sub_alias, g_node_class="Scada")
-        write_g_node_json(sup_json, alias=sup_alias, g_node_class="Scada")
+        # scada is MQTT-only (no AMQP exchanges), so the demo subordinate is
+        # a LeafTransactiveNode; the supervisor is a Logical GNode.
+        write_g_node_json(sub_json, alias=sub_alias)
+        write_g_node_json(sup_json, alias=sup_alias, g_node_class="Supervisor")
 
         sub_settings = GNodeSettings(
+            service_alias=sub_alias,
             g_node_path=sub_json,
-            transport_class=TransportClass.Scada,
             rabbit=RabbitBrokerClient(),
         )
         sup_settings = GNodeSettings(
+            service_alias=sup_alias,
             g_node_path=sup_json,
-            transport_class=TransportClass.Supervisor,
             rabbit=RabbitBrokerClient(),
         )
 

@@ -6,6 +6,8 @@ checks fire at settings construction, so a bad URL fails the boot, not the
 first connect.
 """
 
+from pathlib import Path
+
 import pytest
 from pydantic import SecretStr, ValidationError
 
@@ -70,13 +72,13 @@ def test_tls_block_requires_amqps() -> None:
         _client(
             "amqp://smqPublic:x@localhost:5672/d1__1",
             tls=RabbitTls(
-                ca_cert_path="/certs/ca.pem",
-                cert_path="/certs/client.pem",
-                private_key_path="/certs/client.key",
+                ca_cert_path=Path("/certs/ca.pem"),
+                cert_path=Path("/certs/client.pem"),
+                private_key_path=Path("/certs/client.key"),
             ),
         )
 
 
 def test_tls_block_demands_all_three_paths() -> None:
     with pytest.raises(ValidationError):
-        RabbitTls(ca_cert_path="/certs/ca.pem")
+        RabbitTls.model_validate({"ca_cert_path": "/certs/ca.pem"})

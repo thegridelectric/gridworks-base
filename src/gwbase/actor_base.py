@@ -1,5 +1,6 @@
 import functools
 import logging
+import ssl
 import threading
 import time
 import uuid
@@ -13,6 +14,7 @@ from pika.channel import Channel as PikaChannel
 from pika.spec import Basic, BasicProperties
 
 from gwbase.config import ServiceSettings
+from gwbase.credentials import GridworksClaimsCredentials
 from gwbase.logging_setup import _build_actor_logger
 from gwbase.sema.property_format import UniverseRun
 from gwbase.sema.types import FisConnectClaims
@@ -250,6 +252,27 @@ class ActorBase(ABC):
         """
         return FisConnectClaims(alias=self.alias, instance_id=self.instance_id, run=run)
 
+    def _connection_parameters(self) -> pika.URLParameters:
+        """Connection parameters from settings.
+
+        With a ``rabbit.tls`` block: mTLS from the declared cert material,
+        and cert-plus-claims auth — ``GridworksClaimsCredentials`` carrying
+        ``_connect_claims`` for the URL vhost's run. Without the block:
+        the URL's password credentials, unchanged.
+        """
+        rabbit = self.settings.rabbit
+        params = pika.URLParameters(self._url)
+        params.client_properties = self._client_properties()
+        if rabbit.tls is not None:
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            ctx.load_verify_locations(rabbit.tls.ca_cert_path)
+            ctx.load_cert_chain(rabbit.tls.cert_path, rabbit.tls.private_key_path)
+            params.ssl_options = pika.SSLOptions(ctx, server_hostname=params.host)
+            params.credentials = GridworksClaimsCredentials(
+                self._connect_claims(rabbit.run)
+            )
+        return params
+
     def connect_consumer(self) -> pika.SelectConnection:
         """Connect to RabbitMQ. When the connection is established, pika
         will invoke ``on_consumer_connection_open``.
@@ -257,13 +280,8 @@ class ActorBase(ABC):
         :rtype: pika.SelectConnection
         """
         LOGGER.info("Connecting to %s", self._url)
-        params = pika.URLParameters(self._url)
-        # Per FIS lifecycle: identify the service + runtime instance at
-        # connect time so the broker (via the FIS auth backend) can
-        # authorize. GridworksActor decorates this with GNodeClass.
-        params.client_properties = self._client_properties()
         return pika.SelectConnection(
-            parameters=params,
+            parameters=self._connection_parameters(),
             on_open_callback=self.on_consumer_connection_open,  # type: ignore[arg-type]
             on_open_error_callback=self.on_consumer_connection_open_error,  # type: ignore[arg-type]
             on_close_callback=self.on_consumer_connection_closed,  # type: ignore[arg-type]

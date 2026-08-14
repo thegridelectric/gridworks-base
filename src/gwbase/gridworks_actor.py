@@ -5,7 +5,8 @@ from abc import ABC
 from gwbase.config import GNodeSettings
 from gwbase.orchestrator import Orchestrator
 from gwbase.sema import GwBaseSemaCodec
-from gwbase.sema.types import GNodeGt
+from gwbase.sema.property_format import UniverseRun
+from gwbase.sema.types import FisConnectClaims, GNodeGt
 from gwbase.transport_encoding import TransportClass
 
 LOGGER = logging.getLogger(__name__)
@@ -78,14 +79,26 @@ class GridworksActor(Orchestrator, ABC):
         self.g_node_class: str = g_node_gt.g_node_class
 
     # ------------------------------------------------------------------
-    # FIS handshake — decorate with the GNodeClass marker
+    # Connect-time identity — decorate with the GNodeClass marker
     # ------------------------------------------------------------------
 
     def _client_properties(self) -> dict:
-        """Add ``GNodeClass`` — FIS's discriminator that this connection is a
-        GNode — on top of the service-level ServiceAlias/ServiceInstanceId."""
+        """Add ``GNodeClass`` on top of the service-level
+        ServiceAlias/ServiceInstanceId, for the audit record."""
 
         return {**super()._client_properties(), "GNodeClass": self.g_node_class}
+
+    def _connect_claims(self, run: UniverseRun) -> FisConnectClaims:
+        """Add ``GNodeClass`` to the claims. Its presence is the gate's
+        discriminator that this connection is a GNode rather than a plain
+        service, and the class is verified against the registry."""
+
+        return FisConnectClaims(
+            alias=self.alias,
+            instance_id=self.instance_id,
+            run=run,
+            g_node_class=self.g_node_class,
+        )
 
     # ------------------------------------------------------------------
     # Back-compat property aliases (callers used the g_node_* names)

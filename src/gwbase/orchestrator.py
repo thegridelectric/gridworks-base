@@ -7,7 +7,7 @@ from typing import no_type_check
 from gwbase.actor_base import ActorBase
 from gwbase.config import ServiceSettings
 from gwbase.sema import GwBaseSemaCodec
-from gwbase.sema.types import HeartbeatA, Ready, SimTimestep
+from gwbase.sema.types import HeartbeatA, SimReady, SimTimestep
 from gwbase.transport_encoding import (
     BroadcastRoutingEnvelope,
     DirectRoutingEnvelope,
@@ -232,7 +232,7 @@ class Orchestrator(ActorBase, ABC):
     def send_ready(self, *, time_unix_s: int | None = None) -> None:
         """Announce readiness for a simulated timestep to the time
         coordinator. Defaults to the latest received simulated time."""
-        msg = Ready(
+        msg = SimReady(
             from_g_node_alias=self.alias,
             from_g_node_instance_id=self.instance_id,
             time_unix_s=time_unix_s

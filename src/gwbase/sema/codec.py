@@ -1,9 +1,10 @@
 import json
 import logging
-from collections import defaultdict
 from importlib import import_module
+from collections import defaultdict
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeVar, overload
+
 
 from gwbase.sema.base import (
     DegradedSemaType,
@@ -15,6 +16,8 @@ from gwbase.sema.base import (
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T", bound=GwBaseSemaType)
+
 
 class GwBaseSemaCodec:
     def __init__(self) -> None:
@@ -25,13 +28,74 @@ class GwBaseSemaCodec:
     # Decode
     # ------------------------------------------------------------------------
 
-    def from_dict(  # noqa: C901, PLR0912 — single decode dispatch, kept inline on purpose
+    @overload
+    def from_dict(
+        self,
+        data: dict,
+        mode: Literal["strict", "degraded"] = "strict",
+        auto_upgrade: bool = True,
+        *,
+        expect: type[T],
+    ) -> T: ...
+
+    @overload
+    def from_dict(
+        self,
+        data: dict,
+        mode: Literal["strict", "degraded"] = "strict",
+        auto_upgrade: bool = True,
+        expect: None = None,
+    ) -> GwBaseSemaType | DegradedSemaType: ...
+
+    def from_dict(
+        self,
+        data: dict,
+        mode: Literal["strict", "degraded"] = "strict",
+        auto_upgrade: bool = True,
+        expect: type[T] | None = None,
+    ) -> GwBaseSemaType | DegradedSemaType:
+        decoded = self._decode(data, mode, auto_upgrade)
+        if expect is not None and not isinstance(decoded, expect):
+            raise ValueError(
+                f"decoded {type(decoded).__name__}, expected {expect.__name__}"
+            )
+        return decoded
+
+    @overload
+    def from_file(
+        self,
+        path: str | Path,
+        mode: Literal["strict", "degraded"] = "strict",
+        auto_upgrade: bool = True,
+        *,
+        expect: type[T],
+    ) -> T: ...
+
+    @overload
+    def from_file(
+        self,
+        path: str | Path,
+        mode: Literal["strict", "degraded"] = "strict",
+        auto_upgrade: bool = True,
+        expect: None = None,
+    ) -> GwBaseSemaType | DegradedSemaType: ...
+
+    def from_file(
+        self,
+        path: str | Path,
+        mode: Literal["strict", "degraded"] = "strict",
+        auto_upgrade: bool = True,
+        expect: type[T] | None = None,
+    ) -> GwBaseSemaType | DegradedSemaType:
+        with open(path) as f:
+            return self.from_dict(json.load(f), mode, auto_upgrade, expect=expect)
+
+    def _decode(
         self,
         data: dict,
         mode: Literal["strict", "degraded"] = "strict",
         auto_upgrade: bool = True,
     ) -> GwBaseSemaType | DegradedSemaType:
-
         if not isinstance(data, dict):
             raise ValueError("Input must be dict")
 
@@ -114,7 +178,6 @@ class GwBaseSemaCodec:
         data: bytes,
         mode: Literal["strict", "degraded"] = "strict",
     ) -> GwBaseSemaType | DegradedSemaType:
-
         try:
             d = json.loads(data.decode("utf-8"))
         except Exception as e:
@@ -122,7 +185,7 @@ class GwBaseSemaCodec:
 
         return self.from_dict(d, mode=mode)
 
-    def to_bytes(self, msg: GwBaseSemaType) -> bytes:  # noqa: PLR6301 — codec API symmetry with from_bytes
+    def to_bytes(self, msg: GwBaseSemaType) -> bytes:
         return msg.to_bytes()
 
 
@@ -132,8 +195,7 @@ class GwBaseSemaCodec:
 
 
 def get_current_types() -> dict[str, type[GwBaseSemaType]]:
-    # lazy import breaks a cycle with gwbase.sema.types
-    from gwbase.sema import types  # noqa: PLC0415
+    from gwbase.sema import types
 
     return {
         getattr(types, name).type_name_value(): getattr(types, name)

@@ -14,7 +14,7 @@ from gwbase.config import GNodeSettings, ServiceSettings
 from gwbase.gridworks_actor import GridworksActor
 from gwbase.orchestrator import Orchestrator
 from gwbase.sema import GwBaseSemaCodec
-from gwbase.sema.types import HeartbeatA, Ready
+from gwbase.sema.types import HeartbeatA, SimReady
 from gwbase.transport_encoding import RoutingEnvelope, TransportClass
 
 
@@ -160,7 +160,7 @@ class SupervisorStubRecorder(OrchestratorStubRecorder):
 
 
 class TimeCoordinatorStubRecorder(OrchestratorStubRecorder):
-    """Records Ready announcements that match its current simulated time."""
+    """Records SimReady announcements that match its current simulated time."""
 
     def __init__(
         self,
@@ -184,14 +184,14 @@ class TimeCoordinatorStubRecorder(OrchestratorStubRecorder):
 
     def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
         super().process_message(envelope=envelope, body=body)
-        if envelope.type_name != Ready.type_name_value():
+        if envelope.type_name != SimReady.type_name_value():
             return
         try:
             msg = self._codec.from_bytes(body)
         except Exception:
             return
         if (
-            isinstance(msg, Ready)
+            isinstance(msg, SimReady)
             and envelope.from_alias in self.my_actors
             and msg.time_unix_s == self._time
         ):

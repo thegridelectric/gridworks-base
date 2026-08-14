@@ -1,7 +1,5 @@
 from typing import Literal
-
 from pydantic import BaseModel, ConfigDict
-
 from gwbase.sema.base import GwBaseSemaType
 from gwbase.sema.types.gridworks_header import GridworksHeader
 

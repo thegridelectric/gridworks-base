@@ -9,11 +9,16 @@
 # ------------------------------------------------------------------
 
 types:
-  g.node.gt:
-    latest_version: '004'
+  fis.connect.claims:
+    latest_version: '000'
     versioning_strategy: literal
     versions:
-      '004': definitions/types/g.node.gt/004.yaml
+      '000': definitions/types/fis.connect.claims/000.yaml
+  g.node.gt:
+    latest_version: '006'
+    versioning_strategy: literal
+    versions:
+      '006': definitions/types/g.node.gt/006.yaml
   g.node.instance.gt:
     latest_version: '000'
     versioning_strategy: literal
@@ -66,6 +71,8 @@ enums:
 formats:
   hex.char: definitions/formats/hex.char.yaml
   left.right.dot: definitions/formats/left.right.dot.yaml
+  non.empty.string: definitions/formats/non.empty.string.yaml
+  universe.run: definitions/formats/universe.run.yaml
   utc.milliseconds: definitions/formats/utc.milliseconds.yaml
   utc.seconds: definitions/formats/utc.seconds.yaml
   uuid4.str: definitions/formats/uuid4.str.yaml

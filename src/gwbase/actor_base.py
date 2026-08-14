@@ -14,6 +14,8 @@ from pika.spec import Basic, BasicProperties
 
 from gwbase.config import ServiceSettings
 from gwbase.logging_setup import _build_actor_logger
+from gwbase.sema.property_format import UniverseRun
+from gwbase.sema.types import FisConnectClaims
 from gwbase.topology import EAR_EXCHANGE
 from gwbase.transport_encoding import (
     BroadcastRoutingEnvelope,
@@ -223,14 +225,30 @@ class ActorBase(ABC):
         return self._reconnect_delay
 
     def _client_properties(self) -> dict:
-        """AMQP ``client_properties`` advertised at connect time. The tap
-        sends ``ServiceAlias`` + ``ServiceInstanceId`` always; the presence
-        of ``GNodeClass`` (added by ``GridworksActor``) is FIS's discriminator
-        for whether this connection is a GNode."""
+        """AMQP ``client_properties`` advertised at connect time: the tap
+        sends ``ServiceAlias`` + ``ServiceInstanceId`` always, and
+        ``GridworksActor`` adds ``GNodeClass``.
+
+        These are for audit and reconciliation only — the broker records them
+        on the connection, where the management API and the
+        ``connection_created`` event can read them. They are NOT an
+        authentication channel: the AMQP reader never passes
+        ``client_properties`` to an auth backend, so anything the gate must
+        decide on travels as connect claims instead (``_connect_claims``).
+        """
         return {
             "ServiceAlias": self.alias,
             "ServiceInstanceId": self.instance_id,
         }
+
+    def _connect_claims(self, run: UniverseRun) -> FisConnectClaims:
+        """The claims this process asserts at the broker gate.
+
+        ``run`` is the universe run being joined, which the broker
+        cross-checks against the vhost actually being accessed. Identity
+        itself is not claimed here — it is proven by the client certificate.
+        """
+        return FisConnectClaims(alias=self.alias, instance_id=self.instance_id, run=run)
 
     def connect_consumer(self) -> pika.SelectConnection:
         """Connect to RabbitMQ. When the connection is established, pika

@@ -1,0 +1,9 @@
+{
+  "TypeName": "sim.timestep",
+  "Version": "000",
+  "FromGNodeAlias": "d1.time",
+  "FromGNodeInstanceId": "19ee09df-80ba-437b-b6c1-1eebe9d34801",
+  "TimeUnixS": 1577854800,
+  "TimestepCreatedMs": 1577854800000,
+  "MessageId": "7499defd-c54a-4061-a37a-17f3c84f88a2"
+}

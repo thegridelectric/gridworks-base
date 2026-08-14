@@ -3,7 +3,7 @@
 A ``gw`` body is a JSON object with a ``Header`` (validated against
 ``GridworksHeader``) and a ``Payload`` (an opaque PascalCase dict whose
 ``TypeName`` must match ``Header.MessageType``). These helpers do NOT
-depend on a SemaCodec registry — the inner payload is treated as bytes-
+depend on a GwBaseSemaCodec registry — the inner payload is treated as bytes-
 adjacent data and decoded later by whichever codec the application owns.
 
 Wire form::

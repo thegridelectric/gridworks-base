@@ -1,10 +1,11 @@
 from typing import Literal
-
 from gwbase.sema.base import GwBaseSemaType
-from gwbase.sema.property_format import LeftRightDot, UTCSeconds, UUID4Str
+from gwbase.sema.property_format import LeftRightDot
+from gwbase.sema.property_format import UTCSeconds
+from gwbase.sema.property_format import UUID4Str
 
 
-class Ready(GwBaseSemaType):
+class SimReady(GwBaseSemaType):
     """Sema: https://schemas.electricity.works/types/sim.ready/000"""
 
     from_g_node_alias: LeftRightDot

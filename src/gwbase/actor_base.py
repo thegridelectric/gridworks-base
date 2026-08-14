@@ -1,5 +1,6 @@
 import functools
 import logging
+import ssl
 import threading
 import time
 import uuid
@@ -13,7 +14,10 @@ from pika.channel import Channel as PikaChannel
 from pika.spec import Basic, BasicProperties
 
 from gwbase.config import ServiceSettings
+from gwbase.credentials import GridworksClaimsCredentials
 from gwbase.logging_setup import _build_actor_logger
+from gwbase.sema.property_format import UniverseRun
+from gwbase.sema.types import FisConnectClaims
 from gwbase.topology import EAR_EXCHANGE
 from gwbase.transport_encoding import (
     BroadcastRoutingEnvelope,
@@ -125,7 +129,7 @@ class ActorBase(ABC):
         self._consume_connection: None | (
             pika.adapters.select_connection.SelectConnection
         ) = None
-        self._single_channel: pika.channel.Channel | None = None
+        self._single_channel: PikaChannel | None = None
         self._closing_consumer: bool = False
         self._consumer_tag: str | None = None
         self.should_reconnect_consumer: bool = False
@@ -223,14 +227,64 @@ class ActorBase(ABC):
         return self._reconnect_delay
 
     def _client_properties(self) -> dict:
-        """AMQP ``client_properties`` advertised at connect time. The tap
-        sends ``ServiceAlias`` + ``ServiceInstanceId`` always; the presence
-        of ``GNodeClass`` (added by ``GridworksActor``) is FIS's discriminator
-        for whether this connection is a GNode."""
+        """AMQP ``client_properties`` advertised at connect time: the tap
+        sends ``ServiceAlias`` + ``ServiceInstanceId`` always, and
+        ``GridworksActor`` adds ``GNodeClass``.
+
+        These are for audit and reconciliation only — the broker records them
+        on the connection, where the management API and the
+        ``connection_created`` event can read them. They are NOT an
+        authentication channel: the AMQP reader never passes
+        ``client_properties`` to an auth backend, so anything the gate must
+        decide on travels as connect claims instead (``_connect_claims``).
+        """
         return {
             "ServiceAlias": self.alias,
             "ServiceInstanceId": self.instance_id,
         }
+
+    def _connect_claims(self, run: UniverseRun) -> FisConnectClaims:
+        """The claims this process asserts at the broker gate.
+
+        ``run`` is the universe run being joined, which the broker
+        cross-checks against the vhost actually being accessed. Identity
+        itself is not claimed here — it is proven by the client certificate.
+        """
+        return FisConnectClaims(alias=self.alias, instance_id=self.instance_id, run=run)
+
+    def _live_channel(self) -> PikaChannel:
+        """The open consume channel; subscribe helpers may only run once it
+        exists (their contract: call from ``local_rabbit_startup``)."""
+        if self._single_channel is None:
+            raise RuntimeError(
+                f"{self.alias}: no open channel — subscribe helpers must be "
+                f"called from local_rabbit_startup, after the channel opens"
+            )
+        return self._single_channel
+
+    def _connection_parameters(self) -> pika.URLParameters:
+        """Connection parameters from settings.
+
+        With a ``rabbit.tls`` block: mTLS from the declared cert material,
+        and cert-plus-claims auth — ``GridworksClaimsCredentials`` carrying
+        ``_connect_claims`` for the URL vhost's run. Without the block:
+        the URL's password credentials, unchanged.
+        """
+        rabbit = self.settings.rabbit
+        params = pika.URLParameters(self._url)
+        params.client_properties = self._client_properties()
+        if rabbit.tls is not None:
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            ctx.load_verify_locations(rabbit.tls.ca_cert_path)
+            ctx.load_cert_chain(rabbit.tls.cert_path, rabbit.tls.private_key_path)
+            params.ssl_options = pika.SSLOptions(ctx, server_hostname=params.host)
+            # pika-stubs types the credentials slot as the two stock classes,
+            # but pika's runtime accepts anything registered in VALID_TYPES —
+            # which gwbase.credentials does at import (stub gap, not a doubt).
+            params.credentials = GridworksClaimsCredentials(  # pyright: ignore[reportAttributeAccessIssue]
+                self._connect_claims(rabbit.run)
+            )
+        return params
 
     def connect_consumer(self) -> pika.SelectConnection:
         """Connect to RabbitMQ. When the connection is established, pika
@@ -239,13 +293,8 @@ class ActorBase(ABC):
         :rtype: pika.SelectConnection
         """
         LOGGER.info("Connecting to %s", self._url)
-        params = pika.URLParameters(self._url)
-        # Per FIS lifecycle: identify the service + runtime instance at
-        # connect time so the broker (via the FIS auth backend) can
-        # authorize. GridworksActor decorates this with GNodeClass.
-        params.client_properties = self._client_properties()
         return pika.SelectConnection(
-            parameters=params,
+            parameters=self._connection_parameters(),
             on_open_callback=self.on_consumer_connection_open,  # type: ignore[arg-type]
             on_open_error_callback=self.on_consumer_connection_open_error,  # type: ignore[arg-type]
             on_close_callback=self.on_consumer_connection_closed,  # type: ignore[arg-type]
@@ -617,7 +666,7 @@ class ActorBase(ABC):
         ).routing_key
         exchange = routing_code(from_class) + "mic_tx"
         LOGGER.info("Binding %s to %s with %s", self.queue_name, exchange, binding)
-        self._single_channel.queue_bind(self.queue_name, exchange, routing_key=binding)
+        self._live_channel().queue_bind(self.queue_name, exchange, routing_key=binding)
 
     def subscribe_amq_topic(self, *, binding_key: str) -> None:
         """Subscribe to messages on the built-in ``amq.topic`` exchange —
@@ -634,7 +683,7 @@ class ActorBase(ABC):
         ``gw.*.to.ta.#``.
         """
         LOGGER.info("Binding %s to amq.topic with %s", self.queue_name, binding_key)
-        self._single_channel.queue_bind(
+        self._live_channel().queue_bind(
             self.queue_name, "amq.topic", routing_key=binding_key
         )
 

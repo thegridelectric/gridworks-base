@@ -7,12 +7,12 @@ import pytest
 
 from gwbase.sema.types import HeartbeatA
 from gwbase.sema.types.gridworks_header import GridworksHeader
-from gwbase.sema.wrapped import unwrap_bytes, wrap_bytes
 from gwbase.transport_encoding import (
     TransportClass,
     WrappedRoutingEnvelope,
     parse_routing_key,
 )
+from gwbase.wrapped import unwrap_bytes, wrap_bytes
 
 
 def test_wrap_unwrap_round_trip() -> None:
@@ -45,7 +45,7 @@ def test_wrap_unwrap_round_trip() -> None:
     assert header.dst == "d1.scada1"
     assert payload_dict["TypeName"] == "heartbeat.a"
 
-    # Inner can be re-decoded by a SemaType directly — no codec required
+    # Inner can be re-decoded by a GwBaseSemaType directly — no codec required
     inner_back = HeartbeatA.from_dict(payload_dict)
     assert inner_back == inner
 

@@ -1,40 +1,56 @@
 metadata:
   registry_version: "1.0"
-  last_updated: "2026-05-15T00:00:00Z"
+  last_updated: "2026-08-14T20:10:00Z"
   maintainer: "gridworks-energy"
-
-snapshot:
-  built_at: "2026-05-18T09:09:43Z"
 
 formats:
   hex.char:
     owner: gridworks-energy
     schema_url: "https://schemas.electricity.works/formats/hex.char"
     created: "2026-05-08T16:34:06Z"
+    status: "published"
     description: "Single hexadecimal character, restricted to 0-9, a-f, or A-F"
 
   left.right.dot:
     owner: gridworks-energy
     schema_url: "https://schemas.electricity.works/formats/left.right.dot"
     created: "2022-01-01T00:00:00Z"
+    status: "published"
     description: "Dot-separated hierarchical identifier composed of lowercase alphanumeric segments"
+
+  non.empty.string:
+    owner: gridworks-energy
+    schema_url: "https://schemas.electricity.works/formats/non.empty.string"
+    created: "2024-12-31T15:00:00Z"
+    status: "published"
+    description: "String with at least one character"
+
+  universe.run:
+    owner: gridworks-energy
+    schema_url: "https://schemas.electricity.works/formats/universe.run"
+    created: "2026-08-14T19:30:00Z"
+    status: "published"
+    description: "Broker-vhost form <universe>__<run>: the universe token, a double underscore, and the run number"
 
   utc.milliseconds:
     owner: gridworks-energy
     schema_url: "https://schemas.electricity.works/formats/utc.milliseconds"
     created: "2024-09-02T15:00:00Z"
+    status: "published"
     description: "UTC timestamp in whole milliseconds since Unix epoch (2000–3000 range)"
 
   utc.seconds:
     owner: gridworks-energy
     schema_url: "https://schemas.electricity.works/formats/utc.seconds"
     created: "2024-09-02T15:00:00Z"
+    status: "published"
     description: "UTC timestamp in whole seconds since Unix epoch (2000–3000 range)"
 
   uuid4.str:
     owner: gridworks-energy
     schema_url: "https://schemas.electricity.works/formats/uuid4.str"
     created: "2024-09-02T15:00:00Z"
+    status: "published"
     description: "Canonical lowercase UUIDv4 string (RFC 4122) in 8-4-4-4-12 format"
 
 enums:
@@ -48,6 +64,7 @@ enums:
       "000":
         schema_url: "https://schemas.electricity.works/enums/base.g.node.class/000"
         created: "2026-02-22T16:43:00Z"
+        status: "published"
 
   g.node.instance.status:
     latest_version: "000"
@@ -59,6 +76,7 @@ enums:
       "000":
         schema_url: "https://schemas.electricity.works/enums/g.node.instance.status/000"
         created: "2026-03-04T17:00:00Z"
+        status: "published"
 
   g.node.instance.transport:
     latest_version: "000"
@@ -70,6 +88,7 @@ enums:
       "000":
         schema_url: "https://schemas.electricity.works/enums/g.node.instance.transport/000"
         created: "2026-03-03T17:00:00Z"
+        status: "published"
 
   g.node.status:
     latest_version: "000"
@@ -81,8 +100,28 @@ enums:
       "000":
         schema_url: "https://schemas.electricity.works/enums/g.node.status/000"
         created: "2026-02-22T16:43:00Z"
+        status: "published"
 
 types:
+  fis.connect.claims:
+    latest_version: "000"
+    owner: jessica-millar
+    versioning_strategy: "literal"
+    description: "Connect-time claims a principal presents at the broker gate for FIS authorization: current alias, runtime instance id, the run being joined, and GNodeClass iff the principal is a GNode."
+
+    versions:
+      "000":
+        schema_url: "https://schemas.electricity.works/types/fis.connect.claims/000"
+        created: "2026-08-14T19:30:00Z"
+        summary: "Initial Sema version"
+        status: "staging"
+        direct_dependencies:
+          structural:
+            - "left.right.dot"
+            - "non.empty.string"
+            - "universe.run"
+            - "uuid4.str"
+
   g.node.gt:
     latest_version: "006"
     owner: gridworks-energy
@@ -106,12 +145,13 @@ types:
     latest_version: "000"
     owner: gridworks-energy
     versioning_strategy: "literal"
-    description: "Runtime execution instance of a GNode identity"
+    description: "Runtime execution instance of a GNode identity on one run"
 
     versions:
       "000":
         schema_url: "https://schemas.electricity.works/types/g.node.instance.gt/000"
         created: "2026-03-04T17:00:00Z"
+        status: "published"
         summary: "Initial Sema version"
         direct_dependencies:
           structural:
@@ -130,6 +170,7 @@ types:
       "001":
         schema_url: "https://schemas.electricity.works/types/gridworks.header/001"
         created: "2022-10-17T16:55:39Z"
+        status: "published"
         summary: "Initial published version, matching the gwproto Header wire format deployed in the field."
         direct_dependencies:
           structural:
@@ -139,12 +180,13 @@ types:
     latest_version: "000"
     owner: gridworks-energy
     versioning_strategy: "literal"
-    description: "Lightweight actor heartbeat message. Version 000 carries hex tokens; version 001 is a minimal no-payload variant."
+    description: "Lightweight supervisor-tier actor heartbeat carrying sender/peer hex tokens for bidirectional liveness."
 
     versions:
       "000":
         schema_url: "https://schemas.electricity.works/types/heartbeat.a/000"
         created: "2026-05-08T16:34:06Z"
+        status: "published"
         summary: "Initial Sema version."
         direct_dependencies:
           structural:
@@ -160,6 +202,7 @@ types:
       "000":
         schema_url: "https://schemas.electricity.works/types/sim.ready/000"
         created: "2026-05-08T18:01:43Z"
+        status: "published"
         summary: "Initial Sema version."
         direct_dependencies:
           structural:
@@ -177,6 +220,7 @@ types:
       "000":
         schema_url: "https://schemas.electricity.works/types/sim.timestep/000"
         created: "2026-05-08T16:48:56Z"
+        status: "published"
         summary: "Initial Sema version."
         direct_dependencies:
           structural:
@@ -191,6 +235,7 @@ types:
     description: "GridWorks message envelope: a gridworks.header plus a Payload of any registered Sema type."
     schema_url: "https://schemas.electricity.works/types/gw"
     created: "2022-10-17T16:55:39Z"
+    status: "published"
     summary: "Versionless GridWorks message envelope (gwproto Message wire format)."
     direct_dependencies:
       structural:

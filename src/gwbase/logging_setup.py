@@ -107,6 +107,10 @@ def _build_actor_logger(  # noqa: PLR0913 — logger builder fans out logging se
     logger.addHandler(handler)
 
     # File header (bijective: alias -> Alias, instance -> InstanceId).
+    # RotatingFileHandler opens its stream at construction (delay=False,
+    # the default), so it is never None here; the annotation is Optional
+    # only for delay=True handlers.
+    assert handler.stream is not None
     handler.stream.write(
         f"=== gwbase log: alias={service_alias} instance={instance_id} "
         f"started={_iso(datetime.now(tz=UTC).timestamp())} ===\n"

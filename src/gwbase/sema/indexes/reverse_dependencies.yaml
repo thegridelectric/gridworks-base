@@ -6,7 +6,7 @@ enums:
   base.g.node.class:
     '000':
       used_by:
-      - g.node.gt:004
+      - g.node.gt:006
   g.node.instance.status:
     '000':
       used_by:
@@ -18,17 +18,24 @@ enums:
   g.node.status:
     '000':
       used_by:
-      - g.node.gt:004
+      - g.node.gt:006
 formats:
   hex.char:
     used_by:
     - heartbeat.a:000
   left.right.dot:
     used_by:
-    - g.node.gt:004
+    - fis.connect.claims:000
+    - g.node.gt:006
     - gridworks.header:001
     - sim.ready:000
     - sim.timestep:000
+  non.empty.string:
+    used_by:
+    - fis.connect.claims:000
+  universe.run:
+    used_by:
+    - fis.connect.claims:000
   utc.milliseconds:
     used_by:
     - g.node.instance.gt:000
@@ -39,7 +46,8 @@ formats:
     - sim.timestep:000
   uuid4.str:
     used_by:
-    - g.node.gt:004
+    - fis.connect.claims:000
+    - g.node.gt:006
     - g.node.instance.gt:000
     - sim.ready:000
     - sim.timestep:000

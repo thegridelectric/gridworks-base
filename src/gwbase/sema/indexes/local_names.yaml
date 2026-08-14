@@ -4,6 +4,7 @@ enums:
   g.node.instance.transport: g.node.instance.transport
   g.node.status: g.node.status
 types:
+  fis.connect.claims: fis.connect.claims
   g.node.gt: g.node.gt
   g.node.instance.gt: g.node.instance.gt
   gridworks.header: gridworks.header

@@ -101,10 +101,9 @@ def test_from_classes_emits_long_form_tokens() -> None:
         to_class=TransportClass.LeafTransactiveNode,
     )
     assert wrapped.to_class_token == "ltn"
-    assert (
-        parse_routing_key(wrapped.routing_key).to_class
-        is TransportClass.LeafTransactiveNode
-    )
+    parsed = parse_routing_key(wrapped.routing_key)
+    assert isinstance(parsed, WrappedRoutingEnvelope)
+    assert parsed.to_class is TransportClass.LeafTransactiveNode
 
     direct = DirectRoutingEnvelope.from_classes(
         type_name="bid",

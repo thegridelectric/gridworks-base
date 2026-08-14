@@ -1,12 +1,10 @@
 from typing import Literal, Self
-
 from pydantic import model_validator
-
 from gwbase.sema.base import GwBaseSemaType
-from gwbase.sema.enums import BaseGNodeClass, GNodeStatus
-from gwbase.sema.property_format import LeftRightDot, UUID4Str
-
-_MIN_ALIAS_SEGMENTS = 2
+from gwbase.sema.enums import BaseGNodeClass
+from gwbase.sema.enums import GNodeStatus
+from gwbase.sema.property_format import LeftRightDot
+from gwbase.sema.property_format import UUID4Str
 
 
 class GNodeGt(GwBaseSemaType):
@@ -118,15 +116,12 @@ class GNodeGt(GwBaseSemaType):
         a. Alias SHALL have at least two dotted words (the universe segment is a namespace, not a GNodeAlias, so the shortest valid GNodeAlias is like "d1.isone").
         b. If PrevAlias is present, it SHALL likewise have at least two dotted words.
         """
-        if len(self.alias.split(".")) < _MIN_ALIAS_SEGMENTS:
+        if len(self.alias.split(".")) < 2:
             raise ValueError(
                 "Axiom 6 failed: Alias must have at least two dotted words "
                 "(the universe segment alone is a namespace, not a GNodeAlias)."
             )
-        if (
-            self.prev_alias is not None
-            and len(self.prev_alias.split(".")) < _MIN_ALIAS_SEGMENTS
-        ):
+        if self.prev_alias is not None and len(self.prev_alias.split(".")) < 2:
             raise ValueError(
                 "Axiom 6 failed: PrevAlias must have at least two dotted words "
                 "(the universe segment alone is a namespace, not a GNodeAlias)."

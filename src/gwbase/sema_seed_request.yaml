@@ -1,0 +1,38 @@
+# Regenerate the snapshot after editing this seed:
+#   scripts/regen_sema_snapshot.sh
+# (runs `sema snapshot prepare <this file>` + `build --package-name gwbase` in
+# the sema repo, then mirrors output/sema -> src/gwbase/sema). src/gwbase/sema
+# is generated — edit this seed, not the vendored output.
+#
+# initial_targets may contain only types and enums. Formats are never listed
+# directly; they are pulled in through type dependencies.
+#
+# For each type or enum, choose exactly one of:
+#   {}                         Use only the latest registry version.
+#   include_all_versions: true Include every registry-declared version.
+#   versions: ["001", "003"]   Include explicit versions. For types, seed
+#                              expansion also fills in intermediate versions.
+#
+# Versions here are pinned to what gwbase already speaks rather than left to
+# float at latest: a regen is otherwise a silent protocol change for every
+# actor on the bus. Moving a pin is its own deliberate change, landing with
+# the code that reads the new fields.
+
+initial_targets:
+  types:
+    g.node.gt:
+      versions: ["006"]
+    g.node.instance.gt:
+      versions: ["000"]
+    heartbeat.a:
+      versions: ["000"]
+    sim.ready:
+      versions: ["000"]
+    sim.timestep:
+      versions: ["000"]
+    gw: {}
+
+    # Connect-time claims for the broker's SASL gate: built by the pika
+    # credentials class, decoded by the Fleet Index Service.
+    fis.connect.claims:
+      versions: ["000"]

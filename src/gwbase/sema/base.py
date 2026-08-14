@@ -4,6 +4,7 @@ from typing import Any, Self, TypeVar
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
@@ -44,6 +45,20 @@ def snake_to_pascal(word: str) -> str:
 
 class GwBaseSemaError(Exception):
     """Base exception for Sema-related errors."""
+
+
+class UpgradeRequiresContext(GwBaseSemaError, ValueError):
+    """Raised by an ``upgrade()`` that cannot run on a standalone instance.
+
+    Some old -> new upgrades need out-of-band context the isolated message
+    does not carry (e.g. the source layout that supplies node handles / ids,
+    or the originating request). Such an upgrade refuses by design rather
+    than fabricating values. The round-trip gate recognizes this exception
+    as an *expected* outcome for that version: the sample is still required
+    and still round-trips at its own version, but the decode-old -> upgrade
+    step is exempt. Subclasses ``ValueError`` so existing ``except ValueError``
+    callers keep working.
+    """
 
 
 T = TypeVar("T", bound="GwBaseSemaType")
@@ -100,6 +115,15 @@ class GwBaseSemaType(BaseModel):
     # Introspection
     # ------------------------------------------------------------------------
 
+    @staticmethod
+    def upgrade_requires_context(message: str) -> "UpgradeRequiresContext":
+        """Factory for the exception an ``upgrade()`` raises when it needs
+        out-of-band context to run (see :class:`UpgradeRequiresContext`).
+        Lets an upgrade body raise it via the already-imported ``GwBaseSemaType``
+        without an extra import:
+        ``raise GwBaseSemaType.upgrade_requires_context("...")``."""
+        return UpgradeRequiresContext(message)
+
     @classmethod
     def type_name_value(cls) -> str:
         return cls.model_fields["type_name"].default
@@ -117,9 +141,7 @@ class GwBaseSemaType(BaseModel):
             f"{self.__class__.__name__} does not implement upgrade()"
         )
 
-    def to_latest(
-        self, registry: dict[str, type["GwBaseSemaType"]]
-    ) -> "GwBaseSemaType":
+    def to_latest(self, registry: dict[str, type["GwBaseSemaType"]]) -> "GwBaseSemaType":
         current = self
         type_name = self.type_name_value()
 
@@ -135,8 +157,8 @@ class GwBaseSemaType(BaseModel):
         try:
             current_version_int = int(current.version)
             latest_version_int = int(latest_version_str)
-        except ValueError as e:
-            raise GwBaseSemaError(f"Invalid version format for {type_name}") from e
+        except ValueError:
+            raise GwBaseSemaError(f"Invalid version format for {type_name}")
 
         if current_version_int > latest_version_int:
             raise GwBaseSemaError(
@@ -166,7 +188,7 @@ class DegradedSemaType:
     """
     Best-effort decoded Sema-like object.
 
-    This is NOT a valid SemaType and MUST NOT be used for control logic.
+    This is NOT a valid GwBaseSemaType and MUST NOT be used for control logic.
     """
 
     def __init__(

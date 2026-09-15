@@ -301,6 +301,7 @@ with `TransportClass`. It is transport addressing, NOT Sema vocabulary
 | `time` | TimeCoordinator |
 | `super` | Supervisor |
 | `gnr` | GridNodeRegistry |
+| `alerts` | Alerter |
 
 This table is enforced against the enum by
 `tests/test_readme_transport.py` — if they drift, the suite fails.

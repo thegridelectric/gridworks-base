@@ -101,6 +101,14 @@
       "destination": "ear_tx",
       "destination_type": "exchange",
       "routing_key": "#",
+      "source": "alertsmic_tx",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ear_tx",
+      "destination_type": "exchange",
+      "routing_key": "#",
       "source": "gnrmic_tx",
       "vhost": "d1__1"
     },
@@ -217,6 +225,24 @@
       "durable": true,
       "internal": true,
       "name": "gnr_ear_tx",
+      "type": "topic",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": true,
+      "name": "alerts_tx",
+      "type": "topic",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "internal": false,
+      "name": "alertsmic_tx",
       "type": "topic",
       "vhost": "d1__1"
     },

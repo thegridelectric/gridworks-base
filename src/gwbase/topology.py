@@ -23,6 +23,9 @@ AMQP_ACTOR_CLASSES: frozenset[RoutingClass] = frozenset({
     RoutingClass.TimeCoordinator,
     RoutingClass.Supervisor,
     RoutingClass.GridNodeRegistry,
+    # The house alerter: a broadcast-only service; its mic exchange fans
+    # into the ear so the manager and JournalKeeper hear its alert words.
+    RoutingClass.Alerter,
 })
 
 # Direct-message routing edges: a sender of class ``src`` may reach a

@@ -181,7 +181,7 @@ truth; a drift guard keeps the committed
 image when the definitions, conf, or plugins change.
 
 **Automatic (CI):** `.github/workflows/broker-image.yml` builds and pushes
-the image on a push to `main`/`dev` that touches the baked inputs, gated by
+the image on a push to `main` that touches the baked inputs, gated by
 the definitions drift check (`gen_definitions.py --check`). Usually you do
 not push by hand.
 

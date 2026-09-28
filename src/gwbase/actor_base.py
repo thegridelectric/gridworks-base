@@ -292,9 +292,15 @@ class ActorBase(ABC):
 
         :rtype: pika.SelectConnection
         """
-        LOGGER.info("Connecting to %s", self._url)
+        params = self._connection_parameters()
+        LOGGER.info(
+            "Connecting to %s:%s vhost=%s",
+            params.host,
+            params.port,
+            params.virtual_host,
+        )
         return pika.SelectConnection(
-            parameters=self._connection_parameters(),
+            parameters=params,
             on_open_callback=self.on_consumer_connection_open,  # type: ignore[arg-type]
             on_open_error_callback=self.on_consumer_connection_open_error,  # type: ignore[arg-type]
             on_close_callback=self.on_consumer_connection_closed,  # type: ignore[arg-type]

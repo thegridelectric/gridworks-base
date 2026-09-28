@@ -7,7 +7,7 @@ name: Broker image
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
     paths:
       - "rabbit/rabbitconfig/dev_definitions.json"
       - "for_docker/dev_rabbitmq.conf"

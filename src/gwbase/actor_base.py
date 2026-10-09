@@ -16,6 +16,7 @@ from pika.spec import Basic, BasicProperties
 from gwbase.config import ServiceSettings
 from gwbase.credentials import GridworksClaimsCredentials
 from gwbase.logging_setup import _build_actor_logger
+from gwbase.principal import principal_id
 from gwbase.sema.property_format import UniverseRun
 from gwbase.sema.types import FisConnectClaims
 from gwbase.topology import EAR_EXCHANGE
@@ -103,6 +104,9 @@ class ActorBase(ABC):
         # (per the FIS lifecycle) unless pinned in settings.
         self.alias: str = settings.service_alias
         self.instance_id: str = settings.instance_id or str(uuid.uuid4())
+        # The name the broker authenticates this process as (cert CN, or the
+        # URL username without TLS); stamped on every publish as user_id.
+        self.principal_id: str = principal_id(settings.rabbit)
 
         # Per-actor contextualized logger (XDG state-home, bijective format).
         self.logger: logging.Logger = _build_actor_logger(
@@ -116,8 +120,8 @@ class ActorBase(ABC):
 
         # Tap defaults: consume the universal audit exchange, publish nothing.
         # Orchestrator overrides these to its class exchanges.
-        adder = "-F" + str(uuid.uuid4()).split("-")[0][0:3]
-        self.queue_name: str = self.alias + adder
+        self._queue_adder: str = "-F" + str(uuid.uuid4()).split("-")[0][0:3]
+        self.queue_name: str = self.alias + self._queue_adder
         self._consume_exchange: str = EAR_EXCHANGE
         self._publish_exchange: str | None = None
         self._url: str = settings.rabbit.url.get_secret_value()
@@ -216,7 +220,24 @@ class ActorBase(ABC):
             if self._main_loop_running:
                 LOGGER.info("Reconnecting after %d seconds", reconnect_delay)
             time.sleep(reconnect_delay)
+            self.refresh_identity_before_reconnect()
             self.flush_consumer()
+
+    def refresh_identity_before_reconnect(self) -> None:
+        """Runs on the reconnect thread, after the backoff and before the
+        next connect, with no connection open. A tier whose alias can change
+        under it (a GNode renamed in the registry) re-reads it here, so the
+        next connect's claims, queue name and bindings carry the current
+        alias. The base actor's alias is fixed config: nothing to refresh.
+        """
+
+    def rename(self, alias: str) -> None:
+        """Adopt ``alias`` as this actor's routable address. Only valid with
+        no connection open (the reconnect window): the queue name and the
+        bindings are declared from the alias at each connect."""
+        LOGGER.warning("Alias %s is now %s", self.alias, alias)
+        self.alias = alias
+        self.queue_name = self.alias + self._queue_adder
 
     def _get_reconnect_delay(self) -> int:
         if self.was_consuming:
@@ -762,6 +783,7 @@ class ActorBase(ABC):
         properties = pika.BasicProperties(
             reply_to=self.queue_name,
             app_id=self.alias,
+            user_id=self.principal_id,
             type=envelope.category.value,
             correlation_id=correlation_id or str(uuid.uuid4()),
         )

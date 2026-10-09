@@ -79,9 +79,11 @@ class _RecorderMixin(_RecorderBase):
         self.got_heartbeat_from_super: bool = False
         self.latest_envelope: RoutingEnvelope | None = None
         self.latest_body: bytes | None = None
+        self.latest_user_id: str | None = None
 
     def on_message(self, _unused_channel, basic_deliver, properties, body):
         self.messages_received += 1
+        self.latest_user_id = properties.user_id
         super().on_message(_unused_channel, basic_deliver, properties, body)
 
     def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:

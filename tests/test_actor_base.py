@@ -119,6 +119,9 @@ def test_actor_base(
         assert su.messages_received == 1
         assert su.messages_routed_internally == 1
         assert su.got_heartbeat_from_sub
+        # The broker validates user_id against the authenticated name and
+        # drops a mismatch; delivery with it set is the broker's acceptance.
+        assert su.latest_user_id == gn.principal_id == "smqPublic"
 
         d = datetime.datetime(year=2020, month=1, day=1, hour=5)
         ts = SimTimestep(

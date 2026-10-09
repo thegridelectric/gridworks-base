@@ -3,6 +3,7 @@ import logging
 from abc import ABC
 
 from gwbase.config import GNodeSettings
+from gwbase.gnr_reader import get_g_node_by_id
 from gwbase.orchestrator import Orchestrator
 from gwbase.sema import GwBaseSemaCodec
 from gwbase.sema.property_format import UniverseRun
@@ -77,6 +78,31 @@ class GridworksActor(Orchestrator, ABC):
 
         self.g_node_id: str = g_node_gt.g_node_id
         self.g_node_class: str = g_node_gt.g_node_class
+        self._gnr_url: str | None = settings.gnr_url
+        self._gnr_timeout_s: float = settings.gnr_timeout_s
+        if self._gnr_url is None:
+            LOGGER.warning(
+                "%s: gnr_url unset, alias self-heal off; a registry rename "
+                "needs a provisioning redeploy",
+                self.alias,
+            )
+
+    # ------------------------------------------------------------------
+    # Alias self-heal — the durable identity is the GNodeId; the alias is
+    # whatever the registry says it is now
+    # ------------------------------------------------------------------
+
+    def refresh_identity_before_reconnect(self) -> None:
+        """Re-read this GNode's alias from gnr by GNodeId and adopt it if
+        it changed. A rename makes FIS close the connection and refuse the
+        old alias's claims, so the reconnect must carry the new one. gnr
+        unreachable or the id unknown: keep the alias held, and let the
+        gate decide."""
+        if self._gnr_url is None:
+            return
+        gt = get_g_node_by_id(self._gnr_url, self.g_node_id, self._gnr_timeout_s)
+        if gt is not None and gt.alias != self.alias:
+            self.rename(gt.alias)
 
     # ------------------------------------------------------------------
     # Connect-time identity — decorate with the GNodeClass marker

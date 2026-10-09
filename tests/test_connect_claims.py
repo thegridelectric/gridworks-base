@@ -14,6 +14,7 @@ from pydantic import SecretStr
 from gwbase.actor_base import ActorBase, RoutingEnvelope
 from gwbase.config.rabbit_settings import RabbitBrokerClient, RabbitTls
 from gwbase.credentials import GridworksClaimsCredentials
+from gwbase.principal import principal_id
 from gwbase.sema.types import FisConnectClaims
 from gwbase.transport_encoding import TransportClass
 from tests._stubs import GNodeStubRecorder
@@ -166,3 +167,14 @@ def test_connection_parameters_with_tls_carry_cert_and_claims(
     assert creds.claims.alias == "d1.super"
     assert creds.claims.instance_id == actor.instance_id
     assert creds.claims.run == "d1__1"
+
+
+def test_principal_id_is_the_cert_cn_with_tls(throwaway_certs) -> None:
+    rabbit = RabbitBrokerClient(
+        url=SecretStr("amqps://localhost:5671/d1__1"), tls=throwaway_certs
+    )
+    assert principal_id(rabbit) == "00000000-0000-4000-8000-000000000000"
+
+
+def test_principal_id_is_the_url_username_without_tls() -> None:
+    assert principal_id(RabbitBrokerClient()) == "smqPublic"

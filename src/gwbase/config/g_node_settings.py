@@ -22,3 +22,9 @@ class GNodeSettings(ServiceSettings):
     g_node_path: Path = Field(
         default_factory=lambda data: g_node_gt_path(data["service_name"]),
     )
+    # gnr's public façade, e.g. "https://gnr.electricity.works". Lets the
+    # actor re-read its alias by GNodeId before every reconnect, so a
+    # registry rename converges without a provisioning redeploy. None turns
+    # that off (a dev rung with no gnr), and the actor says so at boot.
+    gnr_url: str | None = None
+    gnr_timeout_s: float = 5.0

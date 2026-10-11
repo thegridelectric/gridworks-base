@@ -139,7 +139,7 @@ class ActorBase(ABC):
         self.should_reconnect_consumer: bool = False
         self.was_consuming: bool = False
         self._consuming: bool = False
-        self._prefetch_count: int = 1
+        self.prefetch_count: int = settings.prefetch_count
         self._reconnect_delay: int = 0
 
         self.consuming_thread: threading.Thread = threading.Thread(
@@ -489,18 +489,17 @@ class ActorBase(ABC):
     @no_type_check
     def set_qos(self) -> None:
         """Set consumer prefetch so RabbitMQ delivers at most
-        ``_prefetch_count`` unacknowledged messages at a time. When QoS is
-        applied pika will invoke ``on_basic_qos_ok``. Experiment with
-        higher prefetch values for throughput in production."""
+        ``prefetch_count`` unacknowledged messages at a time. When QoS is
+        applied pika will invoke ``on_basic_qos_ok``."""
         self._single_channel.basic_qos(
-            prefetch_count=self._prefetch_count,
+            prefetch_count=self.prefetch_count,
             callback=self.on_basic_qos_ok,
         )
 
     @no_type_check
     def on_basic_qos_ok(self, _unused_frame) -> None:
         """Invoked by pika once Basic.QoS completes. Begins consuming."""
-        LOGGER.info("QOS set to: %d", self._prefetch_count)
+        LOGGER.info("QOS set to: %d", self.prefetch_count)
         self.start_consuming()
 
     @no_type_check

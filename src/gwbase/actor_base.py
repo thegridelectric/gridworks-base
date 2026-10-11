@@ -160,6 +160,10 @@ class ActorBase(ABC):
         self.consuming_thread.start()
 
     def stop(self) -> None:
+        # The reconnect loop reads this flag; it is cleared here, before
+        # the consumer is told to stop, so a stop never depends on a
+        # subclass's ``local_stop`` to end the loop.
+        self._main_loop_running = False
         self.shutting_down = True
         self.stop_consumer()
         self.local_stop()
@@ -559,8 +563,10 @@ class ActorBase(ABC):
             "RabbitMQ acknowledged the cancellation of the consumer: %s",
             userdata,
         )
+        # ``_closing_consumer`` stays set until ``flush_consumer``: the
+        # connection close that follows is this stop completing, not an
+        # outage to reconnect from.
         self.close_consumer_channel()
-        self._closing_consumer = False
 
     def close_consumer_channel(self) -> None:
         """Issue Channel.Close cleanly."""

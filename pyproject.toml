@@ -1,6 +1,6 @@
 [project]
 name = "gridworks-base"
-version = "0.5.15"
+version = "0.5.16"
 description = "Gridworks Base"
 readme = "README.md"
 authors = [

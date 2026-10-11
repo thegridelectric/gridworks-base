@@ -34,6 +34,12 @@ class ServiceSettings(BaseSettings):
     log_level: str = "INFO"
     log_rotate_bytes: int = 10_000_000  # 10MB per file
     log_rotate_count: int = 5  # 5 backup files
+    # Messages the broker may send ahead of the consumer's acks. ActorBase
+    # acks each message on arrival and no two actors share a queue, so this
+    # sets throughput only: a consumer far from its broker waits one round
+    # trip per message at 1. Unacked messages are redelivered if the
+    # process dies.
+    prefetch_count: int = 100
 
     model_config = SettingsConfigDict(
         env_prefix="GWBASE_",

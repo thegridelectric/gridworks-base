@@ -1,6 +1,7 @@
 from gwbase.gridworks_actor import GridworksActor
 from gwbase.sema import GwBaseSemaCodec
 from gwbase.sema.types import HeartbeatA
+from gwbase.sema.types.gridworks_header import GridworksHeader
 from gwbase.transport_encoding import RoutingEnvelope, TransportClass
 from tests._stubs import provision_topology
 from tests._wait import wait_for
@@ -18,7 +19,13 @@ class HelloGNode(GridworksActor):
         )
         self._codec = GwBaseSemaCodec()
 
-    def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
+    def process_message(
+        self,
+        *,
+        envelope: RoutingEnvelope,
+        body: bytes,
+        header: GridworksHeader | None,
+    ) -> None:
         return
 
 

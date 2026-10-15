@@ -44,12 +44,12 @@ class _Tap(ActorBase):
 
 
 class _Orch(Orchestrator):
-    def process_message(self, *, envelope, body) -> None:  # noqa: ARG002
+    def process_message(self, *, envelope, body, header) -> None:  # noqa: ARG002
         return
 
 
 class _GNode(GridworksActor):
-    def process_message(self, *, envelope, body) -> None:  # noqa: ARG002
+    def process_message(self, *, envelope, body, header) -> None:  # noqa: ARG002
         return
 
 

@@ -18,6 +18,7 @@ from gwbase.gridworks_actor import GridworksActor
 from gwbase.orchestrator import Orchestrator
 from gwbase.sema import GwBaseSemaCodec
 from gwbase.sema.types import HeartbeatA, SimReady
+from gwbase.sema.types.gridworks_header import GridworksHeader
 from gwbase.transport_encoding import RoutingEnvelope, TransportClass
 
 
@@ -79,6 +80,7 @@ class _RecorderMixin(_RecorderBase):
         self.got_heartbeat_from_super: bool = False
         self.latest_envelope: RoutingEnvelope | None = None
         self.latest_body: bytes | None = None
+        self.latest_header: GridworksHeader | None = None
         self.latest_user_id: str | None = None
 
     def on_message(self, _unused_channel, basic_deliver, properties, body):
@@ -86,8 +88,15 @@ class _RecorderMixin(_RecorderBase):
         self.latest_user_id = properties.user_id
         super().on_message(_unused_channel, basic_deliver, properties, body)
 
-    def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
+    def process_message(
+        self,
+        *,
+        envelope: RoutingEnvelope,
+        body: bytes,
+        header: GridworksHeader | None,
+    ) -> None:
         self.messages_routed_internally += 1
+        self.latest_header = header
         self.latest_envelope = envelope
         self.latest_body = body
 
@@ -164,8 +173,14 @@ class SupervisorStubRecorder(OrchestratorStubRecorder):
         self.my_single_sub: str = subordinate_alias
         self.got_heartbeat_from_sub: bool = False
 
-    def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
-        super().process_message(envelope=envelope, body=body)
+    def process_message(
+        self,
+        *,
+        envelope: RoutingEnvelope,
+        body: bytes,
+        header: GridworksHeader | None,
+    ) -> None:
+        super().process_message(envelope=envelope, body=body, header=header)
         if (
             envelope.type_name == HeartbeatA.type_name_value()
             and envelope.from_alias == self.my_single_sub
@@ -196,8 +211,14 @@ class TimeCoordinatorStubRecorder(OrchestratorStubRecorder):
         self.ready: list[str] = []
         self._time: int = current_time_unix_s
 
-    def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
-        super().process_message(envelope=envelope, body=body)
+    def process_message(
+        self,
+        *,
+        envelope: RoutingEnvelope,
+        body: bytes,
+        header: GridworksHeader | None,
+    ) -> None:
+        super().process_message(envelope=envelope, body=body, header=header)
         if envelope.type_name != SimReady.type_name_value():
             return
         try:

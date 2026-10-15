@@ -1,4 +1,5 @@
 import functools
+import json
 import logging
 import random
 from abc import ABC, abstractmethod
@@ -8,14 +9,17 @@ from gwbase.actor_base import ActorBase
 from gwbase.config import ServiceSettings
 from gwbase.sema import GwBaseSemaCodec
 from gwbase.sema.types import HeartbeatA, SimReady, SimTimestep
+from gwbase.sema.types.gridworks_header import GridworksHeader
 from gwbase.transport_encoding import (
     BroadcastRoutingEnvelope,
     DirectRoutingEnvelope,
     MessageCategory,
     RoutingEnvelope,
     TransportClass,
+    WrappedRoutingEnvelope,
     routing_code,
 )
+from gwbase.wrapped import unwrap_bytes
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +43,9 @@ class Orchestrator(ActorBase, ABC):
     The Sema codec used for control-plane types is private to this class.
     Subclasses see only semantic events (``on_supervisor_heartbeat``,
     ``on_simulated_time``); they implement ``process_message`` for
-    application traffic and never touch ``dispatch_message``.
+    application traffic and never touch ``dispatch_message``, which opens
+    a ``gw`` envelope on the way in so the subclass sees a bare sema body
+    whatever the routing category.
     """
 
     _CONTROL_PLANE_TYPES: frozenset[str] = frozenset({"heartbeat.a", "sim.timestep"})
@@ -140,17 +146,49 @@ class Orchestrator(ActorBase, ABC):
     # ------------------------------------------------------------------
 
     def dispatch_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
+        header: GridworksHeader | None = None
+        if isinstance(envelope, WrappedRoutingEnvelope):
+            try:
+                header, payload = unwrap_bytes(body)
+            except ValueError as e:
+                LOGGER.error(
+                    f"Dropped wrapped {envelope.type_name} from "
+                    f"{envelope.from_alias}: {e}"
+                )
+                return
+            if header.message_type != envelope.type_name:
+                LOGGER.error(
+                    f"Dropped wrapped {envelope.type_name} from "
+                    f"{envelope.from_alias}: header MessageType "
+                    f"{header.message_type!r} disagrees with the routing key"
+                )
+                return
+            body = json.dumps(payload).encode()
         if envelope.type_name in self._CONTROL_PLANE_TYPES:
-            self._dispatch_control_plane(envelope=envelope, body=body)
+            self._dispatch_control_plane(envelope=envelope, body=body, header=header)
             return
-        self.process_message(envelope=envelope, body=body)
+        self.process_message(envelope=envelope, body=body, header=header)
 
     @abstractmethod
-    def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
-        """Subclass hook for application-level messages."""
+    def process_message(
+        self,
+        *,
+        envelope: RoutingEnvelope,
+        body: bytes,
+        header: GridworksHeader | None,
+    ) -> None:
+        """Subclass hook for application-level messages. ``body`` is the
+        bare sema JSON in every routing category: a ``gw`` envelope is
+        opened by ``dispatch_message`` before this is called, and its
+        ``GridworksHeader`` arrives as ``header``; a bare ``rj`` / ``rjb``
+        body arrives unchanged with ``header=None``."""
 
     def _dispatch_control_plane(
-        self, *, envelope: RoutingEnvelope, body: bytes
+        self,
+        *,
+        envelope: RoutingEnvelope,
+        body: bytes,
+        header: GridworksHeader | None,
     ) -> None:
         try:
             obj = self._control_plane_codec.from_bytes(body)
@@ -158,7 +196,7 @@ class Orchestrator(ActorBase, ABC):
             LOGGER.warning(f"Failed to decode control-plane {envelope.type_name}: {e}")
             return
         if isinstance(obj, HeartbeatA):
-            self._handle_heartbeat(obj, envelope=envelope, body=body)
+            self._handle_heartbeat(obj, envelope=envelope, body=body, header=header)
         elif isinstance(obj, SimTimestep):
             self._handle_timestep(obj, from_alias=envelope.from_alias)
 
@@ -167,14 +205,19 @@ class Orchestrator(ActorBase, ABC):
     # ------------------------------------------------------------------
 
     def _handle_heartbeat(
-        self, ping: HeartbeatA, *, envelope: RoutingEnvelope, body: bytes
+        self,
+        ping: HeartbeatA,
+        *,
+        envelope: RoutingEnvelope,
+        body: bytes,
+        header: GridworksHeader | None,
     ) -> None:
         # Only a ping from THIS actor's supervisor is handled internally
         # (pong + on_supervisor_heartbeat hook). Any other heartbeat.a — e.g.
         # a subordinate's heartbeat arriving at its supervisor — is surfaced
         # to the application via process_message so it can be observed.
         if envelope.from_alias != self._my_super_alias:
-            self.process_message(envelope=envelope, body=body)
+            self.process_message(envelope=envelope, body=body, header=header)
             return
         self.on_supervisor_heartbeat(from_alias=envelope.from_alias)
         self._send_heartbeat_response(ping=ping)

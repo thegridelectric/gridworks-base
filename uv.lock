@@ -371,7 +371,7 @@ wheels = [
 
 [[package]]
 name = "gridworks-base"
-version = "0.5.17"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },

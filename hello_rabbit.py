@@ -26,6 +26,7 @@ from gwbase.config.rabbit_settings import RabbitBrokerClient
 from gwbase.gridworks_actor import GridworksActor
 from gwbase.sema.enums import BaseGNodeClass
 from gwbase.sema.types import HeartbeatA
+from gwbase.sema.types.gridworks_header import GridworksHeader
 from gwbase.transport_encoding import RoutingEnvelope, TransportClass
 from gwbase.wrapped import unwrap_bytes, wrap_bytes
 
@@ -73,7 +74,13 @@ class HelloGNode(GridworksActor):
             my_time_coordinator_alias="d1.time",
         )
 
-    def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
+    def process_message(
+        self,
+        *,
+        envelope: RoutingEnvelope,
+        body: bytes,
+        header: GridworksHeader | None,
+    ) -> None:
         LOGGER.debug(
             "[%s] ignoring app message %s from %s",
             self.alias,
@@ -100,7 +107,13 @@ class TinySupervisor(GridworksActor):
         )
         self._sub_alias = sub_alias
 
-    def process_message(self, *, envelope: RoutingEnvelope, body: bytes) -> None:
+    def process_message(
+        self,
+        *,
+        envelope: RoutingEnvelope,
+        body: bytes,
+        header: GridworksHeader | None,
+    ) -> None:
         # Pongs from the sub show up here (HeartbeatA from sub_alias is not
         # the control-plane case — that's the *incoming-from-supervisor*
         # case — so it falls through to the application).

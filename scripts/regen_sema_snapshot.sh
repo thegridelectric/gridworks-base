@@ -8,7 +8,8 @@
 # source of truth). The CLI refuses to run from a dirty sema checkout and
 # writes only under <sema>/output, so the snapshot is reproducible from
 # the sema commit the checkout sits on — check out the ref you intend to
-# ship from before running.
+# ship from before running. The snapshot holds published words only: the
+# CLI's default guard refuses a seed whose closure reaches an unpublished word.
 #
 # Usage:
 #   scripts/regen_sema_snapshot.sh                 # sibling ../sema checkout
@@ -36,12 +37,7 @@ echo "==> package:   ${PACKAGE_NAME}"
 
 cd "${SEMA_REPO}"
 echo "==> sema snapshot prepare"
-# --allow-staged: the seed includes fis.connect.claims, which is deliberately
-# a staging word while the broker auth gate it serves is still being built.
-# Staging words are mutable in place, so this snapshot is dev-only until that
-# word is promoted to published — at which point drop this flag, and let the
-# CLI's default guard keep the next staging word out by accident.
-uv run sema snapshot prepare --allow-staged "${SEED}"
+uv run sema snapshot prepare "${SEED}"
 echo "==> sema snapshot build --package-name ${PACKAGE_NAME}"
 uv run sema snapshot build --package-name "${PACKAGE_NAME}"
 

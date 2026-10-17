@@ -1,6 +1,6 @@
 metadata:
   generated_from: indexes/public_registry.yaml
-  generated_at: '2026-08-14T20:41:51Z'
+  generated_at: '2026-10-16T22:58:54Z'
   note: Transitive closure of initial_targets
 initial_targets:
 - g.node.gt:006

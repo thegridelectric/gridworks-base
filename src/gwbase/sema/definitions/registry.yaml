@@ -1,6 +1,6 @@
 metadata:
   registry_version: "1.0"
-  last_updated: "2026-08-14T20:10:00Z"
+  last_updated: "2026-10-15T21:35:00Z"
   maintainer: "gridworks-energy"
 
 formats:
@@ -21,7 +21,7 @@ formats:
   non.empty.string:
     owner: gridworks-energy
     schema_url: "https://schemas.electricity.works/formats/non.empty.string"
-    created: "2024-12-31T15:00:00Z"
+    created: "2024-09-02T15:00:00Z"
     status: "published"
     description: "String with at least one character"
 
@@ -114,7 +114,7 @@ types:
         schema_url: "https://schemas.electricity.works/types/fis.connect.claims/000"
         created: "2026-08-14T19:30:00Z"
         summary: "Initial Sema version"
-        status: "staging"
+        status: "published"
         direct_dependencies:
           structural:
             - "left.right.dot"

@@ -193,6 +193,17 @@ def exchange_bindings() -> list[BindingSpec]:
             f"{MessageCategory.JsonBroadcast.value}.#",
         )
     )
+    # Same bridge for a MarketMaker's BROADCASTS (`latest.price` at the top
+    # of each slot), so an MQTT-native LeafTransactiveNode hears the market
+    # it clears against. A price is a public market fact, so crossing to
+    # the MQTT side is safe.
+    bindings.append(
+        BindingSpec(
+            publish_exchange(RoutingClass.MarketMaker),
+            AMQP_TOPIC,
+            f"{MessageCategory.JsonBroadcast.value}.#",
+        )
+    )
     return bindings
 
 

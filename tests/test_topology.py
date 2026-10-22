@@ -58,10 +58,10 @@ def test_exchanges_cover_ear_plus_a_pair_per_class() -> None:
 def test_bindings_cover_edges_and_ear_taps() -> None:
     bindings = topo.exchange_bindings()
     # one per routing edge, plus one ear tap per AMQP class, plus the
-    # amq.topic ear tap, plus the timemic and gnrmic -> amq.topic MQTT
-    # bridge taps, plus the registry's scoped ear pair (gnr_tx + gnrmic_tx
-    # -> gnr_ear_tx)
-    assert len(bindings) == len(topo.ROUTING_EDGES) + len(topo.AMQP_ACTOR_CLASSES) + 5
+    # amq.topic ear tap, plus the timemic, gnrmic and mmmic -> amq.topic
+    # MQTT bridge taps, plus the registry's scoped ear pair (gnr_tx +
+    # gnrmic_tx -> gnr_ear_tx)
+    assert len(bindings) == len(topo.ROUTING_EDGES) + len(topo.AMQP_ACTOR_CLASSES) + 6
     # the scoped ear hears everything said TO the registry and BY it
     assert any(
         b.source == "gnr_tx" and b.destination == "gnr_ear_tx" and b.routing_key == "#"
@@ -98,6 +98,14 @@ def test_bindings_cover_edges_and_ear_taps() -> None:
     # can passively hear ancestor renames
     assert any(
         b.source == "gnrmic_tx"
+        and b.destination == "amq.topic"
+        and b.routing_key == "rjb.#"
+        for b in bindings
+    )
+    # market maker broadcasts (latest.price) cross too, so an MQTT-native
+    # LTN hears the price it clears against
+    assert any(
+        b.source == "mmmic_tx"
         and b.destination == "amq.topic"
         and b.routing_key == "rjb.#"
         for b in bindings

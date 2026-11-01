@@ -16,8 +16,9 @@ class TransportClass(StrEnum):
     Actor-tier map (which runtime tier a class rides):
 
     - **Orchestrator (non-GNode, ServiceSettings):** ``Supervisor``,
-      ``TimeCoordinator``, ``GridNodeRegistry``, ``Alerter`` — orchestration/
-      infra participants with no ``g.node.gt`` identity file at boot.
+      ``TimeCoordinator``, ``GridNodeRegistry``, ``Alerter``, ``Flo`` —
+      orchestration/infra participants with no ``g.node.gt`` identity file
+      at boot.
     - **GridworksActor (GNode identity):** ``TerminalAsset``,
       ``LeafTransactiveNode``, ``MarketMaker``, ``PriceForecastService``,
       ``WeatherForecastService``.
@@ -37,6 +38,7 @@ class TransportClass(StrEnum):
     Supervisor = "Supervisor"
     GridNodeRegistry = "GridNodeRegistry"
     Alerter = "Alerter"
+    Flo = "Flo"
 
     @classmethod
     def values(cls) -> list[str]:
@@ -58,6 +60,7 @@ class RoutingClass(StrEnum):
     # infra services
     GridNodeRegistry = "gnr"
     Alerter = "alerts"
+    Flo = "flo"
 
 
 ROUTING_CLASS_BY_TRANSPORT_CLASS: dict[TransportClass, RoutingClass] = {
@@ -72,6 +75,7 @@ ROUTING_CLASS_BY_TRANSPORT_CLASS: dict[TransportClass, RoutingClass] = {
     TransportClass.Supervisor: RoutingClass.Supervisor,
     TransportClass.GridNodeRegistry: RoutingClass.GridNodeRegistry,
     TransportClass.Alerter: RoutingClass.Alerter,
+    TransportClass.Flo: RoutingClass.Flo,
 }
 
 

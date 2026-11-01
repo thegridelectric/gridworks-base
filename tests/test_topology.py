@@ -18,6 +18,7 @@ def test_mqtt_only_and_passive_classes_excluded() -> None:
         RoutingClass.Supervisor,
         RoutingClass.GridNodeRegistry,
         RoutingClass.Alerter,
+        RoutingClass.Flo,
     })
 
 

@@ -26,6 +26,10 @@ AMQP_ACTOR_CLASSES: frozenset[RoutingClass] = frozenset({
     # The house alerter: a broadcast-only service; its mic exchange fans
     # into the ear so the manager and JournalKeeper hear its alert words.
     RoutingClass.Alerter,
+    # The FLO service: answers an LTN's flo.params with a flo.recommendation.
+    # Both cross the MQTT seam as wrapped (gw) messages on amq.topic; the
+    # class exchanges give the actor its queue and put its words in the ear.
+    RoutingClass.Flo,
 })
 
 # Direct-message routing edges: a sender of class ``src`` may reach a

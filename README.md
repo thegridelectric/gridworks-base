@@ -84,6 +84,13 @@ for setting it up:
 
 Note those scripts are just aliases so one doesn't need to remember the docker incantation. Also, if you have an older version of docker, you may need to use `docker-compose` instead of `docker compose`. That should also work.
 
+Each run starts from a clean broker. The scripts `docker rm -fv` the old
+container before starting a new one, which removes the anonymous volume
+that holds RabbitMQ's own state, so queues, ad-hoc bindings and messages
+from the last run are gone. The exchanges, the fabric bindings and the
+`smqPublic` user come back from the definitions baked into the image. If a
+queue you declared by hand has vanished, this is why.
+
 Tests for success:
 
 1. go to http://localhost:15672/ - it should look like this:
@@ -163,6 +170,40 @@ commands directly.
   `ruff check --no-fix` so it fails loudly instead. The pre-commit `ruff` hook
   only checks import order (`--select I`), so it does NOT catch F401/etc.; `ci.sh`
   is the real gate.
+
+## Adding an exchange
+
+Exchanges are not added one at a time. `gwbase.topology` derives every
+exchange and binding from two tables in `src/gwbase/topology.py`, and
+the generated `rabbit/rabbitconfig/*_definitions.json` is what the brokers
+boot from. Nothing is declared by hand on a broker. The shape itself,
+the `<rc>_tx` / `<rc>mic_tx` pair per class and the fabric between them,
+is in [How messages move](#how-messages-move--exchanges-and-bindings)
+below. To give a routing class a place on the fabric:
+
+1. Branch. Add the class to `AMQP_ACTOR_CLASSES`; that yields its
+   `<rc>_tx` / `<rc>mic_tx` pair and its ear tap. For each direct
+   sender→receiver path it needs, add the pair to `ROUTING_EDGES`. A
+   broadcast that MQTT-native actors must hear gets a bridge binding from
+   its `<rc>mic_tx` to `amq.topic` in `exchange_bindings()`, as the time
+   coordinator, registry and market maker have.
+2. Regenerate the committed artifacts:
+
+   ```
+   uv run python for_docker/gen_definitions.py --write-all --dir rabbit/rabbitconfig
+   ```
+
+3. Run `./ci.sh` with the dev broker up. Its drift step refuses artifacts
+   that disagree with the module, and the suite runs the test harness on
+   the same topology.
+4. Merge to `main`. `.github/workflows/broker-image.yml` rebuilds and
+   pushes `ghcr.io/thegridelectric/dev-rabbit:latest`.
+5. Everyone gets the new fabric on their next `./arm.sh` / `./x86.sh`
+   (`--pull always`); a running broker needs that restart.
+
+The deployed brokers import the hybrid definitions from a released
+version of this package, so bump the version in the same change when the
+new exchange is needed in the field.
 
 ## Building & publishing the dev-broker image (GHCR)
 
@@ -302,6 +343,7 @@ with `TransportClass`. It is transport addressing, NOT Sema vocabulary
 | `super` | Supervisor |
 | `gnr` | GridNodeRegistry |
 | `alerts` | Alerter |
+| `flo` | Flo |
 
 This table is enforced against the enum by
 `tests/test_readme_transport.py` — if they drift, the suite fails.

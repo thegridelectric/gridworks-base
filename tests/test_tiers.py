@@ -163,7 +163,6 @@ def _scada(path: Path, service_alias: str) -> _GNode:
         settings=GNodeSettings(
             service_alias=service_alias, service_name="scada", g_node_path=path
         ),
-        transport_class=TransportClass.Scada,
         g_node_class=GwGNodeClass.Scada,
         my_super_alias="d1.super",
         my_time_coordinator_alias="d1.time",

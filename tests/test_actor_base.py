@@ -77,7 +77,6 @@ def test_actor_base(
 
     gn = GNodeStubRecorder(
         settings=gn_settings,
-        transport_class=TransportClass.LeafTransactiveNode,
         g_node_class=GwGNodeClass.LeafTransactiveNode,
         my_super_alias="d1.super",
         my_time_coordinator_alias="d1.time",

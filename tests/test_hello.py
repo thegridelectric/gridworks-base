@@ -3,7 +3,7 @@ from gwbase.sema import GwBaseSemaCodec
 from gwbase.sema.enums import GwGNodeClass
 from gwbase.sema.types import HeartbeatA
 from gwbase.sema.types.gridworks_header import GridworksHeader
-from gwbase.transport_encoding import RoutingEnvelope, TransportClass
+from gwbase.transport_encoding import RoutingEnvelope
 from tests._stubs import provision_topology
 from tests._wait import wait_for
 
@@ -13,14 +13,12 @@ class HelloGNode(GridworksActor):
         self,
         *,
         settings,
-        transport_class,
         g_node_class,
         my_super_alias,
         my_time_coordinator_alias,
     ):
         super().__init__(
             settings=settings,
-            transport_class=transport_class,
             g_node_class=g_node_class,
             my_super_alias=my_super_alias,
             my_time_coordinator_alias=my_time_coordinator_alias,
@@ -49,7 +47,6 @@ def test_hello(make_g_node_json, make_gnode_settings) -> None:
 
     gn = HelloGNode(
         settings=settings,
-        transport_class=TransportClass.LeafTransactiveNode,
         g_node_class=GwGNodeClass.LeafTransactiveNode,
         my_super_alias="d1.super1",
         my_time_coordinator_alias="d1.time",

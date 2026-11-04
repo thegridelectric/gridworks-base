@@ -17,7 +17,6 @@ from gwbase.credentials import GridworksClaimsCredentials
 from gwbase.principal import principal_id
 from gwbase.sema.enums import GwGNodeClass
 from gwbase.sema.types import FisConnectClaims
-from gwbase.transport_encoding import TransportClass
 from tests._stubs import GNodeStubRecorder
 
 
@@ -51,7 +50,6 @@ def test_gnode_claims_carry_the_class(make_g_node_json, make_gnode_settings) -> 
     )
     actor = GNodeStubRecorder(
         settings=settings,
-        transport_class=TransportClass.LeafTransactiveNode,
         g_node_class=GwGNodeClass.LeafTransactiveNode,
         my_super_alias="d1.super",
         my_time_coordinator_alias="d1.time",

@@ -68,6 +68,11 @@ enums:
     latest_version: '000'
     versions:
       '000': definitions/enums/g.node.status/000.yaml
+  gw.g.node.class:
+    enum_type: versioned
+    latest_version: '001'
+    versions:
+      '001': definitions/enums/gw.g.node.class/001.yaml
 formats:
   hex.char: definitions/formats/hex.char.yaml
   left.right.dot: definitions/formats/left.right.dot.yaml

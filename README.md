@@ -396,11 +396,12 @@ An actor rides the tier that matches what it is:
   `ServiceSettings`, carries no GNode identity. For non-GNode consumers
   (audit taps and the like).
 - **`Orchestrator`** — adds class-routing (a `transport_class`) plus the
-  heartbeat / simulated-time rhythm. For Supervisor and TimeCoordinator,
-  which are not GNodes.
+  heartbeat / simulated-time rhythm. For the Supervisor and the other
+  orchestration participants that are not GNodes.
 - **`GridworksActor`** — adds GNode identity, loaded and Sema-validated from
-  a `g.node.gt.json` file at boot. For SCADA, LTN, MarketMaker, forecast
-  services.
+  a `g.node.gt.json` file at boot and checked against the class the actor
+  declares from `GwGNodeClass` (`gw.g.node.class`). For SCADA, LTN,
+  MarketMaker, the forecast services, the FLO, the time coordinator.
 
 ### Settings
 

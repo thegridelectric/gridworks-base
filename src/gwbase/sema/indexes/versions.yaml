@@ -80,3 +80,12 @@ enums:
     note: "This enum is versioned; new versions are additive only."
     versions:
       "000": {}
+
+  gw.g.node.class:
+    enum_type: "versioned"
+    note: "This enum is versioned; new versions are additive only."
+    versions:
+      "001":
+        added_values:
+          - "TimeCoordinator"
+          - "Flo"

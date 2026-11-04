@@ -6,6 +6,7 @@ from gwbase.config import GNodeSettings
 from gwbase.gnr_reader import get_g_node_by_id
 from gwbase.orchestrator import Orchestrator
 from gwbase.sema import GwBaseSemaCodec
+from gwbase.sema.enums import GwGNodeClass
 from gwbase.sema.property_format import UniverseRun
 from gwbase.sema.types import FisConnectClaims, GNodeGt
 from gwbase.transport_encoding import TransportClass
@@ -24,9 +25,12 @@ class GridworksActor(Orchestrator, ABC):
     ``GNodeGt.alias == settings.service_alias`` catches provisioning drift
     between the artifact and the runtime config.
 
-    Used by SCADA, LTN, MarketMaker, the forecast services, etc. — one
-    subclass per ``TransportClass``, each passing its fixed ``transport_class``
-    up to ``Orchestrator``.
+    Used by SCADA, LTN, MarketMaker, the forecast services, the FLO, etc.
+    — one subclass per ``TransportClass``, each passing its fixed
+    ``transport_class`` and its ``g_node_class`` (a ``GwGNodeClass``) up.
+    ``g.node.gt`` keeps ``GNodeClass`` an open string so other registries
+    can name their own classes; a GridWorks GNode's class is a member of
+    ``gw.g.node.class``, and the identity file must agree with the actor.
     """
 
     def __init__(
@@ -34,6 +38,7 @@ class GridworksActor(Orchestrator, ABC):
         *,
         settings: GNodeSettings,
         transport_class: TransportClass,
+        g_node_class: GwGNodeClass,
         my_super_alias: str,
         my_time_coordinator_alias: str,
     ):
@@ -76,8 +81,14 @@ class GridworksActor(Orchestrator, ABC):
                 f"{settings.service_alias!r} in runtime config"
             )
 
+        if g_node_gt.g_node_class != g_node_class.value:
+            raise ValueError(
+                f"Provisioning drift: GNodeClass {g_node_gt.g_node_class!r} in "
+                f"{settings.g_node_path} != the actor's {g_node_class.value!r}"
+            )
+
         self.g_node_id: str = g_node_gt.g_node_id
-        self.g_node_class: str = g_node_gt.g_node_class
+        self.g_node_class: GwGNodeClass = g_node_class
         self._gnr_url: str | None = settings.gnr_url
         self._gnr_timeout_s: float = settings.gnr_timeout_s
         if self._gnr_url is None:
@@ -112,7 +123,7 @@ class GridworksActor(Orchestrator, ABC):
         """Add ``GNodeClass`` on top of the service-level
         ServiceAlias/ServiceInstanceId, for the audit record."""
 
-        return {**super()._client_properties(), "GNodeClass": self.g_node_class}
+        return {**super()._client_properties(), "GNodeClass": self.g_node_class.value}
 
     def _connect_claims(self, run: UniverseRun) -> FisConnectClaims:
         """Add ``GNodeClass`` to the claims. Its presence is the gate's
@@ -123,7 +134,7 @@ class GridworksActor(Orchestrator, ABC):
             alias=self.alias,
             instance_id=self.instance_id,
             run=run,
-            g_node_class=self.g_node_class,
+            g_node_class=self.g_node_class.value,
         )
 
     # ------------------------------------------------------------------

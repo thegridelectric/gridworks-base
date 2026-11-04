@@ -21,10 +21,11 @@ import time
 import uuid
 from pathlib import Path
 
-from gwbase.config import GNodeSettings
+from gwbase.config import GNodeSettings, ServiceSettings
 from gwbase.config.rabbit_settings import RabbitBrokerClient
 from gwbase.gridworks_actor import GridworksActor
-from gwbase.sema.enums import BaseGNodeClass
+from gwbase.orchestrator import Orchestrator
+from gwbase.sema.enums import BaseGNodeClass, GwGNodeClass
 from gwbase.sema.types import HeartbeatA
 from gwbase.sema.types.gridworks_header import GridworksHeader
 from gwbase.transport_encoding import RoutingEnvelope, TransportClass
@@ -70,6 +71,7 @@ class HelloGNode(GridworksActor):
         super().__init__(
             settings=settings,
             transport_class=TransportClass.LeafTransactiveNode,
+            g_node_class=GwGNodeClass.LeafTransactiveNode,
             my_super_alias=my_super_alias,
             my_time_coordinator_alias="d1.time",
         )
@@ -92,11 +94,12 @@ class HelloGNode(GridworksActor):
         LOGGER.info("[%s] got heartbeat from supervisor %s", self.alias, from_alias)
 
 
-class TinySupervisor(GridworksActor):
-    """Supervisor for one subordinate. Sends a direct ``heartbeat.a`` on
-    demand; the subordinate's ``GridworksActor`` answers automatically."""
+class TinySupervisor(Orchestrator):
+    """Supervisor for one subordinate: an Orchestrator, not a GNode. Sends
+    a direct ``heartbeat.a`` on demand; the subordinate's
+    ``GridworksActor`` answers automatically."""
 
-    def __init__(self, *, settings: GNodeSettings, sub_alias: str):
+    def __init__(self, *, settings: ServiceSettings, sub_alias: str):
         super().__init__(
             settings=settings,
             transport_class=TransportClass.Supervisor,
@@ -140,7 +143,7 @@ class TinySupervisor(GridworksActor):
         )
 
 
-def _wait_for_consuming(actor: GridworksActor, timeout_s: float = 5.0) -> None:
+def _wait_for_consuming(actor: Orchestrator, timeout_s: float = 5.0) -> None:
     deadline = time.time() + timeout_s
     while time.time() < deadline:
         if actor._consuming:
@@ -167,20 +170,17 @@ def demo() -> None:
 
     with tempfile.TemporaryDirectory() as tmp:
         sub_json = Path(tmp) / "sub.json"
-        sup_json = Path(tmp) / "sup.json"
         # scada is MQTT-only (no AMQP exchanges), so the demo subordinate is
-        # a LeafTransactiveNode; the supervisor is a Logical GNode.
+        # a LeafTransactiveNode; the supervisor is a service with no GNode file.
         write_g_node_json(sub_json, alias=sub_alias)
-        write_g_node_json(sup_json, alias=sup_alias, g_node_class="Supervisor")
 
         sub_settings = GNodeSettings(
             service_alias=sub_alias,
             g_node_path=sub_json,
             rabbit=RabbitBrokerClient(),
         )
-        sup_settings = GNodeSettings(
+        sup_settings = ServiceSettings(
             service_alias=sup_alias,
-            g_node_path=sup_json,
             rabbit=RabbitBrokerClient(),
         )
 

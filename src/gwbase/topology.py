@@ -26,9 +26,8 @@ AMQP_ACTOR_CLASSES: frozenset[RoutingClass] = frozenset({
     # The house alerter: a broadcast-only service; its mic exchange fans
     # into the ear so the manager and JournalKeeper hear its alert words.
     RoutingClass.Alerter,
-    # The FLO service: answers an LTN's flo.params with a flo.recommendation.
-    # Both cross the MQTT seam as wrapped (gw) messages on amq.topic; the
-    # class exchanges give the actor its queue and put its words in the ear.
+    # The FLO service: answers an LTN's flo.params with a flo.recommendation,
+    # both direct over the LeafTransactiveNode <-> Flo edges.
     RoutingClass.Flo,
 })
 
@@ -39,6 +38,9 @@ ROUTING_EDGES: list[tuple[RoutingClass, RoutingClass]] = [
     (RoutingClass.LeafTransactiveNode, RoutingClass.MarketMaker),
     (RoutingClass.LeafTransactiveNode, RoutingClass.Supervisor),
     (RoutingClass.LeafTransactiveNode, RoutingClass.TimeCoordinator),
+    # An LTN sends flo.params to its FLO and gets the flo.recommendation.
+    (RoutingClass.LeafTransactiveNode, RoutingClass.Flo),
+    (RoutingClass.Flo, RoutingClass.LeafTransactiveNode),
     (RoutingClass.MarketMaker, RoutingClass.Supervisor),
     (RoutingClass.MarketMaker, RoutingClass.TimeCoordinator),
     (RoutingClass.Supervisor, RoutingClass.LeafTransactiveNode),

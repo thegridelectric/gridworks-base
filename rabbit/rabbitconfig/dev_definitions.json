@@ -26,6 +26,22 @@
     },
     {
       "arguments": {},
+      "destination": "flo_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.ltn.*.flo.*",
+      "source": "ltnmic_tx",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
+      "destination": "ltn_tx",
+      "destination_type": "exchange",
+      "routing_key": "*.*.flo.*.ltn.*",
+      "source": "flomic_tx",
+      "vhost": "d1__1"
+    },
+    {
+      "arguments": {},
       "destination": "super_tx",
       "destination_type": "exchange",
       "routing_key": "*.*.mm.*.super.*",

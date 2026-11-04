@@ -400,8 +400,10 @@ An actor rides the tier that matches what it is:
   orchestration participants that are not GNodes.
 - **`GridworksActor`** — adds GNode identity, loaded and Sema-validated from
   a `g.node.gt.json` file at boot and checked against the class the actor
-  declares from `GwGNodeClass` (`gw.g.node.class`). For SCADA, LTN,
-  MarketMaker, the forecast services, the FLO, the time coordinator.
+  declares from `GwGNodeClass` (`gw.g.node.class`); its transport class
+  follows from that class through `TRANSPORT_CLASS_BY_G_NODE_CLASS`. For
+  SCADA, LTN, MarketMaker, the forecast services, the FLO, the time
+  coordinator.
 
 ### Settings
 

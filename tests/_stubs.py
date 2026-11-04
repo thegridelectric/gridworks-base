@@ -119,14 +119,12 @@ class GNodeStubRecorder(_RecorderMixin, GridworksActor):
         self,
         *,
         settings: GNodeSettings,
-        transport_class: TransportClass,
         g_node_class: GwGNodeClass,
         my_super_alias: str,
         my_time_coordinator_alias: str,
     ):
         super().__init__(
             settings=settings,
-            transport_class=transport_class,
             g_node_class=g_node_class,
             my_super_alias=my_super_alias,
             my_time_coordinator_alias=my_time_coordinator_alias,

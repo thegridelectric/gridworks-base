@@ -7,7 +7,6 @@ from gwbase.config import GNodeSettings
 from gwbase.sema import GwBaseSemaCodec
 from gwbase.sema.enums import GwGNodeClass
 from gwbase.sema.types import GNodeGt
-from gwbase.transport_encoding import TransportClass
 from tests._stubs import GNodeStubRecorder
 
 OLD = "d1.isone.old"
@@ -24,7 +23,6 @@ def _actor(
     settings = settings.model_copy(update={"gnr_url": gnr_url})
     return GNodeStubRecorder(
         settings=settings,
-        transport_class=TransportClass.LeafTransactiveNode,
         g_node_class=GwGNodeClass.LeafTransactiveNode,
         my_super_alias="d1.super",
         my_time_coordinator_alias="d1.time",

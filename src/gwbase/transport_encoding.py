@@ -2,6 +2,8 @@ import re
 from dataclasses import dataclass
 from enum import StrEnum
 
+from gwbase.sema.enums import GwGNodeClass
+
 # Routing-key token counts per envelope grammar.
 _DIRECT_TOKEN_COUNT = 6
 _BROADCAST_MIN_TOKEN_COUNT = 4
@@ -17,15 +19,11 @@ class TransportClass(StrEnum):
 
     - **Orchestrator (non-GNode, ServiceSettings):** ``Supervisor``,
       ``GridNodeRegistry``, ``Alerter`` — orchestration/infra participants
-      with no ``g.node.gt`` identity file at boot.
-    - **GridworksActor (GNode identity):** ``TerminalAsset``,
-      ``LeafTransactiveNode``, ``MarketMaker``, ``PriceForecastService``,
-      ``WeatherForecastService``, ``TimeCoordinator``, ``Flo`` — each a
-      registry row; a clock or a FLO is found by walking the forest from
-      the asking GNode up to the universe root.
-    - **No gwbase runtime:** ``Scada`` (MQTT-native, reached via
-      ``amq.topic``) and ``ConnectivityNode`` (passive — a map vertex,
-      not an actor).
+      with no ``g.node.gt`` identity file at boot; they name their
+      ``transport_class`` themselves.
+    - **GridworksActor (GNode identity):** every value of
+      ``TRANSPORT_CLASS_BY_G_NODE_CLASS``; a GNode names only its
+      ``GwGNodeClass`` and its transport class follows from the table.
     """
 
     TerminalAsset = "TerminalAsset"
@@ -82,6 +80,23 @@ ROUTING_CLASS_BY_TRANSPORT_CLASS: dict[TransportClass, RoutingClass] = {
 
 TRANSPORT_CLASS_BY_ROUTING_CLASS: dict[RoutingClass, TransportClass] = {
     v: k for k, v in ROUTING_CLASS_BY_TRANSPORT_CLASS.items()
+}
+
+
+# A GNode's transport class follows from its GridWorks GNode class: one
+# row per ``gw.g.node.class`` value except ``Unknown``, which no actor may
+# claim. The transport classes not in the table are the non-GNode
+# orchestration participants.
+TRANSPORT_CLASS_BY_G_NODE_CLASS: dict[GwGNodeClass, TransportClass] = {
+    GwGNodeClass.TerminalAsset: TransportClass.TerminalAsset,
+    GwGNodeClass.ConnectivityNode: TransportClass.ConnectivityNode,
+    GwGNodeClass.LeafTransactiveNode: TransportClass.LeafTransactiveNode,
+    GwGNodeClass.MarketMaker: TransportClass.MarketMaker,
+    GwGNodeClass.Scada: TransportClass.Scada,
+    GwGNodeClass.PriceForecastService: TransportClass.PriceForecastService,
+    GwGNodeClass.WeatherForecastService: TransportClass.WeatherForecastService,
+    GwGNodeClass.TimeCoordinator: TransportClass.TimeCoordinator,
+    GwGNodeClass.Flo: TransportClass.Flo,
 }
 
 

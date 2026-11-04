@@ -9,7 +9,7 @@ from gwbase.sema import GwBaseSemaCodec
 from gwbase.sema.enums import GwGNodeClass
 from gwbase.sema.property_format import UniverseRun
 from gwbase.sema.types import FisConnectClaims, GNodeGt
-from gwbase.transport_encoding import TransportClass
+from gwbase.transport_encoding import TRANSPORT_CLASS_BY_G_NODE_CLASS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,22 +26,29 @@ class GridworksActor(Orchestrator, ABC):
     between the artifact and the runtime config.
 
     Used by SCADA, LTN, MarketMaker, the forecast services, the FLO, etc.
-    — one subclass per ``TransportClass``, each passing its fixed
-    ``transport_class`` and its ``g_node_class`` (a ``GwGNodeClass``) up.
-    ``g.node.gt`` keeps ``GNodeClass`` an open string so other registries
-    can name their own classes; a GridWorks GNode's class is a member of
-    ``gw.g.node.class``, and the identity file must agree with the actor.
+    — one subclass per GNode class, each passing its fixed ``g_node_class``
+    (a ``GwGNodeClass``) up; the transport class follows from it through
+    ``TRANSPORT_CLASS_BY_G_NODE_CLASS``, so a GNode cannot route as one
+    class while claiming another. ``g.node.gt`` keeps ``GNodeClass`` an
+    open string so other registries can name their own classes; a
+    GridWorks GNode's class is a member of ``gw.g.node.class``, and the
+    identity file must agree with the actor.
     """
 
     def __init__(
         self,
         *,
         settings: GNodeSettings,
-        transport_class: TransportClass,
         g_node_class: GwGNodeClass,
         my_super_alias: str,
         my_time_coordinator_alias: str,
     ):
+        try:
+            transport_class = TRANSPORT_CLASS_BY_G_NODE_CLASS[g_node_class]
+        except KeyError as e:
+            raise ValueError(
+                f"{g_node_class.value} is not a class a GNode actor may claim"
+            ) from e
         super().__init__(
             settings=settings,
             transport_class=transport_class,

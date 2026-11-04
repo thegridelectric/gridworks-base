@@ -70,7 +70,6 @@ class HelloGNode(GridworksActor):
     def __init__(self, *, settings: GNodeSettings, my_super_alias: str):
         super().__init__(
             settings=settings,
-            transport_class=TransportClass.LeafTransactiveNode,
             g_node_class=GwGNodeClass.LeafTransactiveNode,
             my_super_alias=my_super_alias,
             my_time_coordinator_alias="d1.time",

@@ -27,6 +27,7 @@ from gwbase import (
     Orchestrator,
     ServiceSettings,
 )
+from gwbase.sema.enums import GwGNodeClass
 from gwbase.transport_encoding import (
     DirectRoutingEnvelope,
     TransportClass,
@@ -163,6 +164,7 @@ def _scada(path: Path, service_alias: str) -> _GNode:
             service_alias=service_alias, service_name="scada", g_node_path=path
         ),
         transport_class=TransportClass.Scada,
+        g_node_class=GwGNodeClass.Scada,
         my_super_alias="d1.super",
         my_time_coordinator_alias="d1.time",
     )
@@ -171,7 +173,7 @@ def _scada(path: Path, service_alias: str) -> _GNode:
 def test_gridworks_actor_loads_validated_identity(tmp_path) -> None:
     path = _write_scada(tmp_path)
     actor = _scada(path, service_alias="d1.iso.me.scada")
-    assert actor.g_node_class == "Scada"
+    assert actor.g_node_class is GwGNodeClass.Scada
     # handshake now carries the GNodeClass discriminator
     assert actor._client_properties()["GNodeClass"] == "Scada"
     # back-compat aliases still resolve for existing callers

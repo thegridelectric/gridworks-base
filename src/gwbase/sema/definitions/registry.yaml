@@ -1,6 +1,6 @@
 metadata:
   registry_version: "1.0"
-  last_updated: "2026-10-15T21:35:00Z"
+  last_updated: "2026-11-04T07:40:00Z"
   maintainer: "gridworks-energy"
 
 formats:
@@ -101,6 +101,21 @@ enums:
         schema_url: "https://schemas.electricity.works/enums/g.node.status/000"
         created: "2026-02-22T16:43:00Z"
         status: "published"
+
+  gw.g.node.class:
+    latest_version: "001"
+    owner: gridworks-energy
+    enum_type: "versioned"
+    description: "GridWorks-specific functional classification for GNodes"
+
+    versions:
+      "001":
+        schema_url: "https://schemas.electricity.works/enums/gw.g.node.class/001"
+        created: "2026-11-04T07:15:00Z"
+        status: "published"
+        added_values:
+          - "TimeCoordinator"
+          - "Flo"
 
 types:
   fis.connect.claims:

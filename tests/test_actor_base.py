@@ -3,6 +3,7 @@ import time
 import uuid
 
 from gwbase.sema import GwBaseSemaCodec
+from gwbase.sema.enums import GwGNodeClass
 from gwbase.sema.types import HeartbeatA, SimTimestep
 from gwbase.transport_encoding import (
     BroadcastRoutingEnvelope,
@@ -65,7 +66,7 @@ def test_actor_base(
         make_g_node_json("gn.json", alias=gn_alias, g_node_class="LeafTransactiveNode"),
         service_alias=gn_alias,
     )
-    # Supervisor + TimeCoordinator are NOT GNodes — Orchestrator stubs on
+    # The Supervisor and TimeCoordinator stubs are Orchestrators on
     # ServiceSettings, no g.node.gt.json.
     su_settings = make_service_settings(service_alias="d1.super")
     tc_settings = make_service_settings(service_alias="d1.time")
@@ -77,6 +78,7 @@ def test_actor_base(
     gn = GNodeStubRecorder(
         settings=gn_settings,
         transport_class=TransportClass.LeafTransactiveNode,
+        g_node_class=GwGNodeClass.LeafTransactiveNode,
         my_super_alias="d1.super",
         my_time_coordinator_alias="d1.time",
     )

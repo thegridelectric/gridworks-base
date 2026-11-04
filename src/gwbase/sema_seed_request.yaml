@@ -36,3 +36,10 @@ initial_targets:
     # credentials class, decoded by the Fleet Index Service.
     fis.connect.claims:
       versions: ["000"]
+
+  enums:
+    # The GridWorks GNode class taxonomy. g.node.gt keeps GNodeClass an open
+    # string for other registries; every GridWorks GNode declares its class
+    # from this enum and GridworksActor checks the identity file against it.
+    gw.g.node.class:
+      versions: ["001"]

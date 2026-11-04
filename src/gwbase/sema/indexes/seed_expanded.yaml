@@ -1,6 +1,6 @@
 metadata:
   generated_from: indexes/public_registry.yaml
-  generated_at: '2026-10-16T22:58:54Z'
+  generated_at: '2026-11-04T07:53:49Z'
   note: Transitive closure of initial_targets
 initial_targets:
 - g.node.gt:006
@@ -10,6 +10,7 @@ initial_targets:
 - sim.timestep:000
 - gw
 - fis.connect.claims:000
+- gw.g.node.class:001
 worklist:
   formats:
     hex.char:
@@ -39,6 +40,9 @@ worklist:
     g.node.status:
       '000':
         path: definitions/enums/g.node.status/000.yaml
+    gw.g.node.class:
+      '001':
+        path: definitions/enums/gw.g.node.class/001.yaml
   types:
     fis.connect.claims:
       '000':

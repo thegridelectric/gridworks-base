@@ -2,9 +2,10 @@
 against a live rabbit broker.
 
 Note the tier split: the GNode under test (``GNodeStubRecorder``) is a
-``GridworksActor`` (real GNode identity, g.node.gt.json), while Supervisor and
-TimeCoordinator — which are NOT GNodes — are ``Orchestrator`` stubs that ride
-``ServiceSettings`` with no g.node.gt.json. That mirrors the production tiers.
+``GridworksActor`` (real GNode identity, g.node.gt.json), while the Supervisor
+and TimeCoordinator stubs are ``Orchestrator`` stubs on ``ServiceSettings``
+with no g.node.gt.json: the smallest control plane the GNode can be tested
+against.
 """
 
 from typing import TYPE_CHECKING
@@ -17,6 +18,7 @@ from gwbase.config import GNodeSettings, ServiceSettings
 from gwbase.gridworks_actor import GridworksActor
 from gwbase.orchestrator import Orchestrator
 from gwbase.sema import GwBaseSemaCodec
+from gwbase.sema.enums import GwGNodeClass
 from gwbase.sema.types import HeartbeatA, SimReady
 from gwbase.sema.types.gridworks_header import GridworksHeader
 from gwbase.transport_encoding import RoutingEnvelope, TransportClass
@@ -118,12 +120,14 @@ class GNodeStubRecorder(_RecorderMixin, GridworksActor):
         *,
         settings: GNodeSettings,
         transport_class: TransportClass,
+        g_node_class: GwGNodeClass,
         my_super_alias: str,
         my_time_coordinator_alias: str,
     ):
         super().__init__(
             settings=settings,
             transport_class=transport_class,
+            g_node_class=g_node_class,
             my_super_alias=my_super_alias,
             my_time_coordinator_alias=my_time_coordinator_alias,
         )

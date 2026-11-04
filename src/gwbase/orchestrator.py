@@ -36,8 +36,8 @@ class Orchestrator(ActorBase, ABC):
     and binds its queue direct-to-me, and it gains ``direct_envelope`` /
     ``broadcast_envelope`` (which stamp ``from_class``).
 
-    Used by Supervisor and TimeCoordinator (non-GNode orchestration
-    participants, ``ServiceSettings``) and, with GNode identity added, by
+    Used by the Supervisor and the other non-GNode orchestration
+    participants (``ServiceSettings``) and, with GNode identity added, by
     ``GridworksActor``.
 
     The Sema codec used for control-plane types is private to this class.

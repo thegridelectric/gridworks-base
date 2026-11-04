@@ -16,12 +16,13 @@ class TransportClass(StrEnum):
     Actor-tier map (which runtime tier a class rides):
 
     - **Orchestrator (non-GNode, ServiceSettings):** ``Supervisor``,
-      ``TimeCoordinator``, ``GridNodeRegistry``, ``Alerter``, ``Flo`` —
-      orchestration/infra participants with no ``g.node.gt`` identity file
-      at boot.
+      ``GridNodeRegistry``, ``Alerter`` — orchestration/infra participants
+      with no ``g.node.gt`` identity file at boot.
     - **GridworksActor (GNode identity):** ``TerminalAsset``,
       ``LeafTransactiveNode``, ``MarketMaker``, ``PriceForecastService``,
-      ``WeatherForecastService``.
+      ``WeatherForecastService``, ``TimeCoordinator``, ``Flo`` — each a
+      registry row; a clock or a FLO is found by walking the forest from
+      the asking GNode up to the universe root.
     - **No gwbase runtime:** ``Scada`` (MQTT-native, reached via
       ``amq.topic``) and ``ConnectivityNode`` (passive — a map vertex,
       not an actor).

@@ -3,6 +3,7 @@ enums:
   g.node.instance.status: g.node.instance.status
   g.node.instance.transport: g.node.instance.transport
   g.node.status: g.node.status
+  gw.g.node.class: gw.g.node.class
 types:
   fis.connect.claims: fis.connect.claims
   g.node.gt: g.node.gt

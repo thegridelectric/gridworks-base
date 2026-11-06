@@ -11,6 +11,7 @@ def test_service_settings_defaults() -> None:
     assert s.instance_id is None  # auto-uuid happens in the actor, per boot
     assert s.service_name == "gridworks"
     assert s.log_level == "INFO"
+    assert s.log_tz == "UTC"
     assert s.log_rotate_bytes == 10_000_000
     assert s.log_rotate_count == 5
     assert s.rabbit.model_dump() == RabbitBrokerClient().model_dump()
@@ -31,12 +32,21 @@ def test_service_settings_env_overrides(monkeypatch) -> None:
     monkeypatch.setenv("GWBASE_SERVICE_NAME", "tap1")
     monkeypatch.setenv("GWBASE_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("GWBASE_LOG_ROTATE_COUNT", "3")
+    monkeypatch.setenv("GWBASE_LOG_TZ", "America/New_York")
     # service_alias arrives from env — invisible to the type checker
     s = ServiceSettings()  # pyright: ignore[reportCallIssue]
     assert s.service_alias == "d1.env.svc"
     assert s.service_name == "tap1"
     assert s.log_level == "DEBUG"
     assert s.log_rotate_count == 3
+    assert s.log_tz == "America/New_York"
+
+
+def test_log_tz_must_resolve() -> None:
+    with pytest.raises(ValidationError):
+        ServiceSettings(service_alias="d1.tap1", log_tz="America/New York")
+    with pytest.raises(ValidationError):
+        ServiceSettings(service_alias="d1.tap1", log_tz="Mars/Olympus_Mons")
 
 
 def test_gnode_settings_inherits_and_adds_g_node_path() -> None:

@@ -13,6 +13,7 @@ already governs ``LRH_ALIAS_PATTERN`` in ``transport_encoding.py``.
 
 import re
 import uuid
+import zoneinfo
 from typing import Annotated
 
 from pydantic import BeforeValidator
@@ -24,6 +25,7 @@ UUID4_STR_PATTERN = re.compile(
 )
 UNIVERSE_RUN_PATTERN = re.compile(r"^[a-z][a-z0-9]*__[1-9][0-9]*$")
 UNIVERSE_PATTERN = re.compile(r"^[a-z][a-z0-9]*$")
+IANA_TIMEZONE_PATTERN = re.compile(r"^[A-Za-z_]+(/[A-Za-z0-9_+-]+){0,2}$")
 
 
 def is_left_right_dot(v: str) -> str:
@@ -77,6 +79,21 @@ def is_universe(v: str) -> str:
     return v
 
 
+def is_iana_timezone(v: str) -> str:
+    """The sema ``iana.timezone.str`` shape, plus the check the format
+    leaves to the implementation: the name resolves in this runtime's tz
+    database (``zoneinfo``)."""
+    if not isinstance(v, str):
+        raise ValueError(f"<{v}>: iana.timezone.str must be a string.")
+    if not IANA_TIMEZONE_PATTERN.fullmatch(v):
+        raise ValueError(f"<{v}>: Fails iana.timezone.str format.")
+    try:
+        zoneinfo.ZoneInfo(v)
+    except zoneinfo.ZoneInfoNotFoundError as e:
+        raise ValueError(f"<{v}>: not in this runtime's tz database.") from e
+    return v
+
+
 def universe_of(run: str) -> str:
     """The universe token of a ``universe.run`` value (``hw1__1`` -> ``hw1``)."""
     return is_universe(is_universe_run(run).split("__", 1)[0])
@@ -86,3 +103,4 @@ LeftRightDot = Annotated[str, BeforeValidator(is_left_right_dot)]
 UUID4Str = Annotated[str, BeforeValidator(is_uuid4_str)]
 UniverseRun = Annotated[str, BeforeValidator(is_universe_run)]
 Universe = Annotated[str, BeforeValidator(is_universe)]
+IanaTimezone = Annotated[str, BeforeValidator(is_iana_timezone)]

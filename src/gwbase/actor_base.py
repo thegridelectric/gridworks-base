@@ -114,6 +114,7 @@ class ActorBase(ABC):
             service_alias=self.alias,
             instance_id=self.instance_id,
             log_level=settings.log_level,
+            log_tz=settings.log_tz,
             rotate_bytes=settings.log_rotate_bytes,
             rotate_count=settings.log_rotate_count,
         )

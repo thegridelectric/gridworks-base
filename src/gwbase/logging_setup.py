@@ -7,7 +7,12 @@ downstream broker-forwarding handler can attach to the same logger without
 any actor-side code change.
 
 Per-record line:  ``<iso-ts> <LEVEL> <alias> > <message>[ key=val ...]``
-Exception info follows as ``  | ...`` continuation lines.
+Exception info follows as ``  | ...`` continuation lines. The timestamp is
+RFC 3339 with milliseconds in the service's ``log_tz`` and always ends in
+the numeric UTC offset (``2026-11-06T16:37:56.795-05:00``), so a line
+reads in the hour the operator lives in and still names one instant:
+the DST fall-back hour does not repeat, and logs from boxes in different
+zones sort and correlate.
 
 The downstream observability work (BrokerLoggingHandler, verbosity-request)
 is intentionally NOT built here — this is substrate only.
@@ -15,7 +20,8 @@ is intentionally NOT built here — this is substrate only.
 
 import logging
 import logging.handlers
-from datetime import UTC, datetime
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from gwbase.config import paths
 
@@ -34,12 +40,10 @@ _RESERVED_RECORD_ATTRS = frozenset(logging.makeLogRecord({}).__dict__.keys()) | 
 }
 
 
-def _iso(epoch_s: float) -> str:
-    """epoch seconds -> 'YYYY-MM-DDTHH:MM:SS.mmmZ' (millis, UTC)."""
-    return (
-        datetime.fromtimestamp(epoch_s, tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        + "Z"
-    )
+def iso_timestamp(epoch_s: float, tz: ZoneInfo) -> str:
+    """epoch seconds -> RFC 3339 with millis and numeric offset in ``tz``,
+    e.g. ``2026-11-06T16:37:56.795-05:00`` (``+00:00`` for UTC)."""
+    return datetime.fromtimestamp(epoch_s, tz=tz).isoformat(timespec="milliseconds")
 
 
 class _ContextFilter(logging.Filter):
@@ -56,13 +60,17 @@ class _ContextFilter(logging.Filter):
         return True
 
 
-class _HumanFormatter(logging.Formatter):
-    """The bijective human format (the only Wave-1 format)."""
+class HumanFormatter(logging.Formatter):
+    """The bijective human format (the only Wave-1 format); timestamps in ``tz``."""
+
+    def __init__(self, tz: ZoneInfo) -> None:
+        super().__init__()
+        self.tz = tz
 
     def format(self, record: logging.LogRecord) -> str:
         alias = getattr(record, _CTX_ALIAS, "-")
         line = (
-            f"{_iso(record.created)} {record.levelname:<5} "
+            f"{iso_timestamp(record.created, self.tz)} {record.levelname:<5} "
             f"{alias} > {record.getMessage()}"
         )
         extras = {
@@ -84,6 +92,7 @@ def _build_actor_logger(  # noqa: PLR0913 — logger builder fans out logging se
     service_alias: str,
     instance_id: str,
     log_level: str,
+    log_tz: str,
     rotate_bytes: int,
     rotate_count: int,
 ) -> logging.Logger:
@@ -102,7 +111,8 @@ def _build_actor_logger(  # noqa: PLR0913 — logger builder fans out logging se
         maxBytes=rotate_bytes,
         backupCount=rotate_count,
     )
-    handler.setFormatter(_HumanFormatter())
+    tz = ZoneInfo(log_tz)
+    handler.setFormatter(HumanFormatter(tz))
     handler.addFilter(_ContextFilter(service_alias, instance_id))
     logger.addHandler(handler)
 
@@ -113,7 +123,7 @@ def _build_actor_logger(  # noqa: PLR0913 — logger builder fans out logging se
     assert handler.stream is not None
     handler.stream.write(
         f"=== gwbase log: alias={service_alias} instance={instance_id} "
-        f"started={_iso(datetime.now(tz=UTC).timestamp())} ===\n"
+        f"started={iso_timestamp(datetime.now(tz=tz).timestamp(), tz)} ===\n"
     )
     handler.flush()
 

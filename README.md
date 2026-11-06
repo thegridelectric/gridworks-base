@@ -419,6 +419,7 @@ see below the table.
 | `instance_id` | per-process UUID, auto-generated each boot if unset |
 | `service_name` | directory segment for file locations (e.g. `scada`) |
 | `log_level` | `INFO` by default |
+| `log_tz` | IANA zone the log timestamps are rendered in, with their UTC offset (`UTC` by default; a Maine box sets `America/New_York`) |
 | `log_rotate_bytes` / `log_rotate_count` | log rotation (10 MB × 5 default) |
 | `g_node_path` *(GNodeSettings)* | path to `g.node.gt.json` |
 

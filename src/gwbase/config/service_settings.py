@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from gwbase.config.rabbit_settings import RabbitBrokerClient
-from gwbase.transport_format import LeftRightDot, UUID4Str
+from gwbase.transport_format import IanaTimezone, LeftRightDot, UUID4Str
 
 
 class ServiceSettings(BaseSettings):
@@ -32,6 +32,8 @@ class ServiceSettings(BaseSettings):
     instance_id: UUID4Str | None = None  # auto-uuid per boot if None
     service_name: str = "gridworks"  # XDG path segment (NOT the alias)
     log_level: str = "INFO"
+    # Zone the log timestamps are rendered in (with their numeric offset).
+    log_tz: IanaTimezone = "UTC"
     log_rotate_bytes: int = 10_000_000  # 10MB per file
     log_rotate_count: int = 5  # 5 backup files
     # Messages the broker may send ahead of the consumer's acks. ActorBase
